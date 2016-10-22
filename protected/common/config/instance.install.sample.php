@@ -14,7 +14,7 @@ $username           = 'demo';
 $password           = 'demo';
 $debug              = false;
 $environment        = 'prod';
-$vendorPath         = '';
+$vendorPath         = '.';
 $backendVendorPath  = '..';
 //App details
 $frontAppId         = 'front-app';
