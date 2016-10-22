@@ -1,0 +1,1 @@
+<p>These are terms and conditions</p>
