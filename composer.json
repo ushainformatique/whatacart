@@ -6,51 +6,49 @@
     "type": "project",
     "license": "GPLv3",
     "support": {
-        "issues": "https://bitbucket.org/ushainformatique/whatacart/issues",
-        "forum": "http://forum.whatacart.com"
+        "issues": "https://bitbucket.org/ushainformatique/whatacart/issues"
     },
     "minimum-stability": "stable",
     "require": {
         "php": ">=5.4.0",
         "yiisoft/yii2": "2.0.9",
-        "yiisoft/yii2-bootstrap": "~2.0.0",
-        "yiisoft/yii2-swiftmailer": "~2.0.0",
-        "branchonline/yii2-lightbox": "*",
-        "codeception/codeception": "2.0.*",
-        "codeception/specify": "*",
-        "codeception/verify": "*",
-        "2amigos/yii2-date-time-picker-widget": "~1.0",
-        "2amigos/yii2-date-picker-widget": "~1.0",
-        "2amigos/yii2-taggable-behavior": "~1.0",
-        "2amigos/yii2-selectize-widget": "~1.0",
-        "wbraganca/yii2-fancytree-widget": "*",
-        "kartik-v/yii2-mpdf": "*",
-        "kartik-v/yii2-widget-rating": "*",
+        "yiisoft/yii2-bootstrap": "2.0.6",
+        "yiisoft/yii2-swiftmailer": "2.0.5",
+        "branchonline/yii2-lightbox": "1.1.1",
+        "codeception/codeception": "2.0.16",
+        "codeception/specify": "0.4.3",
+        "codeception/verify": "0.3.1",
+        "2amigos/yii2-date-time-picker-widget": "1.0.2",
+        "2amigos/yii2-date-picker-widget": "1.0.5",
+        "2amigos/yii2-taggable-behavior": "1.0.1",
+        "2amigos/yii2-selectize-widget": "1.0.1",
+        "wbraganca/yii2-fancytree-widget": "1.0.1",
+        "kartik-v/yii2-mpdf": "v1.0.0",
+        "kartik-v/yii2-widget-rating": "v1.0.2",
 		"kartik-v/bootstrap-star-rating": "@dev",
         "kartik-v/yii2-widget-fileinput": "@dev",
         "marqu3s/yii2-summernote": "dev-master",
-        "fortawesome/font-awesome": "^4.6"
+        "fortawesome/font-awesome": "v4.6.3",
+		"ushainformatique/usniframework":"dev-default"
     },
     "require-dev": {
-        "yiisoft/yii2-codeception": "~2.0.0",
-        "yiisoft/yii2-debug": "~2.0.0",
-        "yiisoft/yii2-gii": "~2.0.0",
-        "yiisoft/yii2-faker": "~2.0.0",
+        "yiisoft/yii2-debug": "2.0.6",
+        "yiisoft/yii2-gii": "2.0.5",
+        "yiisoft/yii2-faker": "2.0.3",
         "behat/mink":"*",
         "behat/mink-goutte-driver":"*",
-        "behat/mink-sahi-driver":"*",
-        "yiisoft/yii2-imagine": "~2.0.0",
-        "yiisoft/yii2-jui": "~2.0.0",
-        "linslin/yii2-curl": "*"
+        "yiisoft/yii2-imagine": "2.0.3",
+        "yiisoft/yii2-jui": "2.0.5",
+        "linslin/yii2-curl": "1.0.8"
     },
     "config": {
         "process-timeout": 1800,
-        "vendor-dir": "../vendor"
+        "vendor-dir": "vendor"
     },
     "extra": {
         "asset-installer-paths": {
-            "npm-asset-library": "../vendor/npm",
-            "bower-asset-library": "../vendor/bower"
+            "npm-asset-library": "vendor/npm",
+            "bower-asset-library": "vendor/bower"
         }
     }
 }
