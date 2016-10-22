@@ -14,8 +14,8 @@ $username           = 'demo';
 $password           = 'demo';
 $debug              = false;
 $environment        = 'prod';
-$vendorPath         = '..';
-$backendVendorPath  = '..' . DIRECTORY_SEPARATOR . '..';
+$vendorPath         = '';
+$backendVendorPath  = '..';
 //App details
 $frontAppId         = 'front-app';
 $frontAppName       = 'Front Application';

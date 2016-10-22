@@ -17,10 +17,11 @@ else
     }
     require($instanceDir . '/instance.install.php');
 }
+echo $vendorPath;exit;
 defined('YII_ENV') or define('YII_ENV', $environment);
 defined('YII_DEBUG') or define('YII_DEBUG', $debug);
 defined('VENDOR_PATH') or define('VENDOR_PATH', $vendorPath . DIRECTORY_SEPARATOR . 'vendor');
-defined('USNI_PATH') or define('USNI_PATH', VENDOR_PATH . '/usniframework');
+defined('USNI_PATH') or define('USNI_PATH', VENDOR_PATH . '/ushainformatique/usniframework');
 
 
 require(VENDOR_PATH . '/autoload.php');
