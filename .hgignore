@@ -1,0 +1,15 @@
+^frontend/runtime$
+^backend/runtime$
+^protected/backend/runtime$
+^protected/frontend/runtime$
+^assets$
+^backend/assets$
+^protected/common/config/instance\.php$
+^protected/common/config/instanceConfig\.php$
+^nbproject$
+^protected/common/config/instancetestviaunittest\.php$
+^protected/common/config/instanceviaunittest\.php$
+^resources$
+^runtime$
+^protected/common/config/instancetest\.php$
+^protected/common/config/instance.install\.php$
