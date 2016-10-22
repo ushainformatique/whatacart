@@ -1,0 +1,1 @@
+<p>This is privacy policy</p>

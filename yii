@@ -1,0 +1,49 @@
+#!/usr/bin/env php
+<?php
+/**
+ * Yii console bootstrap file.
+ */
+defined('APPLICATION_PATH') or define('APPLICATION_PATH', dirname(__FILE__));
+
+// fcgi doesn't have STDIN and STDOUT defined by default
+defined('STDIN') or define('STDIN', fopen('php://stdin', 'r'));
+defined('STDOUT') or define('STDOUT', fopen('php://stdout', 'w'));
+
+$instanceDir = APPLICATION_PATH . '/protected/common/config';
+if(file_exists($instanceDir . '/instance.php'))
+{
+    require_once($instanceDir . '/instance.php');
+}
+else
+{
+    if(!file_exists($instanceDir . '/instance.install.php'))
+    {
+        copy($instanceDir . '/instance.install.sample.php', $instanceDir . '/instance.install.php');
+    }
+    require($instanceDir . '/instance.install.php');
+}
+defined('YII_ENV') or define('YII_ENV', $environment);
+defined('YII_DEBUG') or define('YII_DEBUG', $debug);
+defined('VENDOR_PATH') or define('VENDOR_PATH', $vendorPath . DIRECTORY_SEPARATOR . 'vendor');
+defined('USNI_PATH') or define('USNI_PATH', VENDOR_PATH . '/usniframework');
+
+require(VENDOR_PATH . '/autoload.php');
+require(VENDOR_PATH . '/yiisoft/yii2/Yii.php');
+
+require(APPLICATION_PATH . '/protected/common/config/bootstrap.php');
+require(APPLICATION_PATH . '/protected/console/config/bootstrap.php');
+
+$config = yii\helpers\ArrayHelper::merge(
+    require(APPLICATION_PATH . '/protected/common/config/main.php'),
+    require(APPLICATION_PATH . '/protected/common/config/main-local.php'),
+    require(APPLICATION_PATH . '/protected/console/config/main.php'),
+    require(APPLICATION_PATH . '/protected/console/config/main-local.php')
+);
+unset($config['as beforeRequest']);
+if(file_exists(APPLICATION_PATH . '/protected/common/config/main-extended.php'))
+{
+    $config = yii\helpers\ArrayHelper::merge($config, require(APPLICATION_PATH . '/protected/common/config/main-extended.php'));
+}
+$application = new usni\library\components\UiConsoleApplication($config);
+$exitCode = $application->run();
+exit($exitCode);

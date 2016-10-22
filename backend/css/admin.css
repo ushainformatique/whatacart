@@ -1,0 +1,221 @@
+/*-----Link color in column ----*/
+td a{
+    color: #333;
+}
+/*------Action Toolbar in grid view----------*/
+.action-toolbar > .btn-group a.btn > i{
+    float: left;
+    margin: 3px 6px 0 -4px;
+    font-weight: normal;
+}
+
+.action-toolbar > .btn-group a{
+    font-weight: normal;
+    font-size: 11px;
+}
+
+.dataTable{
+    border-top: 0px;
+    border-bottom: 0px;
+}
+/*----------Detail View------------*/
+.detail-container .panel-title{
+    font-size: 14px;
+}
+
+.detail-container .panel-title > i{
+    margin: 3px 8px 0px 0px;
+}
+
+.detail-container th{
+    font-weight: normal;
+}
+
+/*---------Modal Detail View------*/
+.compare-list-actions {
+    margin-top: 108px;
+    margin-left: 4px;
+    width: 50px;
+}
+
+/*--------Bulk Edit--------------*/
+.bulk-edit-form{
+    margin-top: 10px;
+    text-align: left;
+}
+
+.bulk-edit-form .checkbox input[type="checkbox"]{
+    margin-left: 0px;
+}
+
+/*-------Checkout-----------*/
+.checkbox-admin{
+    margin-left: 17px;
+}
+ .checkbox-admin input[type="checkbox"]{
+    margin-left: -20px;
+}
+
+/*-----------Tab view----------*/
+.tabbable{
+    margin-top: 10px;
+    margin-left: 10px;
+    margin-bottom: 10px;
+}
+
+.tabbable .form-actions{
+    margin-top: 10px;
+    margin-right: 10px;
+}
+
+.panel-footer .form-actions{
+    margin-top: 5px;
+    margin-right: 15px;
+}
+
+/*-----Option content container-------*/
+span .btn > i{
+    margin: 0px;
+}
+
+/*--------Button with icon overridden----*/
+td .btn > i{
+    margin: 0px;
+}
+.btn > i {
+    float: left;
+    margin: 4px 6px 0px -4px;
+}
+
+.order-cart-remove > i{
+    margin: 0px;
+}
+
+/*--Summer note fixes----*/
+.note-editor .btn > i{
+    margin:0px
+}
+
+.note-editor .btn-sm, .btn-group-sm > .btn {
+    padding: 5px 10px;
+    font-size: 12px;
+    line-height: 1.5;
+    border-radius: 3px;
+}
+
+.note-editor .btn-group .btn + .btn, .note-editor .btn-group .btn + .btn-group, .note-editor .btn-group .btn-group + .btn, .note-editor .btn-group .btn-group + .btn-group {
+    margin-left: -1px;
+}
+
+.note-btn-group .btn-group{
+    margin: 0px;
+}
+
+/*--------Required fields--------*/
+div.required .control-label:after {content: " *"; color: red;}
+
+/*-------Inline radio----------*/
+.radio-inline input[type="radio"]{
+    position: relative;
+    margin-right: 0px;
+    vertical-align: top;
+}
+
+/**---Dahsboard--*/
+.panel-dashboard td > span.label{
+    display: inline;
+}
+
+/*---Option value---*/
+#options-view-container{
+    margin-bottom: 10px;
+}
+
+#admin-checkout-form .radio input[type="radio"]{
+    margin-left: -20px;
+}
+
+/*---------Select 2-----------*/
+.select2-container .select2-choice{
+    height: 34px;
+    line-height: 32px;
+}
+
+/*----Alert----*/
+.alert{
+    margin-bottom: 20px;
+}
+
+/*---Bootstrap Callout http://cpratt.co/twitter-bootstrap-callout-css-styles/----*/
+.bs-callout {
+    padding: 20px;
+    margin: 20px 0;
+    border: 1px solid #eee;
+    border-left-width: 5px;
+    border-radius: 3px;
+}
+.bs-callout h4 {
+    margin-top: 0;
+    margin-bottom: 5px;
+}
+.bs-callout p:last-child {
+    margin-bottom: 0;
+}
+.bs-callout code {
+    border-radius: 3px;
+}
+.bs-callout+.bs-callout {
+    margin-top: -5px;
+}
+.bs-callout-default {
+    border-left-color: #777;
+}
+.bs-callout-default h4 {
+    color: #777;
+}
+.bs-callout-primary {
+    border-left-color: #428bca;
+}
+.bs-callout-primary h4 {
+    color: #428bca;
+}
+.bs-callout-success {
+    border-left-color: #5cb85c;
+}
+.bs-callout-success h4 {
+    color: #5cb85c;
+}
+.bs-callout-danger {
+    border-left-color: #d9534f;
+}
+.bs-callout-danger h4 {
+    color: #d9534f;
+}
+.bs-callout-warning {
+    border-left-color: #f0ad4e;
+}
+.bs-callout-warning h4 {
+    color: #f0ad4e;
+}
+.bs-callout-info {
+    border-left-color: #5bc0de;
+}
+.bs-callout-info h4 {
+    color: #5bc0de;
+}
+/*--------Loader---------*/
+.loader, .button-loader{
+    background:url(../images/interface/loader.gif) no-repeat;
+    background-position:  center center;
+    opacity: 1;
+}
+
+.loader *, .button-loader * {
+    opacity: .8;
+}
+
+.button-loader{
+    background-position:  left center;
+    opacity: 1;
+}
+

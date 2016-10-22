@@ -1,0 +1,20 @@
+@media print{
+    #adminsidebarmenu{
+        display:none;
+    }
+    .breadcrumb-row{
+        display: none;
+    }
+    
+    #invoice-options{
+        display: none;
+    }
+    
+    #footer, .navbar{
+        display: none;
+    }
+    body {font-size: 12px;}
+    p {font-size: 12px;}
+    label {font-size: 12px;}
+/*    body { padding:0 12px; margin-top:0px;}*/
+}
