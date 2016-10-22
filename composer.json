@@ -1,0 +1,56 @@
+{
+    "name": "ushainformatique/whatacart",
+    "description": "Open Source Ecommerce Platform",
+    "keywords": ["whatacart", "ecommerce", "open source ecommerce"],
+    "homepage": "http://www.whatacart.com/",
+    "type": "project",
+    "license": "GPLv3",
+    "support": {
+        "issues": "https://bitbucket.org/ushainformatique/whatacart/issues",
+        "forum": "http://forum.whatacart.com"
+    },
+    "minimum-stability": "stable",
+    "require": {
+        "php": ">=5.4.0",
+        "yiisoft/yii2": "2.0.9",
+        "yiisoft/yii2-bootstrap": "~2.0.0",
+        "yiisoft/yii2-swiftmailer": "~2.0.0",
+        "branchonline/yii2-lightbox": "*",
+        "codeception/codeception": "2.0.*",
+        "codeception/specify": "*",
+        "codeception/verify": "*",
+        "2amigos/yii2-date-time-picker-widget": "~1.0",
+        "2amigos/yii2-date-picker-widget": "~1.0",
+        "2amigos/yii2-taggable-behavior": "~1.0",
+        "2amigos/yii2-selectize-widget": "~1.0",
+        "wbraganca/yii2-fancytree-widget": "*",
+        "kartik-v/yii2-mpdf": "*",
+        "kartik-v/yii2-widget-rating": "*",
+		"kartik-v/bootstrap-star-rating": "@dev",
+        "kartik-v/yii2-widget-fileinput": "@dev",
+        "marqu3s/yii2-summernote": "dev-master",
+        "fortawesome/font-awesome": "^4.6"
+    },
+    "require-dev": {
+        "yiisoft/yii2-codeception": "~2.0.0",
+        "yiisoft/yii2-debug": "~2.0.0",
+        "yiisoft/yii2-gii": "~2.0.0",
+        "yiisoft/yii2-faker": "~2.0.0",
+        "behat/mink":"*",
+        "behat/mink-goutte-driver":"*",
+        "behat/mink-sahi-driver":"*",
+        "yiisoft/yii2-imagine": "~2.0.0",
+        "yiisoft/yii2-jui": "~2.0.0",
+        "linslin/yii2-curl": "*"
+    },
+    "config": {
+        "process-timeout": 1800,
+        "vendor-dir": "../vendor"
+    },
+    "extra": {
+        "asset-installer-paths": {
+            "npm-asset-library": "../vendor/npm",
+            "bower-asset-library": "../vendor/bower"
+        }
+    }
+}
