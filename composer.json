@@ -28,7 +28,8 @@
 		"kartik-v/bootstrap-star-rating": "@dev",
         "kartik-v/yii2-widget-fileinput": "@dev",
         "marqu3s/yii2-summernote": "dev-master",
-        "fortawesome/font-awesome": "v4.6.3"
+        "fortawesome/font-awesome": "v4.6.3",
+        "ushainformatique/usniframework":"dev-default"
     },
     "require-dev": {
         "yiisoft/yii2-debug": "2.0.6",
