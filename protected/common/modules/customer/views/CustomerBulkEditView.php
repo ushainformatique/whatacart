@@ -12,9 +12,10 @@ use usni\library\utils\CountryUtil;
 use usni\library\modules\auth\models\Group;
 use usni\library\modules\users\models\User;
 use usni\UsniAdaptor;
-use customer\models\Customer;
+use customer\utils\CustomerUtil;
 /**
  * CustomerBulkEditView class file.
+ * 
  * @package customer\views
  */
 class CustomerBulkEditView extends UiBootstrapBulkEditView
@@ -26,7 +27,7 @@ class CustomerBulkEditView extends UiBootstrapBulkEditView
     {
         $group      = new Group();
         $parent     = Group::find()->joinWith('translations')->where('name = :name AND language = :language', 
-                                                                [':name' => Customer::CUSTOMER_GROUP_NAME, ':language' => 'en-US'])->one();
+                                                                [':name' => CustomerUtil::getDefaultGroupTitle(), ':language' => 'en-US'])->one();
         $elements = [
                             'status'          => UiHtml::getFormSelectFieldOptionsWithNoSearch(User::getStatusDropdown()),
                             'timezone'        => UiHtml::getFormSelectFieldOptions(TimezoneUtil::getTimezoneSelectOptions(),

@@ -27,7 +27,7 @@ class Store extends TranslatableActiveRecord
 	public function rules()
 	{
 		return [
-                    [['name', 'owner_id'],                  'required'],
+                    [['name', 'owner_id', 'data_category_id'],  'required'],
                     ['name',  'unique', 'targetClass' => StoreTranslated::className(), 'targetAttribute' => ['name', 'language'], 'on' => 'create'],
                     ['name', 'unique', 'targetClass' => StoreTranslated::className(), 'targetAttribute' => ['name', 'language'], 'filter' => ['!=', 'owner_id', $this->id], 'on' => 'update'],
                     ['name',                                'string', 'max'=>64],
@@ -36,7 +36,7 @@ class Store extends TranslatableActiveRecord
                     ['status',                              'default', 'value' => self::STATUS_ACTIVE],
                     ['is_default',                          'boolean'],
                     ['data_category_id',                    'integer'],
-                    [['name', 'url', 'status', 'is_default', 'description', 'metakeywords', 'metadescription', 'owner_id', 'theme'],  'safe'],
+                    [['name', 'url', 'status', 'is_default', 'description', 'metakeywords', 'metadescription', 'owner_id', 'theme', 'data_category_id'],  'safe'],
                ];
 	}
 

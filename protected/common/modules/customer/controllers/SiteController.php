@@ -269,7 +269,7 @@ class SiteController extends BaseController
     public function actionChangePassword()
     {
         $customer = UsniAdaptor::app()->user->getUserModel();
-        $model    = CustomerUtil::processChangePasswordAction($customer->id, UsniAdaptor::app()->request->post(), UsniAdaptor::app()->user->getUserModel());
+        $model    = CustomerUtil::processChangePasswordAction($customer->id, UsniAdaptor::app()->request->post(), UsniAdaptor::app()->user->getUserModel(), 'front');
         if ($model === false)
         {
             $this->goHome();

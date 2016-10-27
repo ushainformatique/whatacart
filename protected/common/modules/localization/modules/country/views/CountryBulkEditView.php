@@ -9,8 +9,10 @@ use usni\library\extensions\bootstrap\views\UiBootstrapBulkEditView;
 use usni\library\components\UiHtml;
 use usni\library\utils\StatusUtil;
 use usni\UsniAdaptor;
+use usni\library\utils\AdminUtil;
 /**
  * CountryBulkEditView class file
+ * 
  * @package common\modules\localization\modules\country\views
  */
 class CountryBulkEditView extends UiBootstrapBulkEditView
@@ -22,7 +24,7 @@ class CountryBulkEditView extends UiBootstrapBulkEditView
     {
         $elements = [
                         'status'            => UiHtml::getFormSelectFieldOptionsWithNoSearch(StatusUtil::getDropdown()),
-                        'postcode_required' => ['type' => 'checkbox'],
+                        'postcode_required' => UiHtml::getFormSelectFieldOptionsWithNoSearch(AdminUtil::getYesNoOptions()),
                     ];
         $metadata = [
                         'elements'          => $elements,
@@ -39,4 +41,3 @@ class CountryBulkEditView extends UiBootstrapBulkEditView
         return UsniAdaptor::t('country', 'Country Bulk Edit');
     }
 }
-?>

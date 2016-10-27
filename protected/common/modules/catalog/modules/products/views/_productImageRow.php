@@ -16,10 +16,10 @@ use usni\library\utils\StringUtil;
             }
             else
             {
-                $file = StringUtil::replaceBackSlashByForwardSlash(UsniAdaptor::app()->getAssetManager()->thumbUploadPath . DS . '120_120_' .$image);
+                $file = StringUtil::replaceBackSlashByForwardSlash(UsniAdaptor::app()->getAssetManager()->thumbUploadPath . DS . '150_150_' .$image);
                 if(file_exists($file))
                 {
-                    echo UiHtml::img(UsniAdaptor::app()->getAssetManager()->getThumbnailUploadUrl() . DS . '120_120_' .$image);
+                    echo UiHtml::img(UsniAdaptor::app()->getAssetManager()->getThumbnailUploadUrl() . DS . '150_150_' .$image);
                 }
                 echo UiHtml::fileInput("ProductImage[$index][uploadInstance]", null, ['placeholder' => UsniAdaptor::t('products', 'Image'), 'class' => 'form-control']);
             }

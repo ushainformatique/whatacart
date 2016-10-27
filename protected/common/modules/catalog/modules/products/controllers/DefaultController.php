@@ -41,14 +41,19 @@ class DefaultController extends BaseController
      */
     protected function beforeModelSave($model)
     {
-         $config = [
+        $required = false;
+        if($model->scenario == 'create')
+        {
+            $required = true;
+        }
+        $config = [
                         'model'             => $model,
                         'attribute'         => 'image',
                         'uploadInstanceAttribute' => 'uploadInstance',
                         'type'              => 'image',
                         'savedAttribute'    => 'savedImage',
                         'fileMissingError'  => UsniAdaptor::t('application', 'Please upload image'),
-                        'required'          => true
+                        'required'          => $required
                   ];
         $uploadInstanceManager = new UploadInstanceManager($config);
         $result = $uploadInstanceManager->processUploadInstance();
@@ -149,5 +154,41 @@ class DefaultController extends BaseController
                     'view'           => UsniAdaptor::t('application','View') . ' ' . Product::getLabel(1),
                     'manage'         => UsniAdaptor::t('application','Manage') . ' ' . Product::getLabel(2)
                ];
+    }
+    
+    /**
+     * @inheritdoc
+     */
+    public function actionView($id)
+    {
+        if(ProductUtil::checkIfProductAllowedToPerformAction($id) == false)
+        {
+            throw new \yii\web\NotFoundHttpException();
+        }
+        return parent::actionView($id);
+    }
+    
+    /**
+     * @inheritdoc
+     */
+    public function actionUpdate($id)
+    {
+        if(ProductUtil::checkIfProductAllowedToPerformAction($id) == false)
+        {
+            throw new \yii\web\NotFoundHttpException();
+        }
+        return parent::actionUpdate($id);
+    }
+    
+    /**
+     * @inheritdoc
+     */
+    public function actionDelete($id)
+    {
+        if(ProductUtil::checkIfProductAllowedToPerformAction($id) == false)
+        {
+            throw new \yii\web\NotFoundHttpException();
+        }
+        return parent::actionDelete($id);
     }
 }

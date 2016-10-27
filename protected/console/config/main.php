@@ -14,8 +14,8 @@ $config  = ArrayHelper::merge(
                                     'components'        => array(
                                         'user'          => ['loginUrl' => ['/users/default/login'], 'class' => 'usni\library\components\UiConsoleUser'],
                                         'languageManager'   => ['class' => 'console\components\LanguageManager',
-                                                                'contentLanguageCookieName' => 'tghConsoleContentLanguage',
-                                                                'applicationLanguageCookieName' => 'tghConsoleLanguage'],
+                                                                'contentLanguageCookieName' => 'whatacartConsoleContentLanguage',
+                                                                'applicationLanguageCookieName' => 'whatacartConsoleLanguage'],
                                         'currencyManager'    => ['class' => 'console\components\CurrencyManager',
                                                                  'applicationCurrencyCookieName' => 'consoleCurrency'],
                                         'storeManager'       => ['class' => 'common\managers\StoreManager',

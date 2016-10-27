@@ -38,12 +38,6 @@ class Zone extends TranslatableActiveRecord
                      }", 
                     'when' => [$this, 'validateZipRange']
                     ],
-                    ['from_zip', 'compare', 'compareAttribute' => 'to_zip', 'operator' => '>', 
-                    'whenClient' => "function(attribute, value){
-                        return $('#zone-is_zip_range').val() == '1';
-                     }", 
-                    'when' => [$this, 'validateZipRange']
-                    ],
                     ['to_zip', 'required', 
                     'whenClient' => "function(attribute, value){
                         return $('#zone-is_zip_range').val() == '1';

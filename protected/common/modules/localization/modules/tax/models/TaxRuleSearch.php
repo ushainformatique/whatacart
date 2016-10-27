@@ -9,6 +9,7 @@ use usni\library\components\TranslatedActiveDataProvider;
 use usni\library\utils\AdminUtil;
 use usni\UsniAdaptor;
 use yii\base\Model;
+use usni\library\components\Sort;
 /**
  * TaxRuleSearch class file
  * This is the search class for model TaxRule.
@@ -57,7 +58,8 @@ class TaxRuleSearch extends TaxRule
         $dataProvider   = new TranslatedActiveDataProvider([
             'query' => $query,
         ]);
-
+        $sort = new Sort(['attributes' => ['name', 'based_on', "customerGroups"]]);
+        $dataProvider->setSort($sort);
         // Validate data
         if (!$this->validate())
         {
@@ -72,6 +74,7 @@ class TaxRuleSearch extends TaxRule
         {
             $query->andFilterWhere([$tableName . '.created_by' => $user->id]);
         }
+        $query->groupBy('id');
         return $dataProvider;
     }
 }

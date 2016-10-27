@@ -10,6 +10,7 @@ use products\models\ProductReview;
 use usni\library\components\UiHtml;
 use usni\UsniAdaptor;
 use usni\fontawesome\FA;
+use usni\library\modules\auth\managers\AuthManager;
 /**
  * ProductReviewActionColumn class file.
  *
@@ -46,7 +47,8 @@ class ProductReviewActionColumn extends UiActionColumn
      */
     public function renderApproveUnapproveUrlLink($url, $model, $key)
     {
-        if($this->checkAccess($model, 'approve'))
+        $user = UsniAdaptor::app()->user->getUserModel();
+        if(AuthManager::checkAccess($user, 'productreview.approve'))
         {
             if($model->status == ProductReview::STATUS_PENDING)
             {
@@ -73,7 +75,8 @@ class ProductReviewActionColumn extends UiActionColumn
      */
     public function renderSpamUrlLink($url, $model, $key)
     {
-        if($this->checkAccess($model, 'spam'))
+        $user = UsniAdaptor::app()->user->getUserModel();
+        if(AuthManager::checkAccess($user, 'productreview.spam'))
         {
             if($model->status == ProductReview::STATUS_SPAM)
             {
@@ -96,7 +99,8 @@ class ProductReviewActionColumn extends UiActionColumn
      */
     public function renderDeleteActionLink($url, $model, $key)
     {
-        if($this->checkAccess($model, 'delete'))
+        $user = UsniAdaptor::app()->user->getUserModel();
+        if(AuthManager::checkAccess($user, 'productreview.delete'))
         {
             $url  = UsniAdaptor::createUrl('catalog/products/review/delete-from-grid', ['id' => $model->id]);
             $icon = FA::icon('trash-o');
@@ -112,7 +116,8 @@ class ProductReviewActionColumn extends UiActionColumn
     
     public function renderDeleteFromTrashLink($url, $model, $key)
     {
-        if($this->checkAccess($model, 'delete'))
+        $user = UsniAdaptor::app()->user->getUserModel();
+        if(AuthManager::checkAccess($user, 'productreview.delete'))
         {
             $url  = UsniAdaptor::createUrl('catalog/products/review/delete-from-trash', ['id' => $model->id]);
             $icon = FA::icon('trash-o');

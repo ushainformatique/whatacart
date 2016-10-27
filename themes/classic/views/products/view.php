@@ -10,6 +10,7 @@ use usni\library\components\UiHtml;
 use common\modules\manufacturer\utils\ManufacturerUtil;
 use common\modules\stores\utils\StoreUtil;
 use products\views\front\InputRatingSubView;
+use products\models\ProductSpecial;
 if ($data['manufacturer'] != null)
 {
     $manufacturerRec = ManufacturerUtil::getManufacturer($data['manufacturer']);
@@ -27,9 +28,14 @@ $image = null;
 $uniqueId = uniqid('image-');
 $productImages = ProductUtil::renderImages($data, $uniqueId);
 
-$notSet         = UsniAdaptor::t('application', '(not set)');
-$customer       = UsniAdaptor::app()->user->getUserModel();
-$discountStr    = ProductUtil::getDiscounts($data, UsniAdaptor::app()->user->getUserModel(), UsniAdaptor::app()->storeManager->getCurrentStore(), '<li>{#discount#}</li>');
+$notSet                 = UsniAdaptor::t('application', '(not set)');
+$customer               = UsniAdaptor::app()->user->getUserModel();
+$productSpecialCount    = ProductSpecial::find()->where('product_id = :pid', [':pid' => $data['id']])->count();
+$discountStr            = null;
+if($productSpecialCount == 0)
+{
+    $discountStr    = ProductUtil::getDiscounts($data, UsniAdaptor::app()->user->getUserModel(), UsniAdaptor::app()->storeManager->getCurrentStore(), '<li>{#discount#}</li>');
+}
 ?>
 <div class="row">
     <div class="col-sm-8">

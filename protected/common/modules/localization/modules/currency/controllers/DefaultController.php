@@ -9,6 +9,7 @@ use common\modules\localization\modules\currency\models\Currency;
 use common\modules\localization\controllers\LocalizationController;
 use usni\UsniAdaptor;
 use usni\library\utils\CacheUtil;
+use common\modules\order\utils\OrderUtil;
 /**
  * DefaultController class file
  * @package common\modules\localization\modules\currency\controllers
@@ -45,6 +46,21 @@ class DefaultController extends LocalizationController
     {
         CacheUtil::delete('allowedCurrenciesList');
         return true;
+    }
+    
+    /**
+     * @inheritdoc
+     */
+    protected function deleteModel($model)
+    {
+        $orders = OrderUtil::getOrdersByAttribute('currency_code', $model['code']);
+        if($model['value'] == 1.00 && !empty($orders))
+        {
+            $message = UsniAdaptor::t('applicationflash', 'The model could not be deleted.');
+            UsniAdaptor::app()->getSession()->setFlash('deleteFailed', $message);
+            return false;
+        }
+        return parent::deleteModel($model);
     }
 }
 ?>

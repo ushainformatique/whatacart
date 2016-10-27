@@ -46,6 +46,7 @@ class StoreGridView extends TranslatableGridView
     {
         $toolbarOptions                     = parent::getActionToolbarOptions();
         $toolbarOptions['showBulkDelete']   = false;
+        $toolbarOptions['showBulkEdit']     = false;
         return $toolbarOptions;
     }
 }

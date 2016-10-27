@@ -22,6 +22,7 @@ use usni\library\modules\users\utils\UserUtil;
 use yii\caching\DbDependency;
 use common\modules\stores\models\StoreConfiguration;
 use usni\library\components\LanguageManager;
+use usni\library\utils\TranslationUtil;
 /**
  * StoreUtil class file.
  * 
@@ -48,10 +49,15 @@ class StoreUtil
      */
     public static function validateAndSaveStoreData($model)
     {
+        $scenario = $model->scenario;
         if(Model::validateMultiple([$model->store, $model->billingAddress, $model->shippingAddress, $model->storeLocal, $model->storeSettings, $model->storeImage]))
         {
             $isNewRecord = $model->store->isNewRecord;
             $model->store->save(false);
+            if($scenario == 'create')
+            {
+                TranslationUtil::saveTranslatedModels($model->store);
+            }
             if($model->billingAddress != null)
             {
                 $model->billingAddress->relatedmodel      = 'Store';
@@ -332,12 +338,16 @@ class StoreUtil
     /**
      * Get stroe by id
      * @param int $id
+     * @param string $language
      * @return array
      */
-    public static function getStoreById($id)
+    public static function getStoreById($id, $language = null)
     {
         $connection       = UsniAdaptor::app()->db;
-        $language         = UsniAdaptor::app()->languageManager->getDisplayLanguage();
+        if($language == null)
+        {
+            $language         = UsniAdaptor::app()->languageManager->getContentLanguage();
+        }
         $tableName        = UsniAdaptor::tablePrefix() . 'store';
         $trTableName      = UsniAdaptor::tablePrefix() . 'store_translated';
         $sql              = "select s.*, str.name, str.description FROM $tableName s, $trTableName str
@@ -606,5 +616,21 @@ class StoreUtil
         {
             self::insertOrUpdateConfiguration($code, $category, $key, $value, $storeId);
         }
+    }
+    
+    /**
+     * Gets store count by language
+     * @param string $language
+     * @return int
+     */
+    public static function getStoreCountByLanguage($language)
+    {
+        $connection       = UsniAdaptor::app()->db;
+        $tableName        = UsniAdaptor::tablePrefix() . 'store';
+        $trTableName      = UsniAdaptor::tablePrefix() . 'store_translated';
+        $dependency       = new DbDependency(['sql' => "SELECT MAX(modified_datetime) FROM $tableName"]);
+        $sql              = "select COUNT(s.id) AS cnt FROM $tableName s, $trTableName str
+                             where s.id = str.owner_id AND str.language = :lan";
+        return $connection->createCommand($sql, [':lan' => $language])->cache(0, $dependency)->queryScalar();
     }
 }

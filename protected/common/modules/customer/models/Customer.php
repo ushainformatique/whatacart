@@ -34,11 +34,6 @@ class Customer extends User
     const GUEST_CUSTOMER_ID        = 0;
     
     /**
-     * Customer group constants.
-     */
-    const CUSTOMER_GROUP_NAME    = 'Customer';
-    
-    /**
      * @inheritdoc
      */
     public static function getLabel($n = 1)

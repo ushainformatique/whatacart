@@ -22,7 +22,6 @@ use common\modules\localization\modules\orderstatus\models\OrderStatus;
  */
 class LocalizationPermissionUtil extends PermissionUtil
 {
-
     /**
      * Gets models associated to the localization module.
      * @return array

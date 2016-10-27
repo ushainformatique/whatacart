@@ -36,7 +36,7 @@ $.fn.renderAjaxErrors = function(data, modelClassName, errorCssClass, successCss
  */
 function attachButtonLoader(form)
 {
-    var button = form.find('input[button=submit]');
+    var button = form.find('button[type=submit]');
     button.parent().addClass('button-loader');
     button.addClass('disabled');
 }
@@ -48,7 +48,7 @@ function attachButtonLoader(form)
  */
 function removeButtonLoader(form)
 {
-    var button = form.find('input[button=submit]');
+    var button = form.find('button[type=submit]');
     button.parent().removeClass('button-loader');
     button.removeClass('disabled');
 }

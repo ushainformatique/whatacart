@@ -9,6 +9,7 @@ use usni\UsniAdaptor;
 use usni\library\modules\users\models\User;
 /**
  * Contains actions which extend the functionality related to user
+ * 
  * @package backend\controllers\users
  */
 class DefaultController extends \usni\library\modules\users\controllers\DefaultController

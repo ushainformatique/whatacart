@@ -1,4 +1,12 @@
+# Prevent directory listing
+Options All -Indexes
+
 RewriteEngine on
+
+# Not directly accessing file or directory with a . like .hg
+RewriteCond %{SCRIPT_FILENAME} -d [OR]
+RewriteCond %{SCRIPT_FILENAME} -f
+RewriteRule "(^|/)\." - [F]
 
 # if a directory or a file exists, use it directly
 RewriteCond %{REQUEST_FILENAME} !-f

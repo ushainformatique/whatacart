@@ -87,17 +87,35 @@ class DefaultController extends BaseController
      */
     public function actionView($id)
     {
-        $categoryIdArray    =  [];
-        $records            = ProductCategoryUtil::getStoreProductCategories();
-        foreach ($records as $record)
-        {
-            $categoryIdArray[] = $record['id'];
-        }
-        if(!in_array($_GET['id'], $categoryIdArray))
+        if(ProductCategoryUtil::checkIfProductCategoryAllowedToPerformAction($id) == false)
         {
             throw new \yii\web\NotFoundHttpException();
         }
         return parent::actionView($id);
+    }
+    
+    /**
+     * @inheritdoc
+     */
+    public function actionUpdate($id)
+    {
+        if(ProductCategoryUtil::checkIfProductCategoryAllowedToPerformAction($id) == false)
+        {
+            throw new \yii\web\NotFoundHttpException();
+        }
+        return parent::actionUpdate($id);
+    }
+    
+    /**
+     * @inheritdoc
+     */
+    public function actionDelete($id)
+    {
+        if(ProductCategoryUtil::checkIfProductCategoryAllowedToPerformAction($id) == false)
+        {
+            throw new \yii\web\NotFoundHttpException();
+        }
+        return parent::actionDelete($id);
     }
     
     /**

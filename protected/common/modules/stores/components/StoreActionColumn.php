@@ -76,7 +76,7 @@ class StoreActionColumn extends UiActionColumn
     {
         if($this->checkAccess($model, 'manage'))
         {
-            if(!$model->is_default)
+            if(!$model->is_default && $model['status'] == Store::STATUS_ACTIVE)
             {
                 $icon   = FA::icon('check-square-o');
                 $url    = UsniAdaptor::createUrl("stores/default/set-default-store", ["id" => $model->id]);
