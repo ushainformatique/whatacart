@@ -16,8 +16,10 @@ use products\models\ProductReview;
 use usni\library\modules\auth\managers\AuthManager;
 use yii\data\ActiveDataProvider;
 use usni\library\extensions\bootstrap\widgets\UiGridViewActionToolBar;
+use products\components\ProductReviewTrashGridViewActionButtonGroup;
 /**
  * ProductReview trash Grid View.
+ * 
  * @package products\views
  */
 class ProductReviewTrashGridView extends ProductReviewGridView
@@ -62,13 +64,7 @@ class ProductReviewTrashGridView extends ProductReviewGridView
      */
     protected function getDataProvider()
     {
-        $user       = UsniAdaptor::app()->user->getUserModel();
         $query      = ProductReview::find()->where('status = :status', [':status' => ProductReview::STATUS_DELETED]);
-        if(!(AuthManager::isUserInAdministrativeGroup($user)
-                    && AuthManager::isSuperUser($user)) && !AuthManager::checkAccess($user, 'productreview.viewother'))
-        {
-            $query->andFilterWhere(['created_by' => $user->id]);
-        }
         return new ActiveDataProvider(['query' => $query]);
     }
     
@@ -87,7 +83,7 @@ class ProductReviewTrashGridView extends ProductReviewGridView
     {
         $toolbarOptions = parent::getActionToolbarOptions();
         $toolbarOptions['showBulkEdit'] = false;
+        $toolbarOptions['gridViewActionButtonGroup'] = ProductReviewTrashGridViewActionButtonGroup::className();
         return $toolbarOptions;
     }
 }
-?>

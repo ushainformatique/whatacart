@@ -9,7 +9,6 @@ use common\modules\order\models\Order;
 use usni\UsniAdaptor;
 use usni\library\utils\ArrayUtil;
 use products\models\Product;
-use products\utils\ProductUtil;
 use usni\library\modules\notification\utils\NotificationUtil;
 use usni\library\components\UiHtml;
 use common\modules\sequence\models\Sequence;
@@ -21,7 +20,6 @@ use usni\library\modules\users\models\User;
 use common\modules\order\models\OrderPaymentTransactionMap;
 use yii\caching\DbDependency;
 use common\modules\order\models\OrderHistory;
-use common\modules\order\models\OrderProduct;
 use common\modules\order\models\OrderAddressDetails;
 use usni\library\modules\users\models\Address;
 use usni\library\modules\notification\models\Notification;
@@ -75,10 +73,13 @@ class OrderUtil
     public static function reduceProductQuantityAfterCheckout($productId, $qtyToReduce)
     {
         $product =  Product::find()->where('id = :id', [':id' => $productId])->asArray()->one();
-                    $quantityAfterCheckout = $product['quantity'] - $qtyToReduce;
-        UsniAdaptor::db()->createCommand()
+        if($product['quantity'] > 0 && $product['quantity'] > $qtyToReduce)
+        {
+            $quantityAfterCheckout = $product['quantity'] - $qtyToReduce;
+            UsniAdaptor::db()->createCommand()
                         ->update(Product::tableName(), ['quantity' => $quantityAfterCheckout],
                                    'id = :id', [':id' => $productId])->execute();
+        }
     }
     
     /**
@@ -857,5 +858,25 @@ class OrderUtil
             $price              = $price / $conversionValue;
         }
         return number_format($price, 2, ".", "");
+    }
+    
+    /**
+     * Check if order allowed to perform action
+     * @param integer $orderId
+     * @return boolean
+     */
+    public static function checkIfOrderAllowedToPerformAction($orderId)
+    {
+        $orderIdArray   = [];
+        $records        = self::getStoreOrders();
+        foreach ($records as $records)
+        {
+            $orderIdArray[] = $records['id'];
+        }
+        if(!in_array($orderId, $orderIdArray))
+        {
+            return false;
+        }
+        return true;
     }
 }

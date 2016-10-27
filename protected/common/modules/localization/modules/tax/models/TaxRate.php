@@ -21,7 +21,7 @@ class TaxRate extends TranslatableActiveRecord
 	public function rules()
 	{
 		return [
-                    [['name', 'type', 'value', 'tax_zone_id'],      'required'],
+                    [['name', 'type', 'value', 'tax_zone_id'],      'required', 'except' => 'bulkedit'],
                     ['name', 'validateName'],
                     [['name', 'type'],                              'string', 'max'=>64],
                     ['value',                                       'number'],

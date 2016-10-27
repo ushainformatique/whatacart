@@ -22,7 +22,7 @@ class Page extends TranslatableActiveRecord
     public function rules()
     {
         return [
-                    [['name', 'alias', 'status'],                   'required'],
+                    [['name', 'alias', 'status'],                   'required', 'except' => 'bulkedit'],
                     [['name'],                                      'unique', 'targetClass' => PageTranslated::className(), 'targetAttribute' => ['name', 'language'], 'on' => 'create'],
                     [['alias'],                                     'unique', 'targetClass' => PageTranslated::className(), 'targetAttribute' => ['alias', 'language'], 'on' => 'create'],
                     ['name',                                        'unique', 'targetClass' => PageTranslated::className(), 'targetAttribute' => ['name', 'language'], 'filter' => ['!=', 'owner_id', $this->id], 'on' => 'update'],

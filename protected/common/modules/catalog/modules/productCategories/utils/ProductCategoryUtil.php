@@ -139,4 +139,24 @@ class ProductCategoryUtil
                             ->one();
         return $pcRecord['data_category_id'];
     }
+    
+    /**
+     * Check if product category allowed to perform action.
+     * @param integer $productCategoryId
+     * @return boolean
+     */
+    public static function checkIfProductCategoryAllowedToPerformAction($productCategoryId)
+    {
+        $categoryIdArray    =  [];
+        $records            = self::getStoreProductCategories();
+        foreach ($records as $record)
+        {
+            $categoryIdArray[] = $record['id'];
+        }
+        if(!in_array($productCategoryId, $categoryIdArray))
+        {
+            return false;
+        }
+        return true;
+    }
 }

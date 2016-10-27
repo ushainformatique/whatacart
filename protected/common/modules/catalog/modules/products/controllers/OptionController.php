@@ -81,6 +81,10 @@ class OptionController extends BaseController
      */
     public function actionProductOptions($product_id)
     {
+        if(ProductUtil::checkIfProductAllowedToPerformAction($product_id) == false)
+        {
+            throw new \yii\web\NotFoundHttpException();
+        }
         $product    = Product::findOne($product_id);
         $user       = UsniAdaptor::app()->user->getUserModel();
         if(PermissionUtil::doesUserHavePermissionToPerformAction($product, $user, 'product.updateother') == true)

@@ -13,6 +13,7 @@ use products\views\AssignProductAttributeEditView;
 use products\models\Product;
 use usni\library\utils\PermissionUtil;
 use yii\web\ForbiddenHttpException;
+use products\utils\ProductUtil;
 /**
  * AttributeController class file.
  * @package products\controllers
@@ -36,6 +37,10 @@ class AttributeController extends BaseController
      */
     public function actionProductAttributes($product_id)
     {
+        if(ProductUtil::checkIfProductAllowedToPerformAction($product_id) == false)
+        {
+            throw new \yii\web\NotFoundHttpException();
+        }
         $product    = Product::findOne($product_id);
         $user       = UsniAdaptor::app()->user->getUserModel();
         if(PermissionUtil::doesUserHavePermissionToPerformAction($product, $user, 'product.updateother') == true)
@@ -96,6 +101,10 @@ class AttributeController extends BaseController
      */
     public function actionModify($product_id, $attribute_id)
     {
+        if(ProductUtil::checkIfProductAllowedToPerformAction($product_id) == false)
+        {
+            throw new \yii\web\NotFoundHttpException();
+        }
         $product       = Product::findOne($product_id);
         $breadcrumbs   = [
                                 [
@@ -125,6 +134,10 @@ class AttributeController extends BaseController
      */
     public function actionRemove($product_id, $attribute_id)
     {
+        if(ProductUtil::checkIfProductAllowedToPerformAction($product_id) == false)
+        {
+            throw new \yii\web\NotFoundHttpException();
+        }
         $productAttributeMapping    = ProductAttributeMapping::getMapping($product_id, $attribute_id);
         $redirectUrl                = ['/catalog/products/attribute/product-attributes', 'product_id' => $product_id];
         $productAttributeMapping->delete();

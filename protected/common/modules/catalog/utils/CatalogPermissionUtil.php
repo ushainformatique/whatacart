@@ -57,12 +57,11 @@ class CatalogPermissionUtil extends PermissionUtil
         unset($permissions['ProductReview']['productreview.update']);
         unset($permissions['ProductReview']['productreview.updateother']);
         unset($permissions['ProductReview']['productreview.bulk-edit']);
+        unset($permissions['ProductReview']['productreview.bulk-delete']);
         unset($permissions['ProductReview']['productreview.create']);
-        $permissions['ProductReview']['productreview.bulk-approve'] = UsniAdaptor::t('products', 'Bulk Approve');
+        unset($permissions['ProductReview']['productreview.deleteother']);
         $permissions['ProductReview']['productreview.approve'] = UsniAdaptor::t('products', 'Approve');
-        $permissions['ProductReview']['productreview.approveother'] = UsniAdaptor::t('products', 'Approve other reviews');
         $permissions['ProductReview']['productreview.spam'] = UsniAdaptor::t('products', 'Spam');
-        $permissions['ProductReview']['productreview.spamother'] = UsniAdaptor::t('products', 'Spam other reviews');
         return $permissions;
     }
 }

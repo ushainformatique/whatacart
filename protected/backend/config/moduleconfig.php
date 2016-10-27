@@ -10,6 +10,7 @@ return [
                         'components'   => [
                         'viewHelper' => [
                             'class' => 'usni\library\modules\users\components\ViewHelper',
+                            'userEditView' => 'backend\views\users\UserEditView'
                         ]
                     ]
                    ],

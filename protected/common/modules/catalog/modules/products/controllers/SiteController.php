@@ -71,12 +71,7 @@ class SiteController extends BaseController
      */
     public function actionDetail($id)
     {
-        $records    = ProductUtil::getStoreProducts();
-        foreach ($records as $record)
-        {
-            $productIdArray[] = $record['id'];
-        }
-        if(!in_array($_GET['id'], $productIdArray))
+        if(ProductUtil::checkIfProductAllowedToPerformAction($id) == false)
         {
             throw new \yii\web\NotFoundHttpException();
         }
@@ -107,7 +102,13 @@ class SiteController extends BaseController
                 $model->save();
                 TranslationUtil::saveTranslatedModels($model);
                 ProductUtil::sendReviewNotification($model);
+                echo "Success";
             }
+            else
+            {
+                echo "Failure";
+            }
+            
         }
     }
     

@@ -7,7 +7,6 @@ namespace common\modules\localization\modules\orderstatus;
 
 use usni\library\components\UiSecuredModule;
 use usni\UsniAdaptor;
-use usni\library\modules\auth\utils\AuthPermissionUtil;
 /**
  * Provides functionality related to order status.
  * 
@@ -41,14 +40,5 @@ class Module extends UiSecuredModule
             'sourceLanguage' => 'en-US',
             'basePath' => '@common/modules/localization/modules/orderstatus/messages'
         ];
-    }
-    
-    /**
-     * Gets permission util.
-     * @return string
-     */
-    public static function getPermissionUtil()
-    {
-        return AuthPermissionUtil::className();
     }
 }

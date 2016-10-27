@@ -12,6 +12,7 @@ use common\modules\order\models\AdminSelectPaymentMethodForm;
 use common\modules\order\views\AdminSelectPaymentMethodView;
 use common\modules\order\models\OrderPaymentTransactionMap;
 use common\modules\order\views\OrderPaymentsGridView;
+use common\modules\order\utils\OrderUtil;
 /**
  * PaymentController class file
  * 
@@ -38,6 +39,10 @@ class PaymentController extends UiAdminController
         if($order == null)
         {
             $this->redirect(UsniAdaptor::createUrl('order/default/manage'));
+        }
+        if(OrderUtil::checkIfOrderAllowedToPerformAction($orderId) == false)
+        {
+            throw new \yii\web\NotFoundHttpException();
         }
         $paymentMethod = $order->orderPaymentDetails->payment_method;
         $model         = new AdminSelectPaymentMethodForm(['scenario' => 'create']);
@@ -84,6 +89,10 @@ class PaymentController extends UiAdminController
         }
         else
         {
+            if(OrderUtil::checkIfOrderAllowedToPerformAction($orderId) == false)
+            {
+                throw new \yii\web\NotFoundHttpException();
+            }
             $_GET['OrderPaymentTransactionMapSearch']['order_id'] = $orderId;
             return parent::actionManage(['breadcrumbs' => $breadcrumbs]);
         }

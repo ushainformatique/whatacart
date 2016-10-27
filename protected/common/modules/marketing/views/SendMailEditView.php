@@ -18,9 +18,9 @@ use products\models\Product;
 use usni\library\modules\auth\models\Group;
 use common\modules\marketing\utils\MarketingUtil;
 use usni\library\utils\FlashUtil;
-use customer\models\Customer;
 /**
  * SendMailEditView class file.
+ * 
  * @package common\modules\marketing\views
  */
 class SendMailEditView extends UiBootstrapEditView
@@ -33,7 +33,7 @@ class SendMailEditView extends UiBootstrapEditView
     {
         $group  = new Group();
         $parent = Group::find()->joinWith('translations')->where('name = :name AND language = :language', 
-                                                                [':name' => Customer::CUSTOMER_GROUP_NAME, ':language' => 'en-US'])->one();
+                                                                [':name' => CustomerUtil::getDefaultGroupTitle(), ':language' => 'en-US'])->one();
         $elements = [
                         'store_id'      => UiHtml::getFormSelectFieldOptionsWithNoSearch(DAOUtil::getDropdownDataBasedOnModel(Store::className())),
                         'to'            => UiHtml::getFormSelectFieldOptions(MarketingUtil::getToNewsletterDropdown()),
@@ -123,4 +123,3 @@ class SendMailEditView extends UiBootstrapEditView
         return FlashUtil::render('sendMail', 'alert alert-success');
     }
 }
-?>

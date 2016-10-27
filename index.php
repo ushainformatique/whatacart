@@ -22,6 +22,7 @@ defined('YII_DEBUG') or define('YII_DEBUG', $debug);
 defined('VENDOR_PATH') or define('VENDOR_PATH', $vendorPath . DIRECTORY_SEPARATOR . 'vendor');
 defined('USNI_PATH') or define('USNI_PATH', VENDOR_PATH . '/ushainformatique/usniframework');
 
+
 require(VENDOR_PATH . '/autoload.php');
 require(VENDOR_PATH . '/yiisoft/yii2/Yii.php');
 

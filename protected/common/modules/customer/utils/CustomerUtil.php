@@ -140,7 +140,7 @@ class CustomerUtil
      * @param int $id
      * @param Array $postData
      */
-    public static function processChangePasswordAction($id, $postData, $loggedInUserModel)
+    public static function processChangePasswordAction($id, $postData, $loggedInUserModel, $interface = 'admin')
     {
         $customer       = Customer::findOne($id);
         $isPermissible  = CustomerPermissionUtil::doesUserHavePermissionToPerformAction($customer, $loggedInUserModel, 'customer.change-password');
@@ -149,6 +149,10 @@ class CustomerUtil
             $model           = new ChangePasswordForm(['user' => $customer]);
             if ($model->load($postData) && $model->validate() && $model->resetPassword())
             {
+                if($interface == 'admin')
+                {
+                    $model->sendMail();
+                }
                 FlashUtil::setMessage('changepassword', UsniAdaptor::t('userflash', 'Password changed successfully.'));
                 //Set to null
                 $model->newPassword     = null;
@@ -259,23 +263,28 @@ class CustomerUtil
                             WHERE tg.id = tgt.owner_id AND tg.parent_id = (SELECT tgt2.owner_id FROM tbl_group_translated tgt2 WHERE tgt2.name = :name
                             AND tgt2.language = :lan)";
         $connection     = UsniAdaptor::app()->getDb();
-        return $connection->createCommand($sql, [':lan' => 'en-US', ':name' => Customer::CUSTOMER_GROUP_NAME])->cache(0, $dependency)->queryAll(); 
+        return $connection->createCommand($sql, [':lan' => 'en-US', ':name' => CustomerUtil::getDefaultGroupTitle()])->cache(0, $dependency)->queryAll(); 
     }
     
     /**
      * Get customer group by name
      * @param string $name
+     * @param string $language
      * @return array
      */
-    public static function getCustomerGroupByName($name)
+    public static function getCustomerGroupByName($name, $language = null)
     {
+        if($language == null)
+        {
+            $language = UsniAdaptor::app()->languageManager->getContentLanguage();
+        }
         $groupTable     = UsniAdaptor::tablePrefix() . 'group';
         $groupTrTable   = UsniAdaptor::tablePrefix() . 'group_translated';
         $dependency     = new DbDependency(['sql' => "SELECT MAX(modified_datetime) FROM $groupTable"]);
         $sql            = "SELECT tg.*, tgt.name FROM $groupTable tg, $groupTrTable tgt
                             WHERE tgt.name = :name AND tgt.language = :lan AND tgt.owner_id = tg.id";
         $connection     = UsniAdaptor::app()->getDb();
-        return $connection->createCommand($sql, [':lan' => 'en-US', ':name' => $name])->cache(0, $dependency)->queryOne(); 
+        return $connection->createCommand($sql, [':lan' => $language, ':name' => $name])->cache(0, $dependency)->queryOne(); 
     }
     
     /**

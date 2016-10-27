@@ -5,7 +5,6 @@
  */
 namespace backend\components;
 
-use customer\models\Customer as CustomerModel;
 use usni\library\modules\auth\components\AuthActionColumn;
 use customer\utils\CustomerUtil;
 use usni\fontawesome\FA;
@@ -25,9 +24,10 @@ class CustomerAuthActionColumn extends AuthActionColumn
     protected function renderDeleteActionLink($url, $model, $key)
     {
         $isAllowed              = CustomerUtil::checkIfCustomerGroupAllowedToDelete($model);
-        //If any customer group associated with parent customer group then parent customer group can not be delete.
-		$groupName = CustomerModel::CUSTOMER_GROUP_NAME;
+        //Parent customer group can not be delete.
+        $groupName              = CustomerUtil::getDefaultGroupTitle();
         $parentCustomerGroup    = Group::findByName($groupName);
+		$groupName              = CustomerUtil::getDefaultGroupTitle();
         if($parentCustomerGroup['id'] == $model['id'])
         {
             return null;

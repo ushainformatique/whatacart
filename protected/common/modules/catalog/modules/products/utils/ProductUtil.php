@@ -21,7 +21,6 @@ use usni\library\modules\auth\managers\AuthManager;
 use products\models\ProductDiscount;
 use products\models\ProductSpecial;
 use products\models\ProductImage;
-use usni\library\components\ImageManager;
 use usni\library\utils\FileUploadUtil;
 use usni\library\components\Lightbox;
 use taxes\models\TaxRate;
@@ -708,7 +707,7 @@ class ProductUtil
         {
             $inputDateTime    = date('Y-m-d H:i:s');
         }
-        $discounts      = ProductDiscount::find()->where('product_id = :pid', [':pid' => $product['id']])->asArray()->all();
+        $discounts      = ProductDiscount::find()->where('product_id = :pid', [':pid' => $product['id']])->orderBy('priority')->asArray()->all();
         if($customer != null)
         {
             $groups = array_keys(CustomerUtil::getCustomerGroups($customer['id']));
@@ -757,7 +756,7 @@ class ProductUtil
         {
             $inputDateTime    = date('Y-m-d H:i:s');
         }
-        $specials               = ProductSpecial::find()->where('product_id = :pid', [':pid' => $product['id']])->asArray()->all();
+        $specials               = ProductSpecial::find()->where('product_id = :pid', [':pid' => $product['id']])->orderBy('priority')->asArray()->all();
         if($customer != null)
         {
             $groups = array_keys(CustomerUtil::getCustomerGroups($customer['id']));
@@ -1100,8 +1099,7 @@ class ProductUtil
         foreach ($selectedItemsIds as $itemId)
         {
             $productReview = ProductReview::findOne($itemId);
-            if(($user->id == $productReview['created_by'] && AuthManager::checkAccess($user, 'products.approve')) ||
-                ($user->id != $productReview['created_by'] && AuthManager::checkAccess($user, 'products.approveother')))
+            if(AuthManager::checkAccess($user, 'productreview.approve'))
             {
                 if($productReview['status'] == $sourceStatus)
                 {
@@ -1235,10 +1233,10 @@ class ProductUtil
                         'model'             => $productImage, 
                         'attribute'         => 'image', 
                         'uploadInstance'    => $productImage->uploadInstance, 
-                        'savedFile'         => $savedFile
+                        'savedFile'         => $savedFile,
+                        'createThumbnail'   => true
                       ];
-                    $fileManagerInstance = new ImageManager($config);
-                    $fileManagerInstance->save();
+                    FileUploadUtil::save('image', $config);
                 }
             }
         }   
@@ -1797,12 +1795,13 @@ class ProductUtil
                             $value  = $purchaseLabel . ' ' . $discount['quantity'] . ' ' . $orOrMore  . ' ' . $productPriceLabel . ' ' . $formattedPrice;
                             if($inputTemplate != null)
                             {
-                                $discountStr .= str_replace('{#discount#}', $value, $inputTemplate);
+                                $discountStr = str_replace('{#discount#}', $value, $inputTemplate);
                             }
                             else
                             {
-                                $discountStr .= $value;
+                                $discountStr = $value;
                             }
+                            return $discountStr;
                         }
                     }
                 }
@@ -2323,5 +2322,25 @@ class ProductUtil
         $connection             = UsniAdaptor::app()->getDb();
         $params                 = [':gid' => $value];
         return $connection->createCommand($sql, $params)->queryAll();
+    }
+    
+    /**
+     * Check if product allowed to perform action.
+     * @param integer $productId
+     * @return boolean
+     */
+    public static function checkIfProductAllowedToPerformAction($productId)
+    {
+        $productIdArray     =  [];
+        $records            = self::getStoreProducts();
+        foreach ($records as $record)
+        {
+            $productIdArray[] = $record['id'];
+        }
+        if(!in_array($productId, $productIdArray))
+        {
+            return false;
+        }
+        return true;
     }
 }

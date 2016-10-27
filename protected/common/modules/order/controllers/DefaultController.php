@@ -203,10 +203,14 @@ class DefaultController extends UiAdminController
      */
     public function actionUpdate($id)
     {
-        $order          = Order::findOne($id);
+        $order  = Order::findOne($id);
         if(empty($order))
         {
             return $this->redirect(UsniAdaptor::createUrl('order/default/manage'));
+        }
+        if(OrderUtil::checkIfOrderAllowedToPerformAction($id) == false)
+        {
+            throw new \yii\web\NotFoundHttpException();
         }
         $orderStatus    = OrderStatusUtil::getStatusId(Order::STATUS_COMPLETED);
         if($order->status == $orderStatus)
@@ -424,13 +428,7 @@ class DefaultController extends UiAdminController
      */
     public function actionView($id)
     {
-        $orderIdArray   = [];
-        $records        = OrderUtil::getStoreOrders();
-        foreach ($records as $records)
-        {
-            $orderIdArray[] = $records['id'];
-        }
-        if(!in_array($id, $orderIdArray))
+        if(OrderUtil::checkIfOrderAllowedToPerformAction($id) == false)
         {
             throw new \yii\web\NotFoundHttpException();
         }
@@ -507,6 +505,18 @@ class DefaultController extends UiAdminController
         $permissionsMap['checkout']             = 'order.manage';
         $permissionsMap['confirm-order']        = 'order.manage';
         return $permissionsMap;
+    }
+    
+    /**
+     * @inheritdoc
+     */
+    public function actionDelete($id)
+    {
+        if(OrderUtil::checkIfOrderAllowedToPerformAction($id) == false)
+        {
+            throw new \yii\web\NotFoundHttpException();
+        }
+        return parent::actionDelete($id);
     }
 }
 ?>

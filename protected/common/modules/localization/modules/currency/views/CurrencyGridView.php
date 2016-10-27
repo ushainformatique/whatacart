@@ -37,4 +37,3 @@ class CurrencyGridView extends TranslatableGridView
         return $columns;
     }
 }
-?>

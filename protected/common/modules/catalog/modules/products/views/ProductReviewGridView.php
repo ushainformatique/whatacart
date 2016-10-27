@@ -6,15 +6,16 @@
 namespace products\views;
 
 use usni\library\components\TranslatableGridView;
-use products\views\ProductReviewGridViewActionToolBar;
 use products\components\ReviewStatusDataColumn;
 use products\utils\ProductUtil;
 use products\components\ProductReviewActionColumn;
 use usni\UsniAdaptor;
 use usni\library\utils\DAOUtil;
 use products\models\Product;
+use products\components\ProductReviewGridViewActionToolBar;
 /**
- * Product Grid View.
+ * Product review Grid View.
+ * 
  * @package products\views
  */
 class ProductReviewGridView extends TranslatableGridView
@@ -66,4 +67,3 @@ class ProductReviewGridView extends TranslatableGridView
         ProductUtil::registerReviewGridStatusScript('remove-spam', $this->getView(), $pjaxId);
     }
 }
-?>

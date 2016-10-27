@@ -8,6 +8,7 @@ namespace common\modules\order\controllers;
 use usni\library\components\UiAdminController;
 use common\modules\order\models\Invoice;
 use usni\UsniAdaptor;
+use common\modules\order\utils\OrderUtil;
 /**
  * InvoiceController class file
  * @package common\modules\order\controllers
@@ -28,6 +29,10 @@ class InvoiceController extends UiAdminController
      */
     public function actionView($id)
     {
+        if(OrderUtil::checkIfOrderAllowedToPerformAction($id) == false)
+        {
+            throw new \yii\web\NotFoundHttpException();
+        }
         $breadcrumbs    = [
                                 [
                                     'label' => UsniAdaptor::t('payment', 'Invoice Details') 

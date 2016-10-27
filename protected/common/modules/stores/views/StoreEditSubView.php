@@ -15,8 +15,10 @@ use marqu3s\summernote\Summernote;
 use usni\library\modules\users\utils\UserUtil;
 use usni\library\modules\users\models\User;
 use usni\library\modules\install\components\InstallManager;
+use common\modules\stores\models\Store;
 /**
  * StoreEditSubView class file
+ * 
  * @package common\modules\stores\views
  */
 class StoreEditSubView extends \usni\library\views\MultiModelEditView
@@ -26,10 +28,19 @@ class StoreEditSubView extends \usni\library\views\MultiModelEditView
      */
     public function getFormBuilderMetadata()
     {
+        $store = Store::findOne($this->model->id);
+        if($this->model->scenario == 'update' && $store['is_default'] == (bool) true)
+        {
+            $status = ['type' => 'hidden'];
+        }
+        else
+        {
+            $status = UiHtml::getFormSelectFieldOptionsWithNoSearch(StatusUtil::getDropdown());
+        }
         $elements = [
                         'name'              => ['type' => 'text'],
-                        'data_category_id'  => UiHtml::getFormSelectFieldOptionsWithNoSearch(StoreUtil::getDataCategorySelectOptions(DataCategory::className())),
-                        'status'            => UiHtml::getFormSelectFieldOptionsWithNoSearch(StatusUtil::getDropdown()),
+                        'data_category_id'  => UiHtml::getFormSelectFieldOptionsWithNoSearch(StoreUtil::getDataCategorySelectOptions(DataCategory::className()), [], ['prompt' => UiHtml::getDefaultPrompt()]),
+                        'status'            => $status,
                         'owner_id'          => UiHtml::getFormSelectFieldOptionsWithNoSearch(UserUtil::getDropdownDataBasedOnModel(User::className()), [], ['prompt' => UiHtml::getDefaultPrompt()]),
                         'metakeywords'      => ['type' => 'textarea'],
                         'metadescription'   => ['type' => 'textarea'],

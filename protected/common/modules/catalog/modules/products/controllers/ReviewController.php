@@ -12,6 +12,7 @@ use usni\UsniAdaptor;
 use usni\library\modules\auth\managers\AuthManager;
 use products\views\ProductReviewTrashGridView;
 use common\modules\catalog\utils\CatalogPermissionUtil;
+use usni\library\utils\ArrayUtil;
 /**
  * Review controller for products.
  * 
@@ -34,10 +35,15 @@ class ReviewController extends BaseController
      */
     public function actionApprove($id)
     {
-        $productReview              = $this->loadModel(ProductReview::className(), $id);
-        $productReview->scenario    = 'approve';
-        $productReview->status      = ProductReview::STATUS_APPROVED;
-        $productReview->save();
+        $loggedInUser   = UsniAdaptor::app()->user->getUserModel();
+        $productReview  = $this->loadModel(ProductReview::className(), $id);
+        $isAllowed      = CatalogPermissionUtil::doesUserHavePermissionToPerformAction($productReview, $loggedInUser, 'productreview.approve');
+        if($isAllowed)
+        {
+            $productReview->scenario    = 'approve';
+            $productReview->status      = ProductReview::STATUS_APPROVED;
+            $productReview->save();
+        }
     }
 
     /**
@@ -47,10 +53,16 @@ class ReviewController extends BaseController
      */
     public function actionUnapprove($id)
     {
-        $productReview              = $this->loadModel(ProductReview::className(), $id);
-        $productReview->scenario    = 'unapprove';
-        $productReview->status      = ProductReview::STATUS_PENDING;
-        $productReview->save();
+        $loggedInUser   = UsniAdaptor::app()->user->getUserModel();
+        $productReview  = $this->loadModel(ProductReview::className(), $id);
+        $isAllowed      = CatalogPermissionUtil::doesUserHavePermissionToPerformAction($productReview, $loggedInUser, 'productreview.approve');
+        if($isAllowed)
+        {
+            $productReview              = $this->loadModel(ProductReview::className(), $id);
+            $productReview->scenario    = 'unapprove';
+            $productReview->status      = ProductReview::STATUS_PENDING;
+            $productReview->save();
+        }
     }
 
     /**
@@ -60,16 +72,19 @@ class ReviewController extends BaseController
      */
     public function actionSpam($id)
     {
-        $productReview              = $this->loadModel(ProductReview::className(), $id);
-        $productReview->scenario    = 'spam';
-        if(CatalogPermissionUtil::doesUserHavePermissionToPerformAction($productReview, UsniAdaptor::app()->user->getUserModel(), 'productreview.spam'))
+        if(UsniAdaptor::app()->request->isAjax)
         {
-            $productReview->status      = ProductReview::STATUS_SPAM;
-            $productReview->save();
-        }
-        else
-        {
-            throw new \yii\web\ForbiddenHttpException(\Yii::t('yii','You are not authorized to perform this action.'));
+            $productReview              = $this->loadModel(ProductReview::className(), $id);
+            $productReview->scenario    = 'spam';
+            if(CatalogPermissionUtil::doesUserHavePermissionToPerformAction($productReview, UsniAdaptor::app()->user->getUserModel(), 'productreview.spam'))
+            {
+                $productReview->status      = ProductReview::STATUS_SPAM;
+                $productReview->save();
+            }
+            else
+            {
+                throw new \yii\web\ForbiddenHttpException(\Yii::t('yii','You are not authorized to perform this action.'));
+            }
         }
     }
 
@@ -80,16 +95,19 @@ class ReviewController extends BaseController
      */
     public function actionRemoveSpam($id)
     {
-        $productReview              = $this->loadModel(ProductReview::className(), $id);
-        $productReview->scenario    = 'removespam';
-        if(CatalogPermissionUtil::doesUserHavePermissionToPerformAction($productReview, UsniAdaptor::app()->user->getUserModel(), 'productreview.spam'))
+        if(UsniAdaptor::app()->request->isAjax)
         {
-            $productReview->status      = ProductReview::STATUS_PENDING;
-            $productReview->save();
-        }
-        else
-        {
-            throw new \yii\web\ForbiddenHttpException(\Yii::t('yii','You are not authorized to perform this action.'));
+            $productReview              = $this->loadModel(ProductReview::className(), $id);
+            $productReview->scenario    = 'removespam';
+            if(CatalogPermissionUtil::doesUserHavePermissionToPerformAction($productReview, UsniAdaptor::app()->user->getUserModel(), 'productreview.spam'))
+            {
+                $productReview->status      = ProductReview::STATUS_PENDING;
+                $productReview->save();
+            }
+            else
+            {
+                throw new \yii\web\ForbiddenHttpException(\Yii::t('yii','You are not authorized to perform this action.'));
+            }
         }
     }
 
@@ -100,11 +118,18 @@ class ReviewController extends BaseController
      */
     public function actionDeleteFromGrid($id)
     {
-        $productReview                  = $this->loadModel(ProductReview::className(), $id);
-        $productReview->status          = ProductReview::STATUS_DELETED;
-        $productReview->scenario        = 'delete';
-        $productReview->save();
-        $this->redirect(UsniAdaptor::createUrl('catalog/products/review/manage'));
+        if(UsniAdaptor::app()->request->isAjax)
+        {
+            $user               = UsniAdaptor::app()->user->getUserModel();
+            $productReview      = $this->loadModel(ProductReview::className(), $id);
+            if(CatalogPermissionUtil::doesUserHavePermissionToPerformAction($productReview, $user, 'productreview.delete'))
+            {   
+                $productReview->status          = ProductReview::STATUS_DELETED;
+                $productReview->scenario        = 'delete';
+                $productReview->save();
+                $this->redirect(UsniAdaptor::createUrl('catalog/products/review/manage'));
+            }
+        }
     }
 
     /**
@@ -113,10 +138,16 @@ class ReviewController extends BaseController
      */
     public function actionBulkApprove()
     {
-        if (isset($_GET['id']))
+        if (UsniAdaptor::app()->request->isAjax && isset($_GET['id']))
         {
-            $selectedItemsIds = $_GET['id'];
-            ProductUtil::updateStatusForSelectedRecords($selectedItemsIds, ProductReview::STATUS_PENDING, ProductReview::STATUS_APPROVED);
+            $loggedInUser   = UsniAdaptor::app()->user->getUserModel();
+            $productReview  = ProductReview::findOne($_GET['id']);
+            $isAllowed      = CatalogPermissionUtil::doesUserHavePermissionToPerformAction($productReview, $loggedInUser, 'productreview.approve');
+            if($isAllowed)
+            {
+                $selectedItemsIds = $_GET['id'];
+                ProductUtil::updateStatusForSelectedRecords($selectedItemsIds, ProductReview::STATUS_PENDING, ProductReview::STATUS_APPROVED);
+            }
         }
     }
 
@@ -126,10 +157,16 @@ class ReviewController extends BaseController
      */
     public function actionBulkUnapprove()
     {
-        if (isset($_GET['id']))
+        if (UsniAdaptor::app()->request->isAjax && isset($_GET['id']))
         {
-            $selectedItemsIds = $_GET['id'];
-            ProductUtil::updateStatusForSelectedRecords($selectedItemsIds, ProductReview::STATUS_APPROVED, ProductReview::STATUS_PENDING);
+            $loggedInUser   = UsniAdaptor::app()->user->getUserModel();
+            $productReview  = ProductReview::findOne($_GET['id']);
+            $isAllowed      = CatalogPermissionUtil::doesUserHavePermissionToPerformAction($productReview, $loggedInUser, 'productreview.approve');
+            if($isAllowed)
+            {
+                $selectedItemsIds = $_GET['id'];
+                ProductUtil::updateStatusForSelectedRecords($selectedItemsIds, ProductReview::STATUS_APPROVED, ProductReview::STATUS_PENDING);
+            }
         }
     }
     
@@ -152,8 +189,7 @@ class ReviewController extends BaseController
                 {
                     $model = $modelClass::findOne(intval($item));
                     //Check if allowed to delete
-                    if(($model->created_by == $user->id && AuthManager::checkAccess($user, strtolower($modelPermissionName) . '.delete')) ||
-                            ($model->created_by != $user->id && AuthManager::checkAccess($user, strtolower($modelPermissionName) . '.deleteother')))
+                    if(AuthManager::checkAccess($user, strtolower($modelPermissionName) . '.delete'))
                     {
                         $model->status = ProductReview::STATUS_DELETED;
                         $model->scenario = 'bulkdelete';
@@ -193,9 +229,17 @@ class ReviewController extends BaseController
      */
     public function actionDeleteFromTrash($id)
     {
-        $review                  = $this->loadModel(ProductReview::className(), $id);
-        $review->delete();
-        $this->redirect(UsniAdaptor::createUrl('products/review/trash'));
+        if (UsniAdaptor::app()->request->isAjax)
+        {
+            $productReview  = $this->loadModel(ProductReview::className(), $id);
+            $loggedInUser   = UsniAdaptor::app()->user->getUserModel();
+            $isAllowed      = CatalogPermissionUtil::doesUserHavePermissionToPerformAction($productReview, $loggedInUser, 'productreview.delete');
+            if($isAllowed)
+            {
+                $productReview->delete();
+                $this->redirect(UsniAdaptor::createUrl('products/review/trash'));
+            }
+        }
     }
     
     /**
@@ -206,5 +250,72 @@ class ReviewController extends BaseController
         return [
                     'manage' => UsniAdaptor::t('application','Manage') . ' ' . ProductReview::getLabel(2)
                ];
+    }
+    
+    /**
+     * Perform BulkDelete on trash gridview
+     * 
+     * @return void
+     */
+    public function actionTrashBulkDelete()
+    {
+        $user     = UsniAdaptor::app()->user->getUserModel();
+        if (UsniAdaptor::app()->request->isAjax && isset($_GET['id']))
+        {
+            $modelClass             = ucfirst($this->resolveModelClassName());
+            $model                  = new $modelClass();
+            $modelPermissionName    = UsniAdaptor::getObjectClassName($model);
+            $selectedItems          = $_GET['id'];
+            foreach ($selectedItems as $item)
+            {
+                if(!in_array($item, $this->getExcludedModelIdsFromBulkDelete()))
+                {
+                    $model = $modelClass::findOne(intval($item));
+                    //Check if allowed to delete
+                    if(AuthManager::checkAccess($user, strtolower($modelPermissionName) . '.delete'))
+                    {
+                        $model->delete();
+                    }
+                }
+            }
+        }
+    }
+    
+    /**
+     * @inheritdoc
+     */
+    protected static function getNonPermissibleActions()
+    {
+        $nonPermissibleActions              = parent::getNonPermissibleActions();
+        $additionalNonPermissibleActions    = [
+                                                    'bulk-approve', 
+                                                    'bulk-unapprove', 
+                                                    'bulk-delete', 
+                                                    'trash-bulk-delete',
+                                                    'approve',
+                                                    'unapprove',
+                                                    'spam',
+                                                    'remove-spam',
+                                                    'delete-from-grid',
+                                                    'delete-from-trash'
+                                              ];
+        return ArrayUtil::merge($nonPermissibleActions, $additionalNonPermissibleActions);
+    }
+    
+    /**
+     * @inheritdoc
+     */
+    protected function getActionToPermissionsMap()
+    {
+        $actionToPermissionsMap = parent::getActionToPermissionsMap();
+        $additionalPermissions  = [
+                                        'trash'             => 'productreview.delete',
+                                        'bulk-approve'      => 'productreview.approve',
+                                        'bulk-unapprove'    => 'productreview.approve',
+                                        'bulk-delete'       => 'productreview.delete',
+                                        'trash-bulk-delete' => 'productreview.delete',
+                                        'unapprove'         => 'productreview.approve'
+                                  ];
+        return array_merge($additionalPermissions, $actionToPermissionsMap);
     }
 }
