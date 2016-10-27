@@ -1,12 +1,12 @@
-UsniCart Ecommerce System
+Overview
 ================================
 
-It is an ecommerce system developed using Yii framework version 2 .
+It is an open source ecommerce system developed using Yii framework version 2.
 
 REQUIREMENTS
 ------------
 
-The minimum requirement by this application template that your Web server supports PHP 5.4.0.
+The minimum requirement for this software to run is that your Web server supports PHP 5.4.0.
 
 
 INSTALLATION
@@ -14,17 +14,22 @@ INSTALLATION
 
 ### Install from composer
 
-Download the zip from http://www.usnicart.com/download and extract it. Place the folder under webroot.
+With Composer installed, you can then install the application using the following commands:
 
-Copy instance.install.sample.php to instance.install.php before running the installation. Make sure you change the environment appropriately.
+**composer create-project ushainformatique/whatacart whatacart**
 
-You can then access the application through the following URL:
+Once the composer run completes, run http://localhost/whatacart if running on local environment. 
 
-~~~
-http://<domain>/<folder-name>/
-~~~
+If you are deploying on a domain for example xyz.com, go to public_html folder and run the following command
 
+**composer create-project ushainformatique/whatacart .**
 
-### Install via Composer
+Once the composer run completes, run http://xyz.com.
 
-TBD
+### Install from zip
+ 
+Download the version zip from http://www.whatacart.com/download and extract it. Place the folder under webroot or public_html if on a domain.
+
+Run http://localhost/whatacart if running on local environment.
+
+If you are deploying on a domain for example xyz.com, go to public_html folder and http://xyz.com.
