@@ -3,20 +3,21 @@
  * @copyright Copyright (C) 2016 Usha Singhai Neo Informatique Pvt. Ltd
  * @license https://www.gnu.org/licenses/gpl-3.0.html
  */
-namespace products\views;
+namespace common\modules\payment\components;
 
 use usni\library\extensions\bootstrap\widgets\UiGridViewActionToolBar;
 /**
- * ProductReviewGridViewActionToolBar class file.
+ * PaymentGridViewActionToolBar class file.
+ * 
  * @package products\views
  */
-class ProductReviewGridViewActionToolBar extends UiGridViewActionToolBar
+class PaymentGridViewActionToolBar extends UiGridViewActionToolBar
 {
     /**
      * @inheritdoc
      */
     public function getGridViewActionButtonGroup()
     {
-        return ProductReviewGridViewActionButtonGroup::className();
+        return PaymentGridViewActionButtonGroup::className();
     }
 }

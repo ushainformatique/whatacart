@@ -300,13 +300,11 @@ class Cart extends \yii\base\Model
     
     /**
      * Get item count in cart
-     * @param Product $product
-     * @param Array $options
+     * @param string $itemCode
      * @return int
      */
-    public function getItemCountInCart($product, $options = [])
+    public function getItemCountInCart($itemCode)
     {
-        $itemCode = CartUtil::getItemCode($product['id'], $options);
         $availableData  = ArrayUtil::getValue($this->itemsList, $itemCode, false);
         if($availableData === false)
         {

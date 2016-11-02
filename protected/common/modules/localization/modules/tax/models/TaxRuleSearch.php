@@ -58,7 +58,7 @@ class TaxRuleSearch extends TaxRule
         $dataProvider   = new TranslatedActiveDataProvider([
             'query' => $query,
         ]);
-        $sort = new Sort(['attributes' => ['name', 'based_on', "customerGroups"]]);
+        $sort = new Sort(['attributes' => ['name', 'based_on']]);
         $dataProvider->setSort($sort);
         // Validate data
         if (!$this->validate())

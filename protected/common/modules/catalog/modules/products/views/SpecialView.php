@@ -29,16 +29,20 @@ class SpecialView extends UiView
      */
     protected function renderContent()
     {
+        $productSpecials   = $this->product->specials;
+        if(empty($productSpecials))
+        {
+            $productSpecials        = ProductUtil::getProductSpecials($this->product->id);
+        }
         $availableCustomerGroups    = CustomerUtil::getChildCustomerGroups();
-        $productSpecials            = ProductUtil::getProductSpecials($this->product->id);
+        
         $filePath                   = $this->getFilePath();
         $mainFilePath               = $this->getMainFilePath();
-        $dummyFilePath              = UsniAdaptor::getAlias('@products/views/_productSpecialDummy') . '.php';
         $rowContent                 = null;
         $items                      = ArrayUtil::map($availableCustomerGroups, 'id', 'name');
         foreach($productSpecials as $index => $productSpecial)
         {
-            $dropdown   = UiHtml::dropDownList('ProductSpecial[group_id][]', $productSpecial['group_id'], $items, ['class' => 'form-control']);
+            $dropdown   = UiHtml::dropDownList('ProductSpecial[' . $index . '][group_id]', $productSpecial['group_id'], $items, ['class' => 'form-control']);
             $rowContent .= $this->getView()->renderPhpFile($filePath, ['dropdown' => $dropdown,
                                                                        'priority' => $productSpecial['priority'],
                                                                        'price'    => $productSpecial['price'],
@@ -47,8 +51,6 @@ class SpecialView extends UiView
                                                                        'index' => $index]);
         }
         $content  = $this->getView()->renderPhpFile($mainFilePath, ['rows' => $rowContent]);
-        $dummyDropdown = UiHtml::dropDownList('ProductSpecial[group_id_dummy][]', null, $items, ['class' => 'form-control dummy-special']);
-        $content  .= $this->getView()->renderPhpFile($dummyFilePath, ['dropdown' => $dummyDropdown]);
         return $content;
     }
     
@@ -62,10 +64,14 @@ class SpecialView extends UiView
                                     {
                                         var rowCount         = $('#special-value-table tbody tr').length;
                                         var newTr            = $('.special-value-row-dummy').clone();
-                                        $(newTr).removeClass('special-value-row-dummy').addClass('special-value-row');
+                                        $(newTr).removeClass('special-value-row-dummy').addClass('special-value-row-' + rowCount);
                                         var newId            = 'special-value-row-' + (rowCount);
                                         $(newTr).attr('id', newId);
-                                        $(newTr).find('.dummy-special').attr('name', 'ProductSpecial[group_id][]').removeClass('dummy-special');
+                                        $(newTr).find('.dummy-special').attr('name', 'ProductSpecial[##rowCount##][group_id]').removeClass('dummy-special');
+                                        var trContent = $(newTr).html();
+                                        //http://www.w3schools.com/jsref/jsref_replace.asp
+                                        trContentModified = trContent.replace(/##rowCount##/g, rowCount);
+                                        $(newTr).html(trContentModified);
                                         $(newTr).appendTo('#special-value-table tbody');
                                         $(newTr).show();
                                         $(newTr).find('.datefield').datetimepicker({autoclose:true, format:'yyyy-mm-dd hh:ii:ss'});

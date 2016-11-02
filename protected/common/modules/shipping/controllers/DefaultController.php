@@ -10,8 +10,11 @@ use usni\UsniAdaptor;
 use common\modules\extension\models\Extension;
 use common\modules\extension\models\ExtensionSearch;
 use common\modules\shipping\views\ShippingGridView;
+use usni\library\utils\FileUtil;
+use common\modules\stores\utils\StoreUtil;
 /**
  * DefaultController class file
+ * 
  * @package common\modules\shipping\controllers
  */
 class DefaultController extends UiAdminController
@@ -68,5 +71,49 @@ class DefaultController extends UiAdminController
             ]
         ];
     }
+    
+    /**
+     * Reloads the shipping methods
+     * @return void
+     */
+    public function actionReload()
+    {
+        $shippingMethods = Extension::find()->where('category = :category', [':category' => 'shipping'])->all();
+        $installedCodes    = [];
+        foreach($shippingMethods as $shipping)
+        {
+            $installedCodes[] = $shipping->code;
+        }
+        $path       = UsniAdaptor::getAlias('@common/modules/shipping/config');
+        $subDirs    = glob($path . '/*', GLOB_ONLYDIR);
+        //If newly added
+        foreach($subDirs as $subDir)
+        {
+            $subPath    = FileUtil::normalizePath($subDir);
+            $data       = require($subPath . '/config.php');
+            //If not in db
+            if(!in_array($data['code'], $installedCodes))
+            {
+                $extension = new Extension(['scenario' => 'create']);
+                $extension->setAttributes($data);
+                if($extension->save())
+                {
+                    $installedCodes[] = $data['code'];
+                }
+            }
+        }
+        //if folder is removed
+        foreach($installedCodes as $code)
+        {
+            $folderPath = FileUtil::normalizePath($path . '/' . $code);
+            if(!file_exists($folderPath))
+            {
+                $shipping = Extension::find()->where('code = :code AND category = :category', [':category' => 'shipping', ':code' => $code])->one();
+                $shipping->delete();
+                //Delete store configuration
+                StoreUtil::deleteStoreConfiguration($code, 'shipping');
+            }
+        }
+        return $this->redirect(UsniAdaptor::createUrl('shipping/default/manage'));
+    }
 }
-?>

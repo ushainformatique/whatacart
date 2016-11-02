@@ -633,4 +633,19 @@ class StoreUtil
                              where s.id = str.owner_id AND str.language = :lan";
         return $connection->createCommand($sql, [':lan' => $language])->cache(0, $dependency)->queryScalar();
     }
+    
+    /**
+     * Delete store configuration for a code and category
+     * @param string $code
+     * @param string $category
+     * @param string $key
+     * @param string $value
+     * @param int $storeId
+     */
+    public static function deleteStoreConfiguration($code, $category)
+    {
+        $tableName = StoreConfiguration::tableName();
+        StoreConfiguration::deleteAll('code = :code AND category =:category', 
+                                                        [':category' => $category, ':code' => $code]);
+    }
 }

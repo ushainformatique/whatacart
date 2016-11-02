@@ -46,7 +46,7 @@ class TaxRule extends TranslatableActiveRecord
 	public function rules()
 	{
 		return [
-                    [['name', 'based_on'], 'required'],
+                    [['name', 'based_on'], 'required', 'except' => 'bulkedit'],
                     ['name',  'unique', 'targetClass' => TaxRuleTranslated::className(), 'targetAttribute' => ['name', 'language'], 'on' => 'create'],
                     ['name', 'unique', 'targetClass' => TaxRuleTranslated::className(), 'targetAttribute' => ['name', 'language'], 'filter' => ['!=', 'owner_id', $this->id], 'on' => 'update'],
                     [['productTaxClass', 'taxRates', 'customerGroups'], 'required'],

@@ -11,7 +11,6 @@ use usni\library\utils\ArrayUtil;
 use usni\library\components\UiHtml;
 use customer\utils\CustomerUtil;
 use products\utils\ProductUtil;
-use products\models\ProductDiscount;
 /**
  * Discount view for the product.
  * 
@@ -30,16 +29,20 @@ class DiscountView extends UiView
      */
     protected function renderContent()
     {
+        $productDiscounts   = $this->product->discounts;
+        if(empty($productDiscounts))
+        {
+            $productDiscounts   = ProductUtil::getProductDiscounts($this->product->id);
+        }
         $availableCustomerGroups    = CustomerUtil::getChildCustomerGroups();
-        $productDiscounts           = ProductUtil::getProductDiscounts($this->product->id);
         $filePath                   = $this->getFilePath();
         $mainFilePath               = $this->getMainFilePath();
-        $dummyFilePath              = UsniAdaptor::getAlias('@products/views/_productDiscountDummy') . '.php';
         $rowContent                 = null;
         $items                      = ArrayUtil::map($availableCustomerGroups, 'id', 'name');
         foreach($productDiscounts as $index => $productDiscount)
         {
-            $dropdown   = UiHtml::dropDownList('ProductDiscount[group_id][]', $productDiscount['group_id'], $items, ['class' => 'form-control']);
+            $groupId    = $productDiscount['group_id'];
+            $dropdown   = UiHtml::dropDownList('ProductDiscount[' . $index . '][group_id]', $groupId, $items, ['class' => 'form-control']);
             $rowContent .= $this->getView()->renderPhpFile($filePath, ['dropdown' => $dropdown,
                                                                        'quantity' => $productDiscount['quantity'],
                                                                        'priority' => $productDiscount['priority'],
@@ -49,8 +52,6 @@ class DiscountView extends UiView
                                                                        'index' => $index]);
         }
         $content  = $this->getView()->renderPhpFile($mainFilePath, ['rows' => $rowContent]);
-        $dummyDropdown = UiHtml::dropDownList('ProductDiscount[group_id_dummy][]', null, $items, ['class' => 'form-control dummy-discount']);
-        $content  .= $this->getView()->renderPhpFile($dummyFilePath, ['dropdown' => $dummyDropdown, 'model' => new ProductDiscount()]);
         return $content;
     }
     
@@ -64,10 +65,14 @@ class DiscountView extends UiView
                                     {
                                         var rowCount         = $('#discount-value-table tbody tr').length;
                                         var newTr            = $('.discount-value-row-dummy').clone();
-                                        $(newTr).removeClass('discount-value-row-dummy').addClass('discount-value-row');
+                                        $(newTr).removeClass('discount-value-row-dummy').addClass('discount-value-row-' + rowCount);
                                         var newId            = 'discount-value-row-' + (rowCount);
                                         $(newTr).attr('id', newId);
-                                        $(newTr).find('.dummy-discount').attr('name', 'ProductDiscount[group_id][]').removeClass('dummy-discount');
+                                        $(newTr).find('.dummy-discount').attr('name', 'ProductDiscount[##rowCount##][group_id]').removeClass('dummy-discount');
+                                        var trContent = $(newTr).html();
+                                        //http://www.w3schools.com/jsref/jsref_replace.asp
+                                        trContentModified = trContent.replace(/##rowCount##/g, rowCount);
+                                        $(newTr).html(trContentModified);
                                         $(newTr).appendTo('#discount-value-table tbody');
                                         $(newTr).show();
                                         $(newTr).find('.datefield').datetimepicker({autoclose:true, format:'yyyy-mm-dd hh:ii:ss'});

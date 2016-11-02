@@ -304,18 +304,54 @@ class TaxUtil
         {
             $language           = UsniAdaptor::app()->languageManager->getContentLanguage();
         }
+        if($zone->is_zip_range == true)
+        {
+            return self::getZoneWithZipRange($zone, $language);
+        }
+        return self::getZoneWithZip($zone, $language);
+    }
+    
+    /**
+     * Get zone with zip range.
+     * @param Zone $zone
+     * @param string $language
+     * @return array
+     */
+    public static function getZoneWithZipRange($zone, $language)
+    {
         $zoneTable              = UsniAdaptor::tablePrefix() . 'zone';
         $trZoneTable            = UsniAdaptor::tablePrefix() . 'zone_translated';
         $trCountryTable         = UsniAdaptor::tablePrefix() . 'country_translated';
         $trStateTable           = UsniAdaptor::tablePrefix() . 'state_translated';
-        $sql                    = "SELECT zt.*, tzt.name, tct.name as country_name, tst.name as state_name
-                                   FROM $zoneTable zt, $trZoneTable tzt, $trCountryTable tct, $trStateTable tst
-                                   WHERE zt.country_id = :cid AND zt.state_id = :sid AND zt.zip = :zip AND zt.id = tzt.owner_id AND tzt.name = :name AND tzt.language = :lang AND tct.owner_id = :coid AND tct.language = :clang AND tst.owner_id = :soid AND tst.language = :slang";
-        $connection             = UsniAdaptor::app()->getDb();
-        $params                 = [':cid' =>  $zone->country_id, ':sid' => $zone->state_id, ':zip' => $zone->zip, 
-                                   ':name' => $zone->name, ':lang' => $language, ':coid' => $zone->country_id, ':clang' => $language, 
-                                   ':soid' => $zone->state_id, ':slang' => $language];
-        $record                 = $connection->createCommand($sql, $params)->queryOne();
-        return $record;
+        $sql    = "SELECT zt.*, tzt.name, tct.name as country_name, tst.name as state_name
+                  FROM $zoneTable zt, $trZoneTable tzt, $trCountryTable tct, $trStateTable tst
+                  WHERE zt.country_id = :cid AND zt.state_id = :sid AND zt.from_zip = :fzip AND zt.to_zip = :tzip AND zt.id = tzt.owner_id AND tzt.name = :name AND tzt.language = :lang AND tct.owner_id = :coid AND tct.language = :clang AND tst.owner_id = :soid AND tst.language = :slang";
+        $connection     = UsniAdaptor::app()->getDb();
+        $params         = [':cid' =>  $zone->country_id, ':sid' => $zone->state_id, ':fzip' => $zone->from_zip, ':tzip' => $zone->to_zip, 
+                           ':name' => $zone->name, ':lang' => $language, ':coid' => $zone->country_id, ':clang' => $language, 
+                           ':soid' => $zone->state_id, ':slang' => $language];
+        return $connection->createCommand($sql, $params)->queryOne();
+    }
+    
+    /**
+     * Get zone with zip.
+     * @param Zone $zone
+     * @param string $language
+     * @return array
+     */
+    public static function getZoneWithZip($zone, $language)
+    {
+        $zoneTable              = UsniAdaptor::tablePrefix() . 'zone';
+        $trZoneTable            = UsniAdaptor::tablePrefix() . 'zone_translated';
+        $trCountryTable         = UsniAdaptor::tablePrefix() . 'country_translated';
+        $trStateTable           = UsniAdaptor::tablePrefix() . 'state_translated';
+        $sql    = "SELECT zt.*, tzt.name, tct.name as country_name, tst.name as state_name
+                  FROM $zoneTable zt, $trZoneTable tzt, $trCountryTable tct, $trStateTable tst
+                  WHERE zt.country_id = :cid AND zt.state_id = :sid AND zt.zip = :zip AND zt.id = tzt.owner_id AND tzt.name = :name AND tzt.language = :lang AND tct.owner_id = :coid AND tct.language = :clang AND tst.owner_id = :soid AND tst.language = :slang";
+        $connection     = UsniAdaptor::app()->getDb();
+        $params         = [':cid' =>  $zone->country_id, ':sid' => $zone->state_id, ':zip' => $zone->zip, 
+                           ':name' => $zone->name, ':lang' => $language, ':coid' => $zone->country_id, ':clang' => $language, 
+                           ':soid' => $zone->state_id, ':slang' => $language];
+        return $connection->createCommand($sql, $params)->queryOne();
     }
 }

@@ -28,7 +28,7 @@ class ProductTableBuilder extends UiTableBuilder
             'sku' => Schema::TYPE_STRING . '(16)',
             'quantity' => Schema::TYPE_INTEGER . '(11) NOT NULL',
             'initial_quantity' => $this->integer(11)->notNull(),
-            'tax_class_id' => Schema::TYPE_INTEGER . '(11) NOT NULL',
+            'tax_class_id' => Schema::TYPE_INTEGER . '(11)',
             'minimum_quantity' => Schema::TYPE_INTEGER . '(11)',
             'subtract_stock' => Schema::TYPE_STRING . '(5)',
             'stock_status' => Schema::TYPE_SMALLINT . '(1) NOT NULL',

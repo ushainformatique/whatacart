@@ -6,6 +6,7 @@
 namespace common\modules\shipping\views;
 
 use common\modules\shipping\components\ShippingActionColumn;
+use common\modules\shipping\components\ShippingGridViewActionToolBar;
 /**
  * ShippingGridView class file.
  * 
@@ -31,5 +32,12 @@ class ShippingGridView extends \common\modules\extension\views\ExtensionGridView
             'template'    => '{settings} {changestatus} {delete}'
         ];  
     }
+    
+    /**
+     * @inheritdoc
+     */
+    public static function getGridViewActionToolBarClassName()
+    {
+        return ShippingGridViewActionToolBar::className();
+    }
 }
-?>

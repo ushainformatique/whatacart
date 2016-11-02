@@ -9,12 +9,13 @@ use common\modules\sequence\models\Sequence;
 use usni\UsniAdaptor;
 /**
  * SequenceUtil class file.
+ * 
  * @package common\modules\sequence\utils
  */
 class SequenceUtil
 {
     /**
-     * Update invoice sequence number.
+     * Update sequence number.
      * @return void
      */
     public static function updateSequenceNumber($columnName)
@@ -24,4 +25,3 @@ class SequenceUtil
                                                         'id = :id', [':id' => $sequence->id])->execute();
     }
 }
-?>

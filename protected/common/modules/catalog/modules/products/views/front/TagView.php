@@ -9,6 +9,7 @@ use frontend\views\common\SearchResultsView;
 use usni\UsniAdaptor;
 /**
  * TagView class file.
+ * 
  * @package products\views\front
  */
 class TagView extends SearchResultsView

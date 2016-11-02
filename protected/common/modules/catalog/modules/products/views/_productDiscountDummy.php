@@ -7,19 +7,19 @@ use usni\UsniAdaptor;
             <?php echo $dropdown; ?>
         </td>
         <td class="text-right">
-            <input type="text" name="ProductDiscount[quantity][]" value="" placeholder="<?php echo UsniAdaptor::t('products', 'Quantity');?>" class="form-control">
+            <input type="text" name="ProductDiscount[##rowCount##][quantity]" value="" placeholder="<?php echo UsniAdaptor::t('products', 'Quantity');?>" class="form-control">
         </td>
         <td class="text-left">
-            <input type="text" name="ProductDiscount[priority][]" value="" placeholder="<?php echo UsniAdaptor::t('products', 'Priority');?>" class="form-control">
+            <input type="text" name="ProductDiscount[##rowCount##][priority]" value="" placeholder="<?php echo UsniAdaptor::t('products', 'Priority');?>" class="form-control">
         </td>
         <td class="text-right">
-            <input type="text" name="ProductDiscount[price][]" value="" placeholder="<?php echo UsniAdaptor::t('products', 'Price');?>" class="form-control">
+            <input type="text" name="ProductDiscount[##rowCount##][price]" value="" placeholder="<?php echo UsniAdaptor::t('products', 'Price');?>" class="form-control">
         </td>
         <td class="text-left">
-            <input type="text" name="ProductDiscount[start_datetime][]" value="" placeholder="YYYY-mm-dd H:i:s" class="form-control datefield">
+            <input type="text" name="ProductDiscount[##rowCount##][start_datetime]" value="" placeholder="YYYY-mm-dd H:i:s" class="form-control datefield">
         </td>
         <td class="text-right">
-            <input type="text" name="ProductDiscount[end_datetime][]" value="" placeholder="YYYY-mm-dd H:i:s" class="form-control datefield">
+            <input type="text" name="ProductDiscount[##rowCount##][end_datetime]" value="" placeholder="YYYY-mm-dd H:i:s" class="form-control datefield">
         </td>
         <td class="text-left">
             <button type="button" onclick="$(this).tooltip('destroy');

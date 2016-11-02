@@ -11,7 +11,9 @@ use usni\UsniAdaptor;
 use yii\caching\DbDependency;
 use usni\library\utils\ArrayUtil;
 /**
- * ProductWeightManager class file.
+ * ProductWeightManager class file. This class would covert the weight of the product, if in different unit than store, in unit of the store.
+ * So for example if unit of store is kg and product dimesions are in g, they would be converted in kg and displayed in front end. 
+ * 
  * @package products\managers
  */
 class ProductWeightManager extends \yii\base\Component
@@ -40,46 +42,43 @@ class ProductWeightManager extends \yii\base\Component
     public static function getWeight($currentStoreWeightClassName, $product, $currentStoreWeightClassId)
     {
         $weight = null;
+        $weight = ArrayUtil::getValue($product, 'weight', 0);
+        if($weight == null)
+        {
+            return null;
+        }
         if($currentStoreWeightClassId !== $product['weight_class'])
         {
             switch($currentStoreWeightClassName)
             {
                 case 'Kilogram':
-                    $weight = self::getCalculatedWeight('Kilogram', $product) . ' ' . UsniAdaptor::t('weightclass', 'Kg');
+                    $weight = self::getCalculatedWeight('Kilogram', $product);
                     break;
                 case 'Gram':
-                    $weight = self::getCalculatedWeight('Gram', $product) . ' ' . UsniAdaptor::t('weightclass', 'g');
+                    $weight = self::getCalculatedWeight('Gram', $product);
                     break;
                 case 'Ounce':
-                    $weight = self::getCalculatedWeight('Ounce', $product) . ' ' . UsniAdaptor::t('weightclass', 'oz');
+                    $weight = self::getCalculatedWeight('Ounce', $product);
                     break;
                 case 'Pound':
-                    $weight = self::getCalculatedWeight('Pound', $product) . ' ' . UsniAdaptor::t('weightclass', 'lb');
+                    $weight = self::getCalculatedWeight('Pound', $product);
                     break;
             }
         }
-        else
+        switch($currentStoreWeightClassName)
         {
-            $weight = ArrayUtil::getValue($product, 'weight', 0);
-            if($weight == null)
-            {
-                $weight = 0;
-            }
-            switch($currentStoreWeightClassName)
-            {
-                case 'Kilogram':
-                    $weight = $weight . ' ' . UsniAdaptor::t('weightclass', 'Kg');
-                    break;
-                case 'Gram':
-                    $weight = $weight . ' ' . UsniAdaptor::t('weightclass', 'g');
-                    break;
-                case 'Ounce':
-                    $weight = $weight . ' ' . UsniAdaptor::t('weightclass', 'oz');
-                    break;
-                case 'Pound':
-                    $weight = $weight . ' ' . UsniAdaptor::t('weightclass', 'lb');
-                    break;
-            }
+            case 'Kilogram':
+                $weight = $weight . ' ' . UsniAdaptor::t('weightclass', 'Kg');
+                break;
+            case 'Gram':
+                $weight = $weight . ' ' . UsniAdaptor::t('weightclass', 'g');
+                break;
+            case 'Ounce':
+                $weight = $weight . ' ' . UsniAdaptor::t('weightclass', 'oz');
+                break;
+            case 'Pound':
+                $weight = $weight . ' ' . UsniAdaptor::t('weightclass', 'lb');
+                break;
         }
         return $weight;
     }
@@ -228,4 +227,3 @@ class ProductWeightManager extends \yii\base\Component
         }
     }
 }
-?>

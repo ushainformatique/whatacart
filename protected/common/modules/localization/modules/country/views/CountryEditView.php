@@ -11,6 +11,7 @@ use usni\library\utils\ButtonsUtil;
 use usni\library\utils\StatusUtil;
 /**
  * CountryEditView class file
+ * 
  * @package common\modules\localization\modules\country\views
  */
 class CountryEditView extends UiBootstrapEditView
@@ -34,5 +35,17 @@ class CountryEditView extends UiBootstrapEditView
                     ];
         return $metadata;
     }
+    
+    /**
+     * @inheritdoc
+     */
+    protected function attributeOptions()
+    {
+        return array(
+            'postcode_required' => array(
+                    'options' => [],
+                    'horizontalCheckboxTemplate' => "<div class=\"checkbox checkbox-admin\">\n{beginLabel}\n{input}\n{labelTitle}\n{endLabel}\n</div>\n{error}"
+            )
+        );
+    }
 }
-?>

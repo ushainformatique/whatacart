@@ -11,7 +11,7 @@ use usni\UsniAdaptor;
 use common\modules\extension\models\Extension;
 use common\modules\stores\utils\StoreUtil;
 use common\modules\stores\managers\StoresDataManager;
-use usni\library\utils\ArrayUtil;
+use usni\library\utils\FileUtil;
 /**
  * Loads default data related to shipping.
  * 
@@ -31,23 +31,15 @@ class ShippingDataManager extends UiDataManager
         {
             return false;
         }
-        $currentStore       = StoreUtil::getDefault('en-US');
-        $shippingFile       = UsniAdaptor::getAlias('@common/modules/shipping/managers/shipping.php');
-        $shippingMethods    = require $shippingFile;
-        foreach($shippingMethods as $code => $data)
+        $currentStore   = StoreUtil::getDefault('en-US');
+        $path           = UsniAdaptor::getAlias('@common/modules/shipping/config');
+        $subDirs        = glob($path . '/*', GLOB_ONLYDIR);
+        foreach($subDirs as $subDir)
         {
-            $insertData = [];
-            foreach($data as $key => $value)
-            {
-                if($key == 'product_version')
-                {
-                    $value = serialize($value);
-                }
-                $insertData[$key] = $value;
-            }
-            $insertData = ArrayUtil::merge($insertData, ['code' => $code, 'category' => 'shipping']);
-            $extension = new Extension(['scenario' => 'create']);
-            $extension->setAttributes($insertData);
+            $subPath    = FileUtil::normalizePath($subDir);
+            $data       = require($subPath . '/config.php');
+            $extension  = new Extension(['scenario' => 'create']);
+            $extension->setAttributes($data);
             $extension->save();
         }
         //Flat rate config

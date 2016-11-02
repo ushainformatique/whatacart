@@ -80,16 +80,4 @@ class Currency extends TranslatableActiveRecord
     {
         return ['name'];
     }
-    
-    /**
-     * @inheritdoc
-     */
-    public function beforeDelete()
-    {
-        if(parent::beforeDelete())
-        {
-            return CurrencyUtil::checkIfAllowedToDelete($this);
-        }
-        return false;
-    }
 }
