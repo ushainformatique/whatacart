@@ -25,7 +25,7 @@ class DataCategory extends TranslatableActiveRecord
 	public function rules()
 	{
 		return [
-                    [['name', 'status'], 'required'],
+                    [['name', 'status'], 'required', 'except' => 'bulkedit'],
                     ['name',             'unique', 'targetClass' => DataCategoryTranslated::className(), 'targetAttribute' => ['name', 'language'], 'on' => 'create'],
                     ['name', 'unique', 'targetClass' => DataCategoryTranslated::className(), 'targetAttribute' => ['name', 'language'], 'filter' => ['!=', 'owner_id', $this->id], 'on' => 'update'],
                     ['name',             'string', 'max' => 128],
@@ -86,17 +86,5 @@ class DataCategory extends TranslatableActiveRecord
             'description'   => UsniAdaptor::t('applicationhint', 'Description for the site'),
             'status'        => UsniAdaptor::t('datacategoryhint', 'Status for datacategory')
         );
-    }
-    
-    /**
-     * @inheritdoc
-     */
-    public function beforeDelete()
-    {
-        if(parent::beforeDelete())
-        {
-            return DataCategoryUtil::checkIfAllowedToDelete($this);
-        }
-        return false;
     }
 }

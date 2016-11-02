@@ -6,16 +6,16 @@ use usni\UsniAdaptor;
         <?php echo $dropdown; ?>
     </td>
     <td class="text-right">
-        <input type="text" name="ProductSpecial[priority][]" value="<?php echo $priority;?>" placeholder="<?php echo UsniAdaptor::t('products', 'Priority');?>" class="form-control">
+        <input type="text" name="ProductSpecial[<?php echo $index;?>][priority]" value="<?php echo $priority;?>" placeholder="<?php echo UsniAdaptor::t('products', 'Priority');?>" class="form-control">
     </td>
     <td class="text-left">
-        <input type="text" name="ProductSpecial[price][]" value="<?php echo $price;?>" placeholder="<?php echo UsniAdaptor::t('products', 'Price');?>" class="form-control">
+        <input type="text" name="ProductSpecial[<?php echo $index;?>][price]" value="<?php echo $price;?>" placeholder="<?php echo UsniAdaptor::t('products', 'Price');?>" class="form-control">
     </td>
     <td class="text-right">
-        <input type="text" name="ProductSpecial[start_datetime][]" value="<?php echo $start_datetime;?>" placeholder="<?php echo UsniAdaptor::t('products', 'Start Datetime');?>" class="form-control datefield">
+        <input type="text" name="ProductSpecial[<?php echo $index;?>][start_datetime]" value="<?php echo $start_datetime;?>" placeholder="<?php echo UsniAdaptor::t('products', 'Start Datetime');?>" class="form-control datefield">
     </td>
     <td class="text-left">
-        <input type="text" name="ProductSpecial[end_datetime][]" value="<?php echo $end_datetime;?>" placeholder="<?php echo UsniAdaptor::t('products', 'End Datetime');?>" class="form-control datefield">
+        <input type="text" name="ProductSpecial[<?php echo $index;?>][end_datetime]" value="<?php echo $end_datetime;?>" placeholder="<?php echo UsniAdaptor::t('products', 'End Datetime');?>" class="form-control datefield">
     </td>
     <td class="text-right">
         <button type="button" id="remove-special-value-row" onclick="$(this).tooltip('destroy');

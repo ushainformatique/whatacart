@@ -23,7 +23,8 @@ class ProductDataView extends UiDetailView
      */
     public function getColumns()
     {
-        $taxClass = ProductTaxClass::findOne($this->model->tax_class_id);
+        $taxClass       = ProductTaxClass::findOne($this->model->tax_class_id);
+        $taxClassName   = null;
         if($taxClass != null)
         {
             $taxClassName = $taxClass->name;
@@ -50,8 +51,8 @@ class ProductDataView extends UiDetailView
                         'format'    => 'raw'
                     ],
                     [
-                        'attribute'  => 'tax_class_id', 
-                        'value' => $taxClassName
+                        'attribute' => 'tax_class_id', 
+                        'value'     => $taxClassName
                     ],
                     [
                         'attribute' => 'stock_status',

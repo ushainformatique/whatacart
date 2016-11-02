@@ -6,6 +6,7 @@
 namespace common\modules\payment\views;
 
 use common\modules\payment\components\PaymentActionColumn;
+use common\modules\payment\components\PaymentGridViewActionToolBar;
 /**
  * PaymentGridView class file.
  * 
@@ -30,5 +31,13 @@ class PaymentGridView extends \common\modules\extension\views\ExtensionGridView
             'class'       => PaymentActionColumn::className(),
             'template'    => '{settings} {changestatus}'
         ];  
+    }
+    
+    /**
+     * @inheritdoc
+     */
+    public static function getGridViewActionToolBarClassName()
+    {
+        return PaymentGridViewActionToolBar::className();
     }
 }

@@ -9,7 +9,6 @@ use usni\library\extensions\bootstrap\views\UiBootstrapEditView;
 use usni\UsniAdaptor;
 use usni\library\utils\ButtonsUtil;
 use frontend\utils\FrontUtil;
-use usni\library\utils\FlashUtil;
 use usni\library\utils\ArrayUtil;
 
 /**
@@ -66,12 +65,13 @@ class ReviewFormView extends UiBootstrapEditView
     }
 
     /**
-     * Renders flash messages.
-     * @return string
+     * @inheritdoc
      */
     protected function renderFlashMessages()
     {
-        return FlashUtil::render('reviewFormSubmit', 'alert alert-success alert-review');
+        $message = UsniAdaptor::t('productflash', 'Thank you for your review. It has been submitted to the admin for approval.');
+        $flash   = '<div class="alert alert-success alert-review">' . $message . '</div>';
+        return $flash;
     }
     
     /**

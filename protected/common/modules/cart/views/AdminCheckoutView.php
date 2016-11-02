@@ -83,17 +83,22 @@ class AdminCheckoutView extends \usni\library\extensions\bootstrap\views\UiBoots
      */
     protected function renderDeliveryView()
     {
-        $deliveryInfoEditForm    = $this->deliveryInfoEditForm;
-        //This would just check if data is there in session or not
-        if($deliveryInfoEditForm->firstname == null)
+        $cart = ApplicationUtil::getCart();
+        if($cart->isShippingRequired())
         {
-            CartUtil::populateCustomerInfoInFormModel($deliveryInfoEditForm, Address::TYPE_SHIPPING_ADDRESS, $this->getCustomerId());
+            $deliveryInfoEditForm    = $this->deliveryInfoEditForm;
+            //This would just check if data is there in session or not
+            if($deliveryInfoEditForm->firstname == null)
+            {
+                CartUtil::populateCustomerInfoInFormModel($deliveryInfoEditForm, Address::TYPE_SHIPPING_ADDRESS, $this->getCustomerId());
+            }
+            $deliveryView            = new DeliveryEditView(['model' => $deliveryInfoEditForm, 
+                                                             'form' => $this->form,
+                                                             'source' => $this->getSource()
+                                                            ]);
+            return $deliveryView->render();
         }
-        $deliveryView            = new DeliveryEditView(['model' => $deliveryInfoEditForm, 
-                                                         'form' => $this->form,
-                                                         'source' => $this->getSource()
-                                                        ]);
-        return $deliveryView->render();
+        return null;
     }
     
     /**
@@ -102,12 +107,17 @@ class AdminCheckoutView extends \usni\library\extensions\bootstrap\views\UiBoots
      */
     protected function renderShippingView()
     {
-        $deliveryOptionsEditForm    = $this->deliveryOptionsEditForm;
-        $deliveryView            = new DeliveryOptionsEditView(['model' => $deliveryOptionsEditForm, 
-                                                                'form' => $this->form,
-                                                                'source' => $this->getSource()
-                                                               ]);
-        return $deliveryView->render();
+        $cart = ApplicationUtil::getCart();
+        if($cart->isShippingRequired())
+        {
+            $deliveryOptionsEditForm    = $this->deliveryOptionsEditForm;
+            $deliveryView            = new DeliveryOptionsEditView(['model' => $deliveryOptionsEditForm, 
+                                                                    'form' => $this->form,
+                                                                    'source' => $this->getSource()
+                                                                   ]);
+            return $deliveryView->render();
+        }
+        return null;
     }
     
     /**

@@ -36,6 +36,7 @@ $url       = UsniAdaptor::createUrl('catalog/products/site/detail', ['id' => $pr
                 </button>
             </span>
         </div>
+        <div class="input-error" style="display:none"></div>
     </td>
     <td class="text-right"><?php echo ProductUtil::getFormattedPrice($price);?></td>
     <td class="text-right"><?php echo ProductUtil::getFormattedPrice($tax);?></td>

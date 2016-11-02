@@ -577,22 +577,22 @@ class ProductUtil
      */
     public static function getFinalPrice($product, $customer, $inputQty = 1, $inputDateTime = null)
     {
-        $discountedPrice = self::getDiscountedPrice($product, $customer, $inputQty, $inputDateTime);
-        if($discountedPrice == -1)
+        $specialPrice    = self::getSpecialPrice($product, $customer, $inputDateTime);
+        if($specialPrice == -1)
         {
-            $specialPrice           = self::getSpecialPrice($product, $customer, $inputDateTime);
-            if($specialPrice == -1)
+            $discountedPrice = self::getDiscountedPrice($product, $customer, $inputQty, $inputDateTime);
+            if($discountedPrice == -1)
             {
                 $price = $product['price'];
             }
             else
             {
-                $price = $specialPrice;
+                $price = $discountedPrice;
             }
         }
         else
         {
-            $price = $discountedPrice;
+            $price = $specialPrice;
         }
         return $price;
     }
@@ -1122,27 +1122,12 @@ class ProductUtil
         $discounts  = $product->discounts;
         if(!empty($discounts))
         {
-            if(array_key_exists('group_id', $discounts))
+            foreach($discounts as $discount)
             {
-                $user                = UsniAdaptor::app()->user->getUserModel();
-                $productDiscountData = [];
-                foreach ($discounts['group_id'] as $index => $groupId)
-                {
-                    $productDiscountData[] = [$product->id, $groupId, $discounts['quantity'][$index], $discounts['priority'][$index], 
-                                              $discounts['price'][$index], $discounts['start_datetime'][$index], $discounts['end_datetime'][$index],
-                                              $user->id, date('Y-m-d H:i:s')];
-                }
-                $table      = UsniAdaptor::tablePrefix() . 'product_discount';
-                $columns    = ['product_id', 'group_id', 'quantity', 'priority', 'price', 'start_datetime', 'end_datetime', 'created_by', 
-                               'created_datetime'];
-                try
-                {
-                    UsniAdaptor::app()->db->createCommand()->batchInsert($table, $columns, $productDiscountData)->execute();
-                }
-                catch (\yii\db\Exception $e)
-                {
-                    throw $e;
-                }
+                $prDiscount = new ProductDiscount(['scenario' => 'create']);
+                $prDiscount->setAttributes($discount);
+                $prDiscount->product_id = $product->id;
+                $prDiscount->save();
             }
         }
     }
@@ -1158,30 +1143,12 @@ class ProductUtil
         $specials  = $product->specials;
         if(!empty($specials))
         {
-            $specialCount = count($specials);
-            if(array_key_exists('group_id', $specials))
+            foreach($specials as $special)
             {
-                $productSpecialData = [];
-                $user               = UsniAdaptor::app()->user->getUserModel();
-                foreach ($specials['group_id'] as $index => $groupId)
-                {
-                    if($index == $specialCount - 1)
-                    {
-                        break;
-                    }
-                    $productSpecialData[] = [$product->id, $groupId, $specials['priority'][$index], $specials['price'][$index], 
-                                             $specials['start_datetime'][$index], $specials['end_datetime'][$index], $user->id, date('Y-m-d H:i:s')];
-                }
-                $table      = UsniAdaptor::tablePrefix() . 'product_special';
-                $columns    = ['product_id', 'group_id', 'priority', 'price', 'start_datetime', 'end_datetime', 'created_by', 'created_datetime'];
-                try
-                {
-                    UsniAdaptor::app()->db->createCommand()->batchInsert($table, $columns, $productSpecialData)->execute();
-                }
-                catch (\yii\db\Exception $e)
-                {
-                    throw $e;
-                }
+                $prSpecial = new ProductSpecial(['scenario' => 'create']);
+                $prSpecial->setAttributes($special);
+                $prSpecial->product_id = $product->id;
+                $prSpecial->save();
             }
         }
     }
@@ -1249,10 +1216,9 @@ class ProductUtil
      */
     public static function validateImageUploads($product)
     {
-        $errors     = [];
         $imageData  = $product->productImageData;
         $uploadInstances    = [];
-        $cumulativeErrors   = [];
+        $imageErrors        = [];
         if(!empty($imageData))
         {
             foreach($imageData as $index => $record)
@@ -1275,28 +1241,21 @@ class ProductUtil
                 {
                     //Setting it to null so that user does not get confused becuase name would be displayed but uploaded data would not be there
                     //@see http://www.yiiframework.com/forum/index.php/topic/33889-file-upload-field-becomes-empty/
-                    $productImage->image = null;
-                    $errors     = $productImage->getErrors();
+                    $productImage->image    = null;
+                    $errors = $imageErrors[$index]    = $productImage->getErrors();
+                    foreach($errors as $attribute => $error)
+                    {
+                        foreach($error as $value)
+                        {
+                            $product->addError('images', UsniAdaptor::t('products', 'At row') . ' ' . $index . ' ' . $value);
+                        }
+                    }
                 }
                 $uploadInstances[$index] = $productImage;
             }
-            if(!empty($errors))
-            {
-                foreach($errors as $attribute => $error)
-                {
-                    foreach($error as $value)
-                    {
-                        $cumulativeErrors[] = 'Images- ' . $value;
-                    }
-                }
-            }
-        }
-        if(!empty($cumulativeErrors))
-        {
-            $product->addErrors($cumulativeErrors);
         }
         $product->images = $uploadInstances;
-        return $cumulativeErrors;
+        return $imageErrors;
     }
     
 /**
@@ -1824,7 +1783,7 @@ class ProductUtil
         }
         $productTable           = Product::tableName();
         $productTranslatedTable = ProductTranslated::tableName();
-        $dependency             = new DbDependency(['sql' => "SELECT modified_datetime FROM $productTable WHERE id = :id", 'params' => [':id' => $productId]]);
+        $dependency             = new DbDependency(['sql' => "SELECT MAX(modified_datetime) FROM $productTable WHERE id = :id", 'params' => [':id' => $productId]]);
         $sql                    = "SELECT p.* , pt.name, pt.alias, pt.metakeywords, pt.metadescription, pt.description
                                    FROM $productTable p, $productTranslatedTable pt WHERE p.id = :id AND p.id = pt.owner_id AND pt.language = :lan";
         $connection             = UsniAdaptor::app()->getDb();
@@ -2193,7 +2152,7 @@ class ProductUtil
         }
         $ovTable        = UsniAdaptor::tablePrefix() . 'product_option_value';
         $ovTrTable      = UsniAdaptor::tablePrefix() . 'product_option_value_translated';
-        $dependency     = new DbDependency(['sql' => "SELECT modified_datetime FROM $ovTable"]);
+        $dependency     = new DbDependency(['sql' => "SELECT MAX(modified_datetime) FROM $ovTable"]);
         $sql            = "SELECT ov.*, ovTr.value 
                            FROM $ovTable ov, $ovTrTable ovTr WHERE ov.option_id = :oid AND ov.id = ovTr.owner_id AND ovTr.language = :lan";
         $connection             = UsniAdaptor::app()->getDb();

@@ -10,7 +10,6 @@ use usni\library\components\UiHtml;
 use common\modules\manufacturer\utils\ManufacturerUtil;
 use common\modules\stores\utils\StoreUtil;
 use products\views\front\InputRatingSubView;
-use products\models\ProductSpecial;
 if ($data['manufacturer'] != null)
 {
     $manufacturerRec = ManufacturerUtil::getManufacturer($data['manufacturer']);
@@ -30,9 +29,9 @@ $productImages = ProductUtil::renderImages($data, $uniqueId);
 
 $notSet                 = UsniAdaptor::t('application', '(not set)');
 $customer               = UsniAdaptor::app()->user->getUserModel();
-$productSpecialCount    = ProductSpecial::find()->where('product_id = :pid', [':pid' => $data['id']])->count();
+$productSpecialPrice    = ProductUtil::getSpecialPrice($data, UsniAdaptor::app()->user->getUserModel());
 $discountStr            = null;
-if($productSpecialCount == 0)
+if($productSpecialPrice == -1)
 {
     $discountStr    = ProductUtil::getDiscounts($data, UsniAdaptor::app()->user->getUserModel(), UsniAdaptor::app()->storeManager->getCurrentStore(), '<li>{#discount#}</li>');
 }
@@ -130,8 +129,12 @@ if($productSpecialCount == 0)
                 $displayWeightSettings = StoreUtil::getSettingValue('display_weight');
                 if ($displayWeightSettings)
                 {
-                    echo UsniAdaptor::t('products', 'Weight') . ': ';
-                    echo UsniAdaptor::app()->productWeightManager->getProductWeight($data['id']);
+                    $weight = UsniAdaptor::app()->productWeightManager->getProductWeight($data['id']);
+                    if(!empty($weight))
+                    {
+                        echo UsniAdaptor::t('products', 'Weight') . ': ';
+                        echo UsniAdaptor::app()->productWeightManager->getProductWeight($data['id']);
+                    }
                 }
                 ?>
             </li>
@@ -140,7 +143,11 @@ if($productSpecialCount == 0)
                 $displayDimensionSettings = StoreUtil::getSettingValue('display_dimensions');
                 if ($displayDimensionSettings)
                 {
-                    echo UsniAdaptor::app()->productDimensionManager->getProductDimensions($data['id']);
+                    $dimensions = UsniAdaptor::app()->productDimensionManager->getProductDimensions($data['id']);
+                    if(!empty($dimensions))
+                    {
+                        echo UsniAdaptor::app()->productDimensionManager->getProductDimensions($data['id']);
+                    }
                 }
                 ?>
             </li>
@@ -177,7 +184,7 @@ if($productSpecialCount == 0)
                     <button type="button" id="button-cart" class="btn btn-success add-cart-detail" data-productid = "<?php echo $data['id']; ?>">
                         <?php echo UsniAdaptor::t('cart', 'Add to Cart'); ?>
                     </button>
-                    <div class="hidden" id="inputquantity-error"><?php echo UsniAdaptor::t('products', 'Input quantity should be >= minimum quantity'); ?></div>
+                    <div class="hidden" id="inputquantity-error"><?php echo UsniAdaptor::t('cart', 'Input quantity should be >= minimum quantity'); ?></div>
                 </div>
             </form>
             <?php

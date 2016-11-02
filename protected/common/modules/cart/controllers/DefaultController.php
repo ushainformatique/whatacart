@@ -46,7 +46,7 @@ class DefaultController extends BaseController
         {
             if($isDetail == false)
             {
-                $this->redirect(UsniAdaptor::createUrl('products/site/detail', ['id' => $product->id]))->send();
+                $this->redirect(UsniAdaptor::createUrl('products/site/detail', ['id' => $product['id']]))->send();
             }
         }
         echo Json::encode($result);
@@ -89,19 +89,34 @@ class DefaultController extends BaseController
     {
         if(UsniAdaptor::app()->request->getIsAjax())
         {
-            $itemCode          = $_POST['item_code'];
             $cart              = ApplicationUtil::getCart();
-            $cart->itemsList[$itemCode]['qty'] = $_POST['qty'];
-            $cart->updateSession();
-            $headerSubView     = new HeaderCartSubView();
-            $headerCartContent = $headerSubView->render();
-            //$cartSubView       = new CartSubView();
-            $viewHelper        = UsniAdaptor::app()->getModule('cart')->viewHelper;
-            $cartSubView       = $viewHelper->getInstance('cartSubView');
-            $content           = $cartSubView->render();
-            return Json::encode(['content' => $content, 'headerCartContent' => $headerCartContent]);
+            $itemCode          = $_POST['item_code'];
+            $productId         = CartUtil::getProductAndOptionsByItemCode($itemCode);
+            $product           = ProductUtil::getProduct($productId);
+            if($_POST['qty'] < 1)
+            {
+                return Json::encode(['error' => UsniAdaptor::t('cart', 'Input quantity should be >= 1')]);
+            }
+            if($product['minimum_quantity'] > $_POST['qty'])
+            {
+                return Json::encode(['error' => UsniAdaptor::t('cart', 'Input quantity should be >= minimum quantity')]);
+            }
+            else
+            {
+                $cart->itemsList[$itemCode]['qty'] = $_POST['qty'];
+                //Check price for the updated quantity may be discount has applied
+                $priceExcludingTax  = ProductUtil::getFinalPrice($product, UsniAdaptor::app()->user->getUserModel(), $_POST['qty']);
+                $cart->updatePriceForProduct($product, $priceExcludingTax);
+                $cart->updateSession();
+                $headerSubView     = new HeaderCartSubView();
+                $headerCartContent = $headerSubView->render();
+                //$cartSubView       = new CartSubView();
+                $viewHelper        = UsniAdaptor::app()->getModule('cart')->viewHelper;
+                $cartSubView       = $viewHelper->getInstance('cartSubView');
+                $content           = $cartSubView->render();
+                return Json::encode(['content' => $content, 'headerCartContent' => $headerCartContent]);
+            }
         }
         return Json::encode([]);
     }
 }
-?>

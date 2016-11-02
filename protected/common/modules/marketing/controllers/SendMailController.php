@@ -15,6 +15,7 @@ use common\modules\marketing\utils\MarketingUtil;
 use usni\library\utils\FlashUtil;
 /**
  * SendMailController class file
+ * 
  * @package common\modules\marketing\controllers
  */
 class SendMailController extends UiAdminController
@@ -100,4 +101,3 @@ class SendMailController extends UiAdminController
                ];
     }
 }
-?>

@@ -35,6 +35,8 @@ use dosamigos\datetimepicker\DateTimePickerAsset;
 use dosamigos\datepicker\DatePicker;
 use common\modules\localization\modules\lengthclass\models\LengthClass;
 use common\modules\localization\modules\weightclass\models\WeightClass;
+use customer\utils\CustomerUtil;
+use usni\library\utils\ArrayUtil;
 /**
  * Product Edit View.
  *
@@ -68,7 +70,7 @@ class ProductEditView extends UiTabbedEditView
             'metakeywords'        => ['type' => 'textarea'],
             'metadescription'     => ['type' => 'textarea'],
             'status'              => UiHtml::getFormSelectFieldOptionsWithNoSearch(StatusUtil::getDropdown()),
-            'tax_class_id'        => UiHtml::getFormSelectFieldOptionsWithNoSearch(DAOUtil::getDropdownDataBasedOnModel(ProductTaxClass::className())),
+            'tax_class_id'        => UiHtml::getFormSelectFieldOptionsWithNoSearch(DAOUtil::getDropdownDataBasedOnModel(ProductTaxClass::className()), [], ['prompt' => UiHtml::getDefaultPrompt()]),
             'categories'          => UiHtml::getFormSelectFieldOptions($category->getMultiLevelSelectOptions('name', 0, '-', true, $this->shouldRenderOwnerCreatedModels()), ['closeOnSelect' => false], ['multiple' => 'multiple']),
             'tagNames'            => array('type' => UiActiveForm::INPUT_WIDGET, 'class' => SelectizeTextInput::className(), 
                                                      'loadUrl' => ['default/tags'], 
@@ -208,8 +210,14 @@ class ProductEditView extends UiTabbedEditView
      */
     protected function renderDiscounts()
     {
+        $errStr     = null;
+        $errors     = $this->model->getErrors('discounts');
+        if(!empty($errors))
+        {
+            $errStr = '<div class="alert alert-danger">' . implode('<br/>', $errors) . '</div>';
+        }
         $view       = new DiscountView(['product' => $this->model]);
-        return $view->render();
+        return $errStr . $view->render();
     }
     
     /**
@@ -218,8 +226,14 @@ class ProductEditView extends UiTabbedEditView
      */
     protected function renderSpecials()
     {
+        $errStr     = null;
+        $errors     = $this->model->getErrors('specials');
+        if(!empty($errors))
+        {
+            $errStr = '<div class="alert alert-danger">' . implode('<br/>', $errors) . '</div>';
+        }
         $view       = new SpecialView(['product' => $this->model]);
-        return $view->render();
+        return $errStr . $view->render();
     }
     
     /**
@@ -228,8 +242,14 @@ class ProductEditView extends UiTabbedEditView
      */
     protected function renderProductImages()
     {
+        $errors             = $this->model->getErrors('images');
+        $errStr     = null;
+        if(!empty($errors))
+        {
+            $errStr = '<div class="alert alert-danger">' . implode('<br/>', $errors) . '</div>';
+        }
         $view   = new ProductImagesEditView(['product' => $this->model]);
-        return $view->render();
+        return $errStr . $view->render();
     }
     
     /**
@@ -262,9 +282,20 @@ class ProductEditView extends UiTabbedEditView
     protected function renderContent()
     {
         $content = parent::renderContent();
-        $dummyImageFilePath  = UsniAdaptor::getAlias('@common/modules/catalog/modules/products/views/_productImageDummy') . '.php';
-        $dummyImage          = $this->getView()->renderPhpFile($dummyImageFilePath);
-        return $content . $dummyImage;
+        $availableCustomerGroups    = CustomerUtil::getChildCustomerGroups();
+        $items                      = ArrayUtil::map($availableCustomerGroups, 'id', 'name');
+        $dummyImageFilePath         = UsniAdaptor::getAlias('@common/modules/catalog/modules/products/views/_productImageDummy') . '.php';
+        $dummyImage                 = $this->getView()->renderPhpFile($dummyImageFilePath);
+        //Dummy discount
+        $dummyDropdown              = UiHtml::dropDownList('ProductDiscount[##rowCount##][group_id_dummy]', null, $items, ['class' => 'form-control dummy-discount']);
+        $dummyFilePath              = UsniAdaptor::getAlias('@products/views/_productDiscountDummy') . '.php';
+        $dummyDiscount              = $this->getView()->renderPhpFile($dummyFilePath, ['dropdown' => $dummyDropdown, 'model' => new ProductDiscount()]);
+        
+        //Dummy special
+        $dummySpDropdown            = UiHtml::dropDownList('ProductSpecial[##rowCount##][group_id_dummy]', null, $items, ['class' => 'form-control dummy-special']);
+        $dummySpecialFilePath       = UsniAdaptor::getAlias('@products/views/_productSpecialDummy') . '.php';
+        $dummySpecial               = $this->getView()->renderPhpFile($dummySpecialFilePath, ['dropdown' => $dummySpDropdown, 'model' => new ProductSpecial()]);
+        return $content . $dummyImage . $dummyDiscount . $dummySpecial;
     }
     
     /**

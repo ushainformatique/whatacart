@@ -76,13 +76,18 @@ class CartUtil
         $js = "$('body').on('click', '.{$updateClass}', function(e){
                     var itemCode = $(this).data('itemcode');
                     var qty = $(this).closest('tr').find('.cart-qty').val();
+                    var obj = $(this);
                     $.ajax({
                             url: '{$updateUrl}',
                             type: 'post',
                             data: 'item_code=' + itemCode + '&qty=' + qty,
                             dataType: 'json',
                             success: function(json) {
-                                if (json['content']) {
+                                if (json['error']) {
+                                    var errorContainer = obj.closest('td').find('.input-error').html(json['error']);
+                                    errorContainer.show();
+                                }
+                                else if (json['content']) {
                                     if($('#shopping-container').length)
                                     {
                                         $('#shopping-container').html(json['content']);
@@ -265,7 +270,8 @@ class CartUtil
      */
     public static function processAddToCartItem($cart, $product, $inputQty, $inputOptions = [])
     {
-        $itemQuantityInCart = $cart->getItemCountInCart($product, $inputOptions);
+        $itemCode = CartUtil::getItemCode($product['id'], $inputOptions);
+        $itemQuantityInCart = $cart->getItemCountInCart($itemCode);
         //If input quantity plus quantity in cart < min quantity
         if($itemQuantityInCart + $inputQty < $product['minimum_quantity'])
         {

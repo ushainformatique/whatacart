@@ -11,6 +11,7 @@ use customer\models\Customer;
 use common\modules\stores\utils\StoreUtil;
 /**
  * CustomerEditView class file.
+ * 
  * @package customer\views\front
  */
 class CustomerEditView  extends BaseCustomerView
@@ -29,6 +30,11 @@ class CustomerEditView  extends BaseCustomerView
         {
             $status = $this->model->status;
             $metadata['elements']['username'] = ['type' => UiActiveForm::INPUT_HIDDEN, 'value' => $this->model->username];
+            $groups = $this->model->groups;
+            if(!empty($groups))
+            {
+                unset($metadata['elements']['groups']);
+            }
         }
         $metadata['elements']['status'] = ['type' => UiActiveForm::INPUT_HIDDEN, 'value' => $status];
         return $metadata;
@@ -39,7 +45,19 @@ class CustomerEditView  extends BaseCustomerView
      */
     protected function getCustomerGroups()
     {
-        $customerGroup  = StoreUtil::getSettingValue('default_customer_group');
-        return ['type' => UiActiveForm::INPUT_HIDDEN, 'value' => $customerGroup];
+        if($this->model->scenario == 'registration')
+        {
+            $customerGroup  = StoreUtil::getSettingValue('default_customer_group');
+            return ['type' => UiActiveForm::INPUT_HIDDEN, 'value' => $customerGroup];
+        }
+        else
+        {
+            $groups = $this->model->groups;
+            if(empty($groups))
+            {
+                $customerGroup  = StoreUtil::getSettingValue('default_customer_group');
+                return ['type' => UiActiveForm::INPUT_HIDDEN, 'value' => $customerGroup];
+            }
+        }    
     }
 }

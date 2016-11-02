@@ -11,7 +11,8 @@ use usni\UsniAdaptor;
 use yii\caching\DbDependency;
 use usni\library\utils\ArrayUtil;
 /**
- * ProductDimensionManager class file.
+ * ProductDimensionManager class file. This class would covert the dimesions of the product, if in different unit than store, in unit of the store.
+ * So for example if unit of store is m and product dimesions are in cm, they would be converted in m and displayed in front end.
  * 
  * @package products\managers
  */
@@ -41,64 +42,62 @@ class ProductDimensionManager extends \yii\base\Component
     public static function getDimensions($currentStoreLengthClassName, $product, $currentStoreLengthClassId)
     {
         $dimensions = null;
+        $length     = ArrayUtil::getValue($product, 'length', 0);
+        $width      = ArrayUtil::getValue($product, 'width', 0);
+        $height     = ArrayUtil::getValue($product, 'height', 0);
+        if($length == null)
+        {
+            $length = 0;
+        }
+        if($width == null)
+        {
+            $width = 0;
+        }
+        if($height == null)
+        {
+            $height = 0;
+        }
+        if($length == 0 || $width == 0 || $height == 0)
+        {
+            return null;
+        }
         if($currentStoreLengthClassId !== $product['length_class'])
         {
             switch($currentStoreLengthClassName)
             {
                 case 'Meter':
                     $dimensions = self::getCalculatedDimension('Meter', $product);
-                    $dimensions = UsniAdaptor::t('products', 'Dimensions'). '(m): ' . $dimensions;
                     break;
                 case 'Centimeter':
                     $dimensions = self::getCalculatedDimension('Centimeter', $product);
-                    $dimensions = UsniAdaptor::t('products', 'Dimensions'). '(cm): ' . $dimensions;
                     break;
                 case 'Inch':
                     $dimensions = self::getCalculatedDimension('Inch', $product);
-                    $inchLabel  = UsniAdaptor::t('lengthclass', 'inch');
-                    $dimensions = UsniAdaptor::t('products', 'Dimensions'). '(' . $inchLabel . '): ' . $dimensions;
                     break;
                 case 'Millimeter':
                     $dimensions = self::getCalculatedDimension('Millimeter', $product);
-                    $dimensions = UsniAdaptor::t('products', 'Dimensions'). '(mm) ' . $dimensions;
                     break;
             }
         }
         else
         {
-            
-            $length     = ArrayUtil::getValue($product, 'length', 0);
-            $width      = ArrayUtil::getValue($product, 'width', 0);
-            $height     = ArrayUtil::getValue($product, 'height', 0);
-            if($length == null)
-            {
-                $length = 0;
-            }
-            if($width == null)
-            {
-                $width = 0;
-            }
-            if($height == null)
-            {
-                $height = 0;
-            }
             $dimensions = "$length x $width x $height";
-            switch($currentStoreLengthClassName)
-             {
-                 case 'Meter':
-                     $dimensions = UsniAdaptor::t('products', 'Dimensions'). '(m): ' . $dimensions;
-                     break;
-                 case 'Centimeter':
-                     $dimensions = UsniAdaptor::t('products', 'Dimensions'). '(cm): ' . $dimensions;
-                     break;
-                 case 'Inch':
-                     $inchLabel  = UsniAdaptor::t('lengthclass', 'inch');
-                     $dimensions = UsniAdaptor::t('products', 'Dimensions'). '(' . $inchLabel . '): ' . $dimensions;
-                     break;
-                 case 'Millimeter':
-                     $dimensions = UsniAdaptor::t('products', 'Dimensions'). '(mm): ' . $dimensions;
-                     break;
-             }
+        }
+        switch($currentStoreLengthClassName)
+        {
+            case 'Meter':
+                $dimensions = UsniAdaptor::t('products', 'Dimensions'). '(m): ' . $dimensions;
+                break;
+            case 'Centimeter':
+                $dimensions = UsniAdaptor::t('products', 'Dimensions'). '(cm): ' . $dimensions;
+                break;
+            case 'Inch':
+                $inchLabel  = UsniAdaptor::t('lengthclass', 'inch');
+                $dimensions = UsniAdaptor::t('products', 'Dimensions'). '(' . $inchLabel . '): ' . $dimensions;
+                break;
+            case 'Millimeter':
+                $dimensions = UsniAdaptor::t('products', 'Dimensions'). '(mm): ' . $dimensions;
+                break;
         }
         return $dimensions;
     }

@@ -186,6 +186,7 @@ class SearchResultsListView extends UiListView
         {
             $query = $query->andWhere('(tpt.name like :keyword OR alias like :keyword OR description like :keyword)', [':keyword' => '%' . $keyword . '%']);
         }
+        $query->groupBy('tp.id');
         return $query;
     }
     

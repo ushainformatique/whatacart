@@ -6,6 +6,8 @@
 namespace common\modules\localization\modules\language\views;
 
 use usni\UsniAdaptor;
+use usni\library\components\LanguageManager;
+use common\modules\stores\utils\StoreUtil;
 /**
  * LanguageSelectionView class file.
  * 
@@ -35,5 +37,23 @@ class LanguageSelectionView extends \usni\library\views\LanguageSelectionView
     protected function getHeaderLinkOptions()
     {
         return array('data-toggle' => 'dropdown', 'class' => 'dropdown-toggle');
+    }
+    
+    /**
+     * @inheritdoc
+     */
+    protected function getData()
+    {
+        $data       = LanguageManager::getList();
+        $lanData    = [];
+        foreach($data as $code => $value)
+        {
+            $count = StoreUtil::getStoreCountByLanguage($code);
+            if($count > 0)
+            {
+                $lanData[$code] = $value;
+            }
+        }
+        return $lanData;
     }
 }

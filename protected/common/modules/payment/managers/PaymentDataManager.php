@@ -13,7 +13,7 @@ use common\modules\localization\modules\orderstatus\utils\OrderStatusUtil;
 use common\modules\order\models\Order;
 use common\modules\stores\managers\StoresDataManager;
 use common\modules\extension\models\Extension;
-use usni\library\utils\ArrayUtil;
+use usni\library\utils\FileUtil;
 /**
  * Loads default data related to payment.
  *
@@ -33,13 +33,14 @@ class PaymentDataManager extends UiDataManager
         {
             return false;
         }
-        $paymentsFile   = UsniAdaptor::getAlias('@common/modules/payment/managers/payments.php');
-        $paymentMethods = require $paymentsFile;
-        foreach($paymentMethods as $code => $data)
+        $path       = UsniAdaptor::getAlias('@common/modules/payment/config');
+        $subDirs    = glob($path . '/*', GLOB_ONLYDIR);
+        foreach($subDirs as $subDir)
         {
-            $insertData = ArrayUtil::merge($data, ['code' => $code, 'category' => 'payment']);
-            $extension = new Extension(['scenario' => 'create']);
-            $extension->setAttributes($insertData);
+            $subPath    = FileUtil::normalizePath($subDir);
+            $data       = require($subPath . '/config.php');
+            $extension  = new Extension(['scenario' => 'create']);
+            $extension->setAttributes($data);
             $extension->save();
         }
         PaypalDataManager::loadDefaultData();

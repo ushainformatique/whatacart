@@ -6,7 +6,6 @@
 namespace productCategories\traits;
 
 use usni\UsniAdaptor;
-use yii\caching\DbDependency;
 use usni\library\components\UiHtml;
 /**
  * Contains utility methods related to product category.

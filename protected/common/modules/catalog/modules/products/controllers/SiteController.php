@@ -83,7 +83,6 @@ class SiteController extends BaseController
         $content      = $this->renderInnerContent([$productView]);
         $this->setMetaKeywords($product['metakeywords']);
         $this->setMetaDescription($product['metadescription']);
-        FlashUtil::setMessage('reviewFormSubmit', UsniAdaptor::t('productflash', 'Thank you for your review. It has been submitted to the admin for approval.'));
         return $this->render(FrontUtil::getDefaultInnerLayout(), ['content' => $content]);
     }
 

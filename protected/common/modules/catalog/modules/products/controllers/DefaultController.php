@@ -13,6 +13,8 @@ use usni\UsniAdaptor;
 use products\utils\ProductUtil;
 use yii\web\Response;
 use usni\library\managers\UploadInstanceManager;
+use products\utils\DiscountUtil;
+use products\utils\SpecialUtil;
 /**
  * Default controller for products module.
  * 
@@ -41,7 +43,8 @@ class DefaultController extends BaseController
      */
     protected function beforeModelSave($model)
     {
-        $required = false;
+        $isValid    = true;
+        $required   = false;
         if($model->scenario == 'create')
         {
             $required = true;
@@ -59,29 +62,13 @@ class DefaultController extends BaseController
         $result = $uploadInstanceManager->processUploadInstance();
         if($result === false)
         {
-            return false;
+            $isValid = false;
         }
         //For discount
         if (isset($_POST['ProductDiscount']) && is_array($_POST['ProductDiscount']))
         {
-            $model->discounts   = $_POST['ProductDiscount'];
-            
-            //Check if discount price is greater then base price.
-            $discountPrices     = $model->discounts['price'];
-            $isDiscountPriceGreaterThenBasePrice = false;
-            foreach ($discountPrices as $discountPrice)
-            {
-                if($discountPrice > $model->price)
-                {
-                    $isDiscountPriceGreaterThenBasePrice = true;
-                    break;
-                }
-            }
-            if($isDiscountPriceGreaterThenBasePrice == true)
-            {
-                $model->addError('discounts', UsniAdaptor::t('products', 'Discounted price should be less then base price'));
-                return false;
-            }
+            $productDiscounts   = $model->discounts = $_POST['ProductDiscount'];
+            $isValid            = DiscountUtil::validateDiscounts($productDiscounts, $model);
         }
         //For related product
         if (isset($_POST['Product']['relatedProducts']) && is_array($_POST['Product']['relatedProducts']))
@@ -92,7 +79,8 @@ class DefaultController extends BaseController
         //For special
         if (isset($_POST['ProductSpecial']) && is_array($_POST['ProductSpecial']))
         {
-            $model->specials = $_POST['ProductSpecial'];
+            $productSpecials   = $model->specials = $_POST['ProductSpecial'];
+            $isValid           = SpecialUtil::validateSpecials($productSpecials, $model);
         }
         //For product images
         if (isset($_POST['ProductImage']) && is_array($_POST['ProductImage']))
@@ -102,9 +90,9 @@ class DefaultController extends BaseController
         $imageErrors    = ProductUtil::validateImageUploads($model);
         if(!empty($imageErrors))
         {
-            return false;
+            $isValid = false;
         }
-        return true;
+        return $isValid;
     }
 
     /**

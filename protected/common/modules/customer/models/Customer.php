@@ -55,9 +55,10 @@ class Customer extends User
         else
         {
             $rules = [
-                        [['username', 'groups'],            'required',  'except' => 'bulkedit'],
-                        ['username',                        'trim'],
-                        ['username',                        'unique', 'targetClass' => static::getTargetClassForUniqueUsername(), 'on' => ['create', 'registration']],
+                        [['username'],          'required',  'except' => 'bulkedit'],
+                        [['groups'],            'required',  'except' => ['bulkedit', 'editprofile']],
+                        ['username',            'trim'],
+                        ['username',            'unique', 'targetClass' => static::getTargetClassForUniqueUsername(), 'on' => ['create', 'registration']],
                         ['username', 'unique', 'targetClass' => static::getTargetClassForUniqueUsername(), 'filter' => ['!=', 'id', $this->id], 'on' => 'update'],
                         ['username',                        'match', 'pattern' => '/^[A-Z0-9._]+$/i'],
                         //@see http://www.zorched.net/2009/05/08/password-strength-validation-with-regular-expressions/

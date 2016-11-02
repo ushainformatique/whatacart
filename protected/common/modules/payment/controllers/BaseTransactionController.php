@@ -40,11 +40,14 @@ abstract class BaseTransactionController extends UiAdminController
         if($orderPaymentTransaction->load($postData))
         {
             $transaction = UsniAdaptor::app()->db->beginTransaction();
-            PaymentUtil::validateAndSaveOrderPaymentTransaction($orderPaymentTransaction, $this->getType());
-            $transaction->commit();
-            $orderPaymentTransaction->transaction_id    = null;
-            $orderPaymentTransaction->transaction_fee   = 0;
-            FlashUtil::setMessage('transactionSuccess', UsniAdaptor::t('order', 'The transaction is saved successfully'));
+            $isValid = PaymentUtil::validateAndSaveOrderPaymentTransaction($orderPaymentTransaction, $this->getType());
+            if($isValid)
+            {
+                $transaction->commit();
+                $orderPaymentTransaction->transaction_id    = null;
+                $orderPaymentTransaction->transaction_fee   = 0;
+                FlashUtil::setMessage('transactionSuccess', UsniAdaptor::t('order', 'The transaction is saved successfully'));
+            }
         }
         $orderPaymentTransaction->totalAmount       = $order['total_including_tax'] + $order['shipping_fee'];
         $orderPaymentTransaction->alreadyPaidAmount = OrderUtil::getAlreadyPaidAmountForOrder($order['id']);

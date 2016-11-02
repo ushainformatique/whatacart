@@ -44,6 +44,19 @@ class DefaultController extends UiAdminController
     /**
      * @inheritdoc
      */
+    public function actionUpdate($id)
+    {
+        $model = DataCategory::findOne($id);
+        if($model['id'] == DataCategory::ROOT_CATEGORY_ID)
+        {
+            throw new \yii\web\ForbiddenHttpException(\Yii::t('yii','Root category could not be updated.'));
+        }
+        return parent::actionUpdate($id);
+    }
+    
+    /**
+     * @inheritdoc
+     */
     public function pageTitles()
     {
         return [
