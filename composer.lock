@@ -3483,7 +3483,7 @@
         },
         {
             "name": "ushainformatique/usniframework",
-            "version": "dev-default",
+            "version": "1.0.0",
             "source": {
                 "type": "hg",
                 "url": "https://bitbucket.org/ushainformatique/usniframeworkyii2",
