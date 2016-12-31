@@ -45,6 +45,7 @@ class SearchForm extends UiFormModel
     {
         return [
                     [['keyword', 'categoryId', 'manufacturerId', 'tag'], 'safe'],
+                    [['keyword', 'categoryId', 'manufacturerId', 'tag'], 'filter', 'filter' => 'usni\library\components\UiHtml::encode']
                ];
     }
     
@@ -61,4 +62,3 @@ class SearchForm extends UiFormModel
                ];
     }
 }
-?>

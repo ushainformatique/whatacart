@@ -18,7 +18,6 @@ use frontend\components\Breadcrumb;
 use usni\library\utils\ErrorUtil;
 use frontend\modules\site\views\ErrorView;
 use frontend\modules\site\views\MaintenanceView;
-use usni\library\utils\ConfigurationUtil;
 /**
  * DefaultController class file
  * 
@@ -68,9 +67,16 @@ class DefaultController extends BaseController
         if($queryParams != null)
         {
             $model->attributes = $queryParams;
-            $searchView     = new SearchResultsView(['model' => $model]);
-            $content        = $this->renderInnerContent([$searchView]);
-            return $this->render(FrontUtil::getDefaultInnerLayout(), ['content' => $content]);
+            if($model->validate())
+            {
+                $searchView     = new SearchResultsView(['model' => $model]);
+                $content        = $this->renderInnerContent([$searchView]);
+                return $this->render(FrontUtil::getDefaultInnerLayout(), ['content' => $content]);
+            }
+            else
+            {
+                throw new \yii\base\InvalidParamException(UsniAdaptor::t('application', 'Invalid search param'));
+            }
         }
     }
     
