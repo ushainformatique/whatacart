@@ -10,7 +10,6 @@ $config  = ArrayHelper::merge(
                                     'id'                    => 'tgh-console',
                                     'basePath'              => dirname(__DIR__),
                                     'controllerNamespace'   => 'console\controllers',
-                                    'controllerMap'         => ['message' => 'console\controllers\MessageController'],
                                     'components'        => array(
                                         'user'          => ['loginUrl' => ['/users/default/login'], 'class' => 'usni\library\components\UiConsoleUser'],
                                         'languageManager'   => ['class' => 'console\components\LanguageManager',
