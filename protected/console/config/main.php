@@ -7,7 +7,7 @@ use yii\helpers\ArrayHelper;
 
 $config  = ArrayHelper::merge(
                     require(USNI_PATH . '/library/config/common.php'), array(
-                                    'id'                    => 'tgh-console',
+                                    'id'                    => 'whatacart-console',
                                     'basePath'              => dirname(__DIR__),
                                     'controllerNamespace'   => 'console\controllers',
                                     'components'        => array(
