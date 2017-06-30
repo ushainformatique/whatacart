@@ -6,9 +6,8 @@
 namespace products\models;
 
 use usni\UsniAdaptor;
-use usni\library\components\TranslatableActiveRecord;
+use usni\library\db\TranslatableActiveRecord;
 use usni\library\utils\FileUploadUtil;
-use common\modules\stores\utils\StoreUtil;
 /**
  * ProductImage active record.
  * 
@@ -96,8 +95,8 @@ class ProductImage extends TranslatableActiveRecord
     {
         if(parent::beforeDelete())
         {
-            $productThumbImageWidth     = StoreUtil::getImageSetting('product_list_image_width', 150);
-            $productThumbImageHeight    = StoreUtil::getImageSetting('product_list_image_height', 150);
+            $productThumbImageWidth     = UsniAdaptor::app()->storeManager->getImageSetting('product_list_image_width', 150);
+            $productThumbImageHeight    = UsniAdaptor::app()->storeManager->getImageSetting('product_list_image_height', 150);
             FileUploadUtil::deleteImage($this, 'image', $productThumbImageWidth, $productThumbImageHeight);
             return true;
         }

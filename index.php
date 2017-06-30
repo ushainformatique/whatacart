@@ -20,12 +20,12 @@ else
 defined('YII_ENV') or define('YII_ENV', $environment);
 defined('YII_DEBUG') or define('YII_DEBUG', $debug);
 defined('VENDOR_PATH') or define('VENDOR_PATH', $vendorPath . DIRECTORY_SEPARATOR . 'vendor');
-defined('USNI_PATH') or define('USNI_PATH', VENDOR_PATH . '/ushainformatique/usniframework');
-
+defined('USNI_PATH') or define('USNI_PATH', VENDOR_PATH . '/ushainformatique/yiichimp');
 
 require(VENDOR_PATH . '/autoload.php');
 require(VENDOR_PATH . '/yiisoft/yii2/Yii.php');
 
+require(USNI_PATH . '/library/config/bootstrap.php');
 require(APPLICATION_PATH . '/protected/common/config/bootstrap.php');
 require(APPLICATION_PATH . '/protected/frontend/config/bootstrap.php');
 
@@ -43,5 +43,5 @@ if(file_exists(APPLICATION_PATH . '/protected/frontend/config/main-extended.php'
 {
     $config = yii\helpers\ArrayHelper::merge($config, require(APPLICATION_PATH . '/protected/frontend/config/main-extended.php'));
 }
-$application = new frontend\components\WebApplication($config);
+$application = new frontend\web\Application($config);
 $application->run();

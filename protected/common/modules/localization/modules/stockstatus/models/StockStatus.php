@@ -5,10 +5,11 @@
  */
 namespace common\modules\localization\modules\stockstatus\models;
 
-use usni\library\components\TranslatableActiveRecord;
+use usni\library\db\TranslatableActiveRecord;
 use usni\UsniAdaptor;
-use common\modules\localization\modules\stockstatus\utils\StockStatusUtil;
 use common\modules\localization\modules\stockstatus\models\StockStatusTranslated;
+use yii\db\Exception;
+use products\dao\ProductDAO;
 /**
  * StockStatus class file
  * 
@@ -73,10 +74,25 @@ class StockStatus extends TranslatableActiveRecord
      */
     public function beforeDelete()
     {
-        if(parent::beforeDelete())
+        $isAllowedToDelete = $this->checkIfAllowedToDelete();
+        if($isAllowedToDelete == false)
         {
-            return StockStatusUtil::checkIfAllowedToDelete($this);
-        }        
-        return false;
+            throw new Exception('Products are associated to it.');
+        }
+        return parent::beforeDelete();
+    }
+    
+    /**
+     * Check if allowed to delete
+     * @return boolean
+     */
+    public function checkIfAllowedToDelete()
+    {
+        $productsCount = ProductDAO::getCountByAttribute('stock_status', $this->id);
+        if($productsCount > 0)
+        {
+            throw new Exception('this model is associated to products.');
+        }
+        return true;
     }
 }

@@ -5,129 +5,104 @@
  */
 namespace productCategories\controllers;
 
-use common\modules\catalog\controllers\BaseController;
 use productCategories\models\ProductCategory;
-use yii\db\ActiveRecord;
-use usni\library\utils\FileUploadUtil;
-use usni\library\utils\TranslationUtil;
-use usni\UsniAdaptor;
-use productCategories\utils\ProductCategoryUtil;
-use usni\library\managers\UploadInstanceManager;
+use yii\filters\AccessControl;
+use usni\library\web\actions\CreateAction;
+use usni\library\web\actions\UpdateAction;
+use productCategories\dto\FormDTO;
+use productCategories\business\Manager;
+use usni\library\web\actions\IndexAction;
+use productCategories\web\actions\DeleteAction;
+use usni\library\web\actions\BulkEditAction;
+use usni\library\web\actions\BulkDeleteAction;
+use usni\library\web\actions\ViewAction;
 /**
  * DefaultController class file
  *
  * @package productCategories\controllers
  */
-class DefaultController extends BaseController
+class DefaultController extends \usni\library\web\Controller
 {
     /**
-     * @inheritdoc
+     * inheritdoc
      */
-    protected function beforeAssigningPostData($model)
-    {
-        assert($model instanceof ActiveRecord);
-        $model->savedImage = $model->image;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function beforeModelSave($model)
-    {
-        $config = [
-                        'model'             => $model,
-                        'attribute'         => 'image',
-                        'uploadInstanceAttribute' => 'uploadInstance',
-                        'type'              => 'image',
-                        'savedAttribute'    => 'savedImage',
-                        'fileMissingError'  => UsniAdaptor::t('application', 'Please upload image'),
-                        'required'          => true
-                  ];
-        $uploadInstanceManager = new UploadInstanceManager($config);
-        $result = $uploadInstanceManager->processUploadInstance();
-        if($result === false)
-        {
-            return false;
-        }
-        return true;
-    }
-    
-    /**
-     * @inheritdoc
-     */
-    public function afterModelSave($model)
-    {
-        if($this->action->id == 'create')
-        {
-            TranslationUtil::saveTranslatedModels($model);
-        }
-        if($model->image != '')
-        {
-            $config = [
-                        'model'             => $model, 
-                        'attribute'         => 'image', 
-                        'uploadInstance'    => $model->uploadInstance,
-                        'savedFile'         => $model->savedImage
-                      ];
-            FileUploadUtil::save('image', $config);
-        }
-        return true;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function resolveModelClassName()
-    {
-        return ProductCategory::className();
-    }
-    
-    /**
-     * @inheritdoc
-     */
-    public function actionView($id)
-    {
-        if(ProductCategoryUtil::checkIfProductCategoryAllowedToPerformAction($id) == false)
-        {
-            throw new \yii\web\NotFoundHttpException();
-        }
-        return parent::actionView($id);
-    }
-    
-    /**
-     * @inheritdoc
-     */
-    public function actionUpdate($id)
-    {
-        if(ProductCategoryUtil::checkIfProductCategoryAllowedToPerformAction($id) == false)
-        {
-            throw new \yii\web\NotFoundHttpException();
-        }
-        return parent::actionUpdate($id);
-    }
-    
-    /**
-     * @inheritdoc
-     */
-    public function actionDelete($id)
-    {
-        if(ProductCategoryUtil::checkIfProductCategoryAllowedToPerformAction($id) == false)
-        {
-            throw new \yii\web\NotFoundHttpException();
-        }
-        return parent::actionDelete($id);
-    }
-    
-    /**
-     * @inheritdoc
-     */
-    public function pageTitles()
+    public function behaviors()
     {
         return [
-                    'create'         => UsniAdaptor::t('application','Create') . ' ' . ProductCategory::getLabel(1),
-                    'update'         => UsniAdaptor::t('application','Update') . ' ' . ProductCategory::getLabel(1),
-                    'view'           => UsniAdaptor::t('application','View') . ' ' . ProductCategory::getLabel(1),
-                    'manage'         => UsniAdaptor::t('application','Manage') . ' ' . ProductCategory::getLabel(2)
-               ];
+            'access' => [
+                'class' => AccessControl::className(),
+                'rules' => [
+                    [
+                        'allow' => true,
+                        'actions' => ['index'],
+                        'roles' => ['productcategory.manage'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['view'],
+                        'roles' => ['productcategory.view'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['create'],
+                        'roles' => ['productcategory.create'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['update', 'bulk-edit'],
+                        'roles' => ['productcategory.update'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['delete', 'bulk-delete'],
+                        'roles' => ['productcategory.delete'],
+                    ]
+                ],
+            ],
+        ];
+    }
+    
+    /**
+     * inheritdoc
+     */
+    public function actions()
+    {
+        $managerConfig = ['class'    => Manager::className()];
+        return [
+            'create' => ['class' => CreateAction::className(),
+                         'modelClass' => ProductCategory::className(),
+                         'updateUrl'  => 'update',
+                         'managerConfig' => $managerConfig,
+                         'formDTOClass' => FormDTO::className(),
+                         'viewFile' => '/create'
+                        ],
+            'update' => ['class' => UpdateAction::className(),
+                         'modelClass' => ProductCategory::className(),
+                         'managerConfig' => $managerConfig,
+                         'formDTOClass' => FormDTO::className(),
+                         'viewFile' => '/update'
+                        ],
+            'index'  => ['class' => IndexAction::className(),
+                         'modelClass' => ProductCategory::className(),
+                         'managerConfig' => $managerConfig,
+                         'viewFile' => '/index'
+                        ],
+            'view'   => ['class' => ViewAction::className(),
+                         'modelClass' => ProductCategory::className(),
+                         'managerConfig' => $managerConfig,
+                         'viewFile' => '/view'
+                        ],
+            'delete'   => ['class' => DeleteAction::className(),
+                            'modelClass' => ProductCategory::className(),
+                            'redirectUrl'=> 'index',
+                            'permission' => 'productcategory.deleteother'
+                          ],
+            'bulk-edit' => ['class' => BulkEditAction::className(),
+                            'modelClass' => ProductCategory::className()
+                        ],
+            'bulk-delete' => ['class' => BulkDeleteAction::className(),
+                              'modelClass' => ProductCategory::className()
+                        ]
+        ];
     }
 }

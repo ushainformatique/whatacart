@@ -6,12 +6,13 @@
 namespace productCategories\controllers;
 
 use frontend\controllers\BaseController;
-use productCategories\views\front\ProductCategoryView;
-use frontend\utils\FrontUtil;
-use productCategories\models\ProductCategory;
-use frontend\components\Breadcrumb;
+use productCategories\dto\ProductCategoryListViewDTO;
+use productCategories\business\SiteManager;
+use usni\UsniAdaptor;
+use yii\base\InvalidParamException;
 /**
- * SiteController class file
+ * SiteController class file.
+ * 
  * @package productCategories\controllers
  */
 class SiteController extends BaseController
@@ -23,13 +24,33 @@ class SiteController extends BaseController
      */
     public function actionView($id)
     {
-        $productCat         = ProductCategory::findOne($id);
-        $breadcrumbView     = new Breadcrumb(['page' => $productCat->name]);
-        $this->getView()->params['breadcrumbs'] = $breadcrumbView->getBreadcrumbLinks();
-        $productCategoryView     = new ProductCategoryView($productCat);
-        $this->setMetaKeywords($productCat->metakeywords);
-        $this->setMetaDescription($productCat->metadescription);
-        $content                 = $this->renderInnerContent([$productCategoryView]);
-        return $this->render(FrontUtil::getDefaultInnerLayout(), ['content' => $content, 'title' => $productCat->name]);
+        $isValid  = SiteManager::getInstance()->isValidCategory($id);
+        if($isValid == false)
+        {
+            throw new InvalidParamException(UsniAdaptor::t('productCategories', "Invalid product category"));
+        }
+        $listViewDTO    = new ProductCategoryListViewDTO();
+        $listViewDTO->setId($id);
+        $listViewDTO->setSortingOption(UsniAdaptor::app()->request->get('sort'));
+        $listViewDTO->setPageSize(UsniAdaptor::app()->request->get('showItemsPerPage'));
+        $dataCategoryId = UsniAdaptor::app()->storeManager->selectedStore['data_category_id'];
+        $listViewDTO->setDataCategoryId($dataCategoryId);
+        SiteManager::getInstance()->processView($listViewDTO);
+        $productCategory = $listViewDTO->getProductCategory();
+        if($productCategory['metakeywords'] != null)
+        {
+            $this->getView()->registerMetaTag([
+                'name' => 'keywords',
+                'content' => $productCategory['metakeywords']
+            ]);
+        }
+        if($productCategory['metadescription'] != null)
+        {
+            $this->getView()->registerMetaTag([
+                'name' => 'description',
+                'content' => $productCategory['metadescription']
+            ]);
+        }
+        return $this->render('/front/view', ['listViewDTO' => $listViewDTO]);
     }
 }

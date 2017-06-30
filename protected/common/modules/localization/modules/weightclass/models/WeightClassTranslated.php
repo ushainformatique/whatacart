@@ -5,12 +5,13 @@
  */
 namespace common\modules\localization\modules\weightclass\models;
     
-use usni\library\components\UiSecuredActiveRecord;
+use usni\library\db\ActiveRecord;
 /**
- * WeightClassTranslated class file
+ * WeightClassTranslated class file.
+ * 
  * @package common\modules\localization\modules\weightclass\models
  */
-class WeightClassTranslated extends UiSecuredActiveRecord
+class WeightClassTranslated extends ActiveRecord
 {
     /**
      * @inheritdoc
@@ -20,4 +21,3 @@ class WeightClassTranslated extends UiSecuredActiveRecord
         return $this->hasOne(WeightClass::className(), ['id' => 'owner_id']);
     }
 }
-?>

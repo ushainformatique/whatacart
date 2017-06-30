@@ -1,12 +1,13 @@
 <?php 
 namespace common\modules\order\models;
     
-use usni\library\components\UiSecuredActiveRecord;
+use usni\library\db\ActiveRecord;
 /**
  * InvoiceTranslated class file
+ * 
  * @package common\modules\order\models
  */
-class InvoiceTranslated extends UiSecuredActiveRecord
+class InvoiceTranslated extends ActiveRecord
 {
     /**
      * @inheritdoc

@@ -6,88 +6,106 @@
 namespace newsletter\controllers;
 
 use newsletter\models\Newsletter;
-use usni\library\components\UiAdminController;
 use usni\UsniAdaptor;
-use newsletter\views\NewsletterEditView;
-use newsletter\utils\NewsletterUtil;
-use common\modules\stores\utils\StoreUtil;
+use usni\library\utils\FlashUtil;
+use yii\filters\AccessControl;
+use newsletter\dto\FormDTO;
+use usni\library\web\actions\CreateAction;
+use usni\library\web\actions\IndexAction;
+use newsletter\business\Manager;
+use usni\library\web\actions\ViewAction;
+use usni\library\web\actions\DeleteAction;
+use usni\library\web\actions\UpdateAction;
 /**
  * DefaultController class file
  * 
  * @package newsletter\controllers
  */
-class DefaultController extends UiAdminController
+class DefaultController extends \usni\library\web\Controller
 {
     /**
-     * @inheritdoc
+     * inheritdoc
      */
-    protected function resolveModelClassName()
-    {
-        return Newsletter::className();
-    }
-    
-    /**
-     * @inheritdoc
-     */
-    public function actionCreate()
-    {
-        $model  = new Newsletter(['scenario' => 'send']);
-        if(isset($_POST['Newsletter']))
-        {
-            $model->attributes = $_POST['Newsletter'];
-            if($model->validate() && $model->save())
-            {
-                $this->afterModelSave($model);
-                return $this->redirect(UsniAdaptor::createUrl('marketing/newsletter/default/manage'));
-            }
-        }
-        $breadcrumbs      = [
-                                [
-                                    'label' => UsniAdaptor::t('application', 'Manage') . ' ' . Newsletter::getLabel(2),
-                                    'url'   => UsniAdaptor::createUrl('marketing/newsletter/default/manage')
-                                ],
-                                [
-                                    'label' => UsniAdaptor::t('newsletter', 'Send Newsletter')
-                                ]
-                            ];
-        $this->getView()->params['breadcrumbs']  = $breadcrumbs;
-        $newsletterView     = NewsletterEditView::className();
-        $view               = new $newsletterView($model);
-        $content            = $this->renderColumnContent([$view]);
-        return $this->render($this->getDefaultLayout(), ['content' => $content]);
-    }
-    
-    /**
-     * @inheritdoc
-     */
-    protected function afterModelSave($model)
-    {
-        $user       = UsniAdaptor::app()->user->getUserModel();
-        $storeOwner = StoreUtil::getStoreOwner($model->store_id);
-        //Notifications for all all newsletter subscribers.
-        if($model->to == Newsletter::ALL_SUBSCRIBERS)
-        {
-            $toAddressArray = NewsletterUtil::getNewsletterNotificationEmails(Newsletter::ALL_SUBSCRIBERS);
-            NewsletterUtil::processNewsletterNotifications($storeOwner, $toAddressArray, $model);
-        }
-        //Notification for all customers except guest.
-        if($model->to == Newsletter::ALL_CUSTOMERS)
-        {
-            $toAddressArray = NewsletterUtil::getNewsletterNotificationEmails(Newsletter::ALL_CUSTOMERS);
-            NewsletterUtil::processNewsletterNotifications($storeOwner, $toAddressArray, $model);
-        }
-        return true;
-    }
-    
-    /**
-     * @inheritdoc
-     */
-    public function pageTitles()
+    public function behaviors()
     {
         return [
-                    'create'         => UsniAdaptor::t('application','Create') . ' ' . Newsletter::getLabel(1),
-                    'view'           => UsniAdaptor::t('application','View') . ' ' . Newsletter::getLabel(1),
-                    'manage'         => UsniAdaptor::t('application','Manage') . ' ' . Newsletter::getLabel(2)
-               ];
+            'access' => [
+                'class' => AccessControl::className(),
+                'rules' => [
+                    [
+                        'allow' => true,
+                        'actions' => ['index', 'send'],
+                        'roles' => ['newsletter.manage'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['view'],
+                        'roles' => ['newsletter.view'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['create'],
+                        'roles' => ['newsletter.create'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['delete'],
+                        'roles' => ['newsletter.delete'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['update'],
+                        'roles' => ['newsletter.update'],
+                    ],
+                ],
+            ],
+        ];
+    }
+    
+    /**
+     * inheritdoc
+     */
+    public function actions()
+    {
+        return [
+            'create' => ['class' => CreateAction::className(),
+                         'modelClass' => Newsletter::className(),
+                         'updateUrl' => '/marketing/newsletter/default/update',
+                         'formDTOClass' => FormDTO::className(),
+                         'viewFile' => '/create'
+                        ],
+            'update' => ['class' => UpdateAction::className(),
+                         'modelClass' => Newsletter::className(),
+                         'formDTOClass' => FormDTO::className(),
+                         'viewFile' => '/update'
+                        ],
+            'index'  => ['class' => IndexAction::className(),
+                         'modelClass' => Newsletter::className(),
+                         'viewFile' => '/index'
+                        ],
+            'view'   => ['class' => ViewAction::className(),
+                         'modelClass' => Newsletter::className(),
+                         'viewFile' => '/view'
+                        ],
+            'delete'   => ['class' => DeleteAction::className(),
+                           'modelClass' => Newsletter::className(),
+                           'redirectUrl'=> 'index',
+                           'permission' => 'newsletter.deleteother'
+                        ],
+        ];
+    }
+    
+    /**
+     * Send newsletter  mails.
+     * @return string
+     */
+    public function actionSend()
+    {
+        if(isset($_GET['selectedIds']))
+        {
+            Manager::getInstance()->processSend($_GET['selectedIds']);
+            FlashUtil::setMessage('success', UsniAdaptor::t('newsletterflash', 'Newsletter has been sent successfully.'));
+            return $this->redirect(UsniAdaptor::createUrl('/marketing/newsletter/default/index'));
+        }
     }
 }

@@ -5,12 +5,13 @@
  */
 namespace common\modules\localization\modules\city\models;
     
-use usni\library\components\UiSecuredActiveRecord;
+use usni\library\db\ActiveRecord;
 /**
- * CityTranslated class file
+ * CityTranslated class file.
+ * 
  * @package common\modules\localization\modules\city\models
  */
-class CityTranslated extends UiSecuredActiveRecord
+class CityTranslated extends ActiveRecord
 {
     /**
      * @inheritdoc
@@ -20,4 +21,3 @@ class CityTranslated extends UiSecuredActiveRecord
         return $this->hasOne(City::className(), ['id' => 'owner_id']);
     }
 }
-?>

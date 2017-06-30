@@ -6,26 +6,71 @@
 namespace products\controllers;
 
 use products\models\ProductReview;
-use common\modules\catalog\controllers\BaseController;
-use products\utils\ProductUtil;
 use usni\UsniAdaptor;
-use usni\library\modules\auth\managers\AuthManager;
-use products\views\ProductReviewTrashGridView;
-use common\modules\catalog\utils\CatalogPermissionUtil;
-use usni\library\utils\ArrayUtil;
+use usni\library\web\actions\IndexAction;
+use yii\filters\AccessControl;
+use products\dto\ProductReviewGridViewDTO;
+use products\business\ProductReviewManager;
+use usni\library\web\actions\BulkDeleteAction;
 /**
  * Review controller for products.
  * 
  * @package products\controllers
  */
-class ReviewController extends BaseController
+class ReviewController extends \usni\library\web\Controller
 {
     /**
-     * @inheritdoc
+     * inheritdoc
      */
-    protected function resolveModelClassName()
+    public function behaviors()
     {
-        return ProductReview::className();
+        return [
+            'access' => [
+                'class' => AccessControl::className(),
+                'rules' => [
+                    [
+                        'allow' => true,
+                        'actions' => ['index'],
+                        'roles' => ['productreview.manage'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['approve', 'unapprove', 'bulk-approve', 'bulk-unapprove'],
+                        'roles' => ['productreview.approve'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['spam', 'remove-spam'],
+                        'roles' => ['productreview.spam'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['delete', 'bulk-delete', 'delete-from-grid', 'delete-from-trash', 'trash-bulk-delete', 'trash', 'undo'],
+                        'roles' => ['productreview.delete'],
+                    ]
+                ],
+            ],
+        ];
+    }
+    
+    /**
+     * inheritdoc
+     */
+    public function actions()
+    {
+        $managerConfig = ['class'     => ProductReviewManager::className()];
+        return [
+            'index'  => ['class' => IndexAction::className(),
+                         'modelClass' => ProductReview::className(),
+                         'managerConfig' => $managerConfig,
+                         'viewFile' => '/productreview/index',
+                         'dtoClass' => ProductReviewGridViewDTO::className()
+                        ],
+            'bulk-delete' => ['class' => BulkDeleteAction::className(),
+                              'modelClass' => ProductReview::className(),
+                              'managerConfig' => $managerConfig,
+                        ],
+        ];
     }
     
     /**
@@ -35,14 +80,9 @@ class ReviewController extends BaseController
      */
     public function actionApprove($id)
     {
-        $loggedInUser   = UsniAdaptor::app()->user->getUserModel();
-        $productReview  = $this->loadModel(ProductReview::className(), $id);
-        $isAllowed      = CatalogPermissionUtil::doesUserHavePermissionToPerformAction($productReview, $loggedInUser, 'productreview.approve');
-        if($isAllowed)
+        if(UsniAdaptor::app()->request->isAjax)
         {
-            $productReview->scenario    = 'approve';
-            $productReview->status      = ProductReview::STATUS_APPROVED;
-            $productReview->save();
+            ProductReviewManager::getInstance()->processApprove($id);
         }
     }
 
@@ -53,15 +93,9 @@ class ReviewController extends BaseController
      */
     public function actionUnapprove($id)
     {
-        $loggedInUser   = UsniAdaptor::app()->user->getUserModel();
-        $productReview  = $this->loadModel(ProductReview::className(), $id);
-        $isAllowed      = CatalogPermissionUtil::doesUserHavePermissionToPerformAction($productReview, $loggedInUser, 'productreview.approve');
-        if($isAllowed)
+        if(UsniAdaptor::app()->request->isAjax)
         {
-            $productReview              = $this->loadModel(ProductReview::className(), $id);
-            $productReview->scenario    = 'unapprove';
-            $productReview->status      = ProductReview::STATUS_PENDING;
-            $productReview->save();
+            ProductReviewManager::getInstance()->processUnapprove($id);
         }
     }
 
@@ -74,17 +108,7 @@ class ReviewController extends BaseController
     {
         if(UsniAdaptor::app()->request->isAjax)
         {
-            $productReview              = $this->loadModel(ProductReview::className(), $id);
-            $productReview->scenario    = 'spam';
-            if(CatalogPermissionUtil::doesUserHavePermissionToPerformAction($productReview, UsniAdaptor::app()->user->getUserModel(), 'productreview.spam'))
-            {
-                $productReview->status      = ProductReview::STATUS_SPAM;
-                $productReview->save();
-            }
-            else
-            {
-                throw new \yii\web\ForbiddenHttpException(\Yii::t('yii','You are not authorized to perform this action.'));
-            }
+            ProductReviewManager::getInstance()->processSpam($id);
         }
     }
 
@@ -97,17 +121,7 @@ class ReviewController extends BaseController
     {
         if(UsniAdaptor::app()->request->isAjax)
         {
-            $productReview              = $this->loadModel(ProductReview::className(), $id);
-            $productReview->scenario    = 'removespam';
-            if(CatalogPermissionUtil::doesUserHavePermissionToPerformAction($productReview, UsniAdaptor::app()->user->getUserModel(), 'productreview.spam'))
-            {
-                $productReview->status      = ProductReview::STATUS_PENDING;
-                $productReview->save();
-            }
-            else
-            {
-                throw new \yii\web\ForbiddenHttpException(\Yii::t('yii','You are not authorized to perform this action.'));
-            }
+            ProductReviewManager::getInstance()->processRemoveSpam($id);
         }
     }
 
@@ -118,18 +132,8 @@ class ReviewController extends BaseController
      */
     public function actionDeleteFromGrid($id)
     {
-        if(UsniAdaptor::app()->request->isAjax)
-        {
-            $user               = UsniAdaptor::app()->user->getUserModel();
-            $productReview      = $this->loadModel(ProductReview::className(), $id);
-            if(CatalogPermissionUtil::doesUserHavePermissionToPerformAction($productReview, $user, 'productreview.delete'))
-            {   
-                $productReview->status          = ProductReview::STATUS_DELETED;
-                $productReview->scenario        = 'delete';
-                $productReview->save();
-                $this->redirect(UsniAdaptor::createUrl('catalog/products/review/manage'));
-            }
-        }
+        ProductReviewManager::getInstance()->processDeleteFromGrid($id);
+        return $this->redirect(UsniAdaptor::createUrl('catalog/products/review/index'));
     }
 
     /**
@@ -140,14 +144,7 @@ class ReviewController extends BaseController
     {
         if (UsniAdaptor::app()->request->isAjax && isset($_GET['id']))
         {
-            $loggedInUser   = UsniAdaptor::app()->user->getUserModel();
-            $productReview  = ProductReview::findOne($_GET['id']);
-            $isAllowed      = CatalogPermissionUtil::doesUserHavePermissionToPerformAction($productReview, $loggedInUser, 'productreview.approve');
-            if($isAllowed)
-            {
-                $selectedItemsIds = $_GET['id'];
-                ProductUtil::updateStatusForSelectedRecords($selectedItemsIds, ProductReview::STATUS_PENDING, ProductReview::STATUS_APPROVED);
-            }
+            ProductReviewManager::getInstance()->processBulkApprove($_GET['id']);
         }
     }
 
@@ -157,46 +154,10 @@ class ReviewController extends BaseController
      */
     public function actionBulkUnapprove()
     {
+        
         if (UsniAdaptor::app()->request->isAjax && isset($_GET['id']))
         {
-            $loggedInUser   = UsniAdaptor::app()->user->getUserModel();
-            $productReview  = ProductReview::findOne($_GET['id']);
-            $isAllowed      = CatalogPermissionUtil::doesUserHavePermissionToPerformAction($productReview, $loggedInUser, 'productreview.approve');
-            if($isAllowed)
-            {
-                $selectedItemsIds = $_GET['id'];
-                ProductUtil::updateStatusForSelectedRecords($selectedItemsIds, ProductReview::STATUS_APPROVED, ProductReview::STATUS_PENDING);
-            }
-        }
-    }
-    
-    /**
-     * Perform BulkDelete on gridview
-     * @return void
-     */
-    public function actionBulkDelete()
-    {
-        $user     = UsniAdaptor::app()->user->getUserModel();
-        if (UsniAdaptor::app()->request->isAjax && isset($_GET['id']))
-        {
-            $modelClass             = ucfirst($this->resolveModelClassName());
-            $model                  = new $modelClass();
-            $modelPermissionName    = UsniAdaptor::getObjectClassName($model);
-            $selectedItems          = $_GET['id'];
-            foreach ($selectedItems as $item)
-            {
-                if(!in_array($item, $this->getExcludedModelIdsFromBulkDelete()))
-                {
-                    $model = $modelClass::findOne(intval($item));
-                    //Check if allowed to delete
-                    if(AuthManager::checkAccess($user, strtolower($modelPermissionName) . '.delete'))
-                    {
-                        $model->status = ProductReview::STATUS_DELETED;
-                        $model->scenario = 'bulkdelete';
-                        $model->save();
-                    }
-                }
-            }
+            ProductReviewManager::getInstance()->processBulkUnapprove($_GET['id']);
         }
     }
     
@@ -206,20 +167,9 @@ class ReviewController extends BaseController
      */
     public function actionTrash()
     {
-        $review         = new ProductReview(['scenario' => 'search']);
-        $breadcrumbs    = [
-                              [
-                                  'label' => UsniAdaptor::t('products', 'Manage Reviews'),
-                                  'url'   => UsniAdaptor::createUrl('catalog/products/review/manage')
-                              ],
-                              [
-                                  'label' => UsniAdaptor::t('products', 'Manage Trash Reviews')
-                              ]
-                          ];
-        $this->getView()->params['breadcrumbs']  = $breadcrumbs;
-        $view           = new ProductReviewTrashGridView(['model' => $review]);
-        $content        = $this->renderColumnContent([$view]);
-        return $this->render($this->getDefaultLayout(), ['content' => $content]);
+        $gridviewDTO        = new ProductReviewGridViewDTO();
+        ProductReviewManager::getInstance()->processTrashList($gridviewDTO);
+        return $this->render('/productreview/trashindex', ['gridViewDTO' => $gridviewDTO]);
     }
     
     /**
@@ -229,27 +179,8 @@ class ReviewController extends BaseController
      */
     public function actionDeleteFromTrash($id)
     {
-        if (UsniAdaptor::app()->request->isAjax)
-        {
-            $productReview  = $this->loadModel(ProductReview::className(), $id);
-            $loggedInUser   = UsniAdaptor::app()->user->getUserModel();
-            $isAllowed      = CatalogPermissionUtil::doesUserHavePermissionToPerformAction($productReview, $loggedInUser, 'productreview.delete');
-            if($isAllowed)
-            {
-                $productReview->delete();
-                $this->redirect(UsniAdaptor::createUrl('products/review/trash'));
-            }
-        }
-    }
-    
-    /**
-     * @inheritdoc
-     */
-    public function pageTitles()
-    {
-        return [
-                    'manage' => UsniAdaptor::t('application','Manage') . ' ' . ProductReview::getLabel(2)
-               ];
+        ProductReviewManager::getInstance()->processDeleteFromTrash($id);
+        $this->redirect(UsniAdaptor::createUrl('catalog/products/review/trash'));
     }
     
     /**
@@ -259,63 +190,21 @@ class ReviewController extends BaseController
      */
     public function actionTrashBulkDelete()
     {
-        $user     = UsniAdaptor::app()->user->getUserModel();
         if (UsniAdaptor::app()->request->isAjax && isset($_GET['id']))
         {
-            $modelClass             = ucfirst($this->resolveModelClassName());
-            $model                  = new $modelClass();
-            $modelPermissionName    = UsniAdaptor::getObjectClassName($model);
-            $selectedItems          = $_GET['id'];
-            foreach ($selectedItems as $item)
-            {
-                if(!in_array($item, $this->getExcludedModelIdsFromBulkDelete()))
-                {
-                    $model = $modelClass::findOne(intval($item));
-                    //Check if allowed to delete
-                    if(AuthManager::checkAccess($user, strtolower($modelPermissionName) . '.delete'))
-                    {
-                        $model->delete();
-                    }
-                }
-            }
+            ProductReviewManager::getInstance()->processTrashBulkDelete($_GET['id']);
         }
     }
     
-    /**
-     * @inheritdoc
-     */
-    protected static function getNonPermissibleActions()
-    {
-        $nonPermissibleActions              = parent::getNonPermissibleActions();
-        $additionalNonPermissibleActions    = [
-                                                    'bulk-approve', 
-                                                    'bulk-unapprove', 
-                                                    'bulk-delete', 
-                                                    'trash-bulk-delete',
-                                                    'approve',
-                                                    'unapprove',
-                                                    'spam',
-                                                    'remove-spam',
-                                                    'delete-from-grid',
-                                                    'delete-from-trash'
-                                              ];
-        return ArrayUtil::merge($nonPermissibleActions, $additionalNonPermissibleActions);
-    }
     
     /**
-     * @inheritdoc
+     * Undo deleted model.
+     * @param int $id
+     * @return void
      */
-    protected function getActionToPermissionsMap()
+    public function actionUndo($id)
     {
-        $actionToPermissionsMap = parent::getActionToPermissionsMap();
-        $additionalPermissions  = [
-                                        'trash'             => 'productreview.delete',
-                                        'bulk-approve'      => 'productreview.approve',
-                                        'bulk-unapprove'    => 'productreview.approve',
-                                        'bulk-delete'       => 'productreview.delete',
-                                        'trash-bulk-delete' => 'productreview.delete',
-                                        'unapprove'         => 'productreview.approve'
-                                  ];
-        return array_merge($additionalPermissions, $actionToPermissionsMap);
+        ProductReviewManager::getInstance()->processUndo($id);
+        $this->redirect(UsniAdaptor::createUrl('catalog/products/review/index'));
     }
 }

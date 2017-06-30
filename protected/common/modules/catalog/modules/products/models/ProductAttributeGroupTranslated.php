@@ -5,12 +5,13 @@
  */
 namespace products\models;
     
-use usni\library\components\UiSecuredActiveRecord;
+use usni\library\db\ActiveRecord;
 /**
- * ProductAttributeGroupTranslated class file
+ * ProductAttributeGroupTranslated class file.
+ * 
  * @package products\models
  */
-class ProductAttributeGroupTranslated extends UiSecuredActiveRecord
+class ProductAttributeGroupTranslated extends ActiveRecord
 {
     /**
      * @inheritdoc
@@ -20,4 +21,3 @@ class ProductAttributeGroupTranslated extends UiSecuredActiveRecord
         return $this->hasOne(ProductAttributeGroup::className(), ['id' => 'owner_id']);
     }
 }
-?>

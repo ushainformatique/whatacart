@@ -5,12 +5,13 @@
  */
 namespace common\modules\localization\modules\orderstatus\models;
     
-use usni\library\components\UiSecuredActiveRecord;
+use usni\library\db\ActiveRecord;
 /**
- * OrderStatusTranslated class file
+ * OrderStatusTranslated class file.
+ * 
  * @package common\modules\localization\modules\orderstatus\models
  */
-class OrderStatusTranslated extends UiSecuredActiveRecord
+class OrderStatusTranslated extends ActiveRecord
 {
     /**
      * @inheritdoc
@@ -20,4 +21,3 @@ class OrderStatusTranslated extends UiSecuredActiveRecord
         return $this->hasOne(OrderStatus::className(), ['id' => 'owner_id']);
     }
 }
-?>

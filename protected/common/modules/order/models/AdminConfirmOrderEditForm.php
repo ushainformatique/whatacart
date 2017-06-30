@@ -1,15 +1,29 @@
 <?php
+/**
+ * @copyright Copyright (C) 2016 Usha Singhai Neo Informatique Pvt. Ltd
+ * @license https://www.gnu.org/licenses/gpl-3.0.html
+ */
 namespace common\modules\order\models;
 
 use usni\UsniAdaptor;
-use yii\base\Model;
+use products\behaviors\PriceBehavior;
 /**
  * AdminConfirmOrderEditForm class file
  *
  * @package common\modules\order\models
  */
-class AdminConfirmOrderEditForm extends Model
+class AdminConfirmOrderEditForm extends \cart\models\ConfirmOrderForm
 {
+    /**
+     * inheritdoc
+     */
+    public function behaviors()
+    {
+        return [
+            PriceBehavior::className()
+        ];
+    }
+    
     /**
      * Status of order
      * @var boolean 
@@ -21,16 +35,16 @@ class AdminConfirmOrderEditForm extends Model
      * @var string 
      */
     public $comments;
-    
+
     /**
      * @inheritdoc
      */
     public function rules()
     {
-        return array(
+        return array_merge(parent::rules(), array(
                         [['status'],  'required'],
                         [['status', 'comments'],  'safe']
-                    );
+                    ));
     }
 
     /**
@@ -38,10 +52,10 @@ class AdminConfirmOrderEditForm extends Model
      */
     public function attributeLabels()
     {
-        return [
-                    'status' => UsniAdaptor::t('application', 'Status'),
-                    'comments' => UsniAdaptor::t('application', 'Comments'),
-               ];
+        return array_merge(parent::attributeLabels(), [
+                    'status'        => UsniAdaptor::t('application', 'Status'),
+                    'comments'      => UsniAdaptor::t('application', 'Comments')
+               ]);
     }
     
     /**
@@ -49,9 +63,9 @@ class AdminConfirmOrderEditForm extends Model
      */
     public function attributeHints()
     {
-        return [
-                    'status' => UsniAdaptor::t('orderhint', 'Status for the order'),
-                    'comments' => UsniAdaptor::t('orderhint', 'Comments for the order'),
-                ];
+        return array_merge(parent::attributeHints(), [
+                    'status'        => UsniAdaptor::t('orderhint', 'Status for the order'),
+                    'comments'      => UsniAdaptor::t('orderhint', 'Comments for the order')
+                ]);
     }
 }

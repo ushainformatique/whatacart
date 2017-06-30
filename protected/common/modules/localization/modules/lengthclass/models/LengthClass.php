@@ -5,9 +5,10 @@
  */
 namespace common\modules\localization\modules\lengthclass\models;
 
-use usni\library\components\TranslatableActiveRecord;
+use usni\library\db\TranslatableActiveRecord;
 use usni\UsniAdaptor;
-use common\modules\localization\modules\lengthclass\utils\LengthClassUtil;
+use products\dao\ProductDAO;
+use yii\db\Exception;
 /**
  * LengthClass class file
  * 
@@ -78,10 +79,25 @@ class LengthClass extends TranslatableActiveRecord
      */
     public function beforeDelete()
     {
-        if(parent::beforeDelete())
+        $isAllowedToDelete = $this->checkIfAllowedToDelete();
+        if(!$isAllowedToDelete)
         {
-            return LengthClassUtil::checkIfAllowedToDelete($this);
-        }        
+            throw new Exception('this model is associated to product');
+        }
+        return parent::beforeDelete();
+    }
+    
+    /**
+     * Check if allowed to delete.
+     * @return boolean
+     */
+    public function checkIfAllowedToDelete()
+    {
+        $count = ProductDAO::getCountByAttribute('length_class', $this->id);
+        if($this->value != 1.00 && $count == 0)
+        {
+            return true;
+        }
         return false;
     }
 }

@@ -8,9 +8,10 @@ namespace common\modules\order\models;
 use usni\UsniAdaptor;
 /**
  * OrderPaymentTransactionMap active record.
+ * 
  * @package common\modules\order\models
  */
-class OrderPaymentTransactionMap extends \usni\library\components\UiSecuredActiveRecord 
+class OrderPaymentTransactionMap extends \usni\library\db\ActiveRecord 
 {   
     /**
      * @inheritdoc

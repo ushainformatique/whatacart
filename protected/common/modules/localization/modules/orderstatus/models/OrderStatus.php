@@ -5,10 +5,11 @@
  */
 namespace common\modules\localization\modules\orderstatus\models;
 
-use usni\library\components\TranslatableActiveRecord;
+use usni\library\db\TranslatableActiveRecord;
 use usni\UsniAdaptor;
 use common\modules\localization\modules\orderstatus\models\OrderStatusTranslated;
-use common\modules\localization\modules\orderstatus\utils\OrderStatusUtil;
+use yii\db\Exception;
+use common\modules\order\models\Order;
 /**
  * OrderStatus active record.
  * 
@@ -72,10 +73,25 @@ class OrderStatus extends TranslatableActiveRecord
      */
     public function beforeDelete()
     {
-        if(parent::beforeDelete())
+        $isAllowedToDelete = $this->checkIfAllowedToDelete();
+        if($isAllowedToDelete == false)
         {
-            return OrderStatusUtil::checkIfAllowedToDelete($this);
-        }        
-        return false;
+            throw new Exception('this model is associated to order');
+        }
+        return parent::beforeDelete();
+    }
+    
+    /**
+     * Check if allowed to delete
+     * @return boolean
+     */
+    public function checkIfAllowedToDelete()
+    {
+        $orderCount = Order::find()->where('status = :status', [':status' => $this->id])->count();
+        if($orderCount > 0 )
+        {
+            return false;
+        }
+        return true;
     }
 }

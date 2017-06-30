@@ -5,13 +5,13 @@
  */
 namespace taxes\models;
 
-use usni\library\components\TranslatableActiveRecord;
+use usni\library\db\TranslatableActiveRecord;
 use usni\UsniAdaptor;
 use common\modules\localization\modules\country\models\Country;
 use common\modules\localization\modules\state\models\State;
-use common\modules\localization\modules\country\models\CountryTranslated;
-use common\modules\localization\modules\state\models\StateTranslated;
-use taxes\utils\TaxUtil;
+use taxes\dao\TaxRuleDAO;
+use yii\db\Exception;
+use taxes\dao\ZoneDAO;
 /**
  * Zone active record.
  * 
@@ -55,7 +55,7 @@ class Zone extends TranslatableActiveRecord
      */
     public function validateName($attribute, $params)
     {
-        $zone = TaxUtil::getZoneBasedOnNameCountryStateZipAndLanguage($this);
+        $zone = $this->getZoneBasedOnNameCountryStateZipAndLanguage();
         if (!empty($zone))
         {
             if(($this->scenario == 'create') || ($this->scenario == 'update' && $this->id != $zone['id']))
@@ -65,6 +65,19 @@ class Zone extends TranslatableActiveRecord
                 $this->addError($attribute, UsniAdaptor::t('tax', "The combination $this->name - $countryName - $stateName - $this->zip - $this->language of Name, Country, State, Zip and Language has already been taken."));
             }
         }
+    }
+    
+    /**
+     * Get zone based on name, country, state, zip and language.
+     * @return array
+     */
+    public function getZoneBasedOnNameCountryStateZipAndLanguage()
+    {
+        if($this->is_zip_range == true)
+        {
+            return ZoneDAO::getZoneWithZipRange($this);
+        }
+        return ZoneDAO::getZoneWithZip($this);
     }
 
     /**
@@ -160,45 +173,28 @@ class Zone extends TranslatableActiveRecord
     }
     
     /**
-     * Gets zone country.
-     * @param $data Zone
-     * @return string
-     */
-    public function getZoneCountry($data)
-    {
-        $language       = UsniAdaptor::app()->languageManager->getContentLanguage();
-        if($data->country_id == '-1')
-        {
-            return UsniAdaptor::t('localization', 'All Countries');
-        }
-        $country = CountryTranslated::find()->where('owner_id = :id AND language = :lang', [':id' => $data->country_id, ':lang' => $language])->asArray()->one();
-        return $country['name'];
-    }
-    
-    /**
-     * Gets zone state.
-     * @param $data Zone
-     * @return string
-     */
-    public function getZoneState($data)
-    {
-        $language       = UsniAdaptor::app()->languageManager->getContentLanguage();
-        if($data->state_id == '-1')
-        {
-            return UsniAdaptor::t('localization', 'All States');
-        }
-        $state = StateTranslated::find()->where('owner_id = :id AND language = :lang', [':id' => $data->state_id, ':lang' => $language])->asArray()->one();
-        return $state['name'];
-    }
-    
-    /**
      * @inheritdoc
      */
     public function beforeDelete()
     {
-        if(parent::beforeDelete())
+        $isAllowedToDelete = $this->checkIfAllowedToDelete();
+        if(!$isAllowedToDelete)
         {
-            return TaxUtil::checkIfZoneAllowedToDelete($this);
+            throw new Exception('this zone is associated with tax rule.');
+        }
+        return parent::beforeDelete();
+    }
+    
+    /**
+     * Check if zone is allowed to delete.
+     * @return boolean
+     */
+    public function checkIfAllowedToDelete()
+    {
+        $taxRule    = TaxRuleDAO::getTaxRuleByAttribute('tax_zone_id', $this->id, $this->language);
+        if(empty($taxRule))
+        {
+            return true;
         }
         return false;
     }

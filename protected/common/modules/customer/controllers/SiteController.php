@@ -9,23 +9,22 @@ use frontend\controllers\BaseController;
 use usni\UsniAdaptor;
 use usni\library\modules\users\utils\UserUtil;
 use customer\models\Customer;
-use customer\models\CustomerEditForm;
-use customer\utils\CustomerUtil;
-use customer\views\front\ForgotPasswordView;
 use customer\models\LoginForm;
-use customer\views\front\ChangePasswordView;
-use customer\models\ForgotPasswordForm;
 use usni\library\utils\FlashUtil;
-use frontend\utils\FrontUtil;
-use customer\views\front\RegistrationView;
-use customer\views\front\OrderView;
 use yii\filters\AccessControl;
-use customer\components\AccountBreadcrumb;
-use common\modules\stores\utils\StoreUtil;
-use common\modules\order\utils\OrderUtil;
-use common\modules\order\utils\OrderPermissionUtil;
 use usni\library\modules\users\models\Person;
 use usni\library\utils\FileUploadUtil;
+use common\modules\stores\dao\StoreDAO;
+use customer\dto\FormDTO;
+use customer\business\SiteManager;
+use usni\library\utils\ArrayUtil;
+use yii\web\ForbiddenHttpException;
+use yii\helpers\Url;
+use common\modules\order\dto\GridViewDTO as OrderGridViewDTO;
+use usni\library\dto\GridViewDTO;
+use yii\web\NotFoundHttpException;
+use common\modules\order\dto\DetailViewDTO;
+use yii\base\InvalidParamException;
 /**
  * SiteController class file.
  * 
@@ -73,32 +72,21 @@ class SiteController extends BaseController
      */
     public function actionLogin()
     {
-        $model = new LoginForm();
-        $isGuest = UsniAdaptor::app()->user->isGuest;
-        if(!$isGuest)
+        if(UsniAdaptor::app()->user->isGuest == false)
+        {
+            return $this->goHome();
+        }
+        $formDTO    = new FormDTO();
+        $formDTO->setModel(new LoginForm());
+        $formDTO->setPostData($_POST);
+        SiteManager::getInstance()->processLogin($formDTO);
+        if($formDTO->getIsTransactionSuccess() == true)
         {
             return $this->goHome();
         }
         else
         {
-            if (isset($_POST['LoginForm']))
-            {
-                $model->attributes = $_POST['LoginForm'];
-                if ($model->validate())
-                {
-                    if ($model->login())
-                    {
-                        return $this->goHome();
-                    }
-                }
-            }
-            $title              = UsniAdaptor::t('users', 'Login');
-            $breadcrumbView     = new AccountBreadcrumb(['page' => UsniAdaptor::t('users', 'Login')]);
-            $this->getView()->params['breadcrumbs'] = $breadcrumbView->getBreadcrumbLinks();
-            $loginView          = UsniAdaptor::app()->getModule('customer')->viewHelper->getInstance('loginPageView', ['model' => $model]);
-            $content            = $this->renderInnerContent([$loginView]);
-
-            return $this->render(FrontUtil::getDefaultInnerLayout(), ['content' => $content, 'title' => $title]);
+            return $this->render('/front/login', ['formDTO' => $formDTO]);
         }
     }
     
@@ -108,88 +96,29 @@ class SiteController extends BaseController
      */
     public function actionForgotPassword()
     {
-        $model              = new ForgotPasswordForm();
-        $model->scenario    = 'forgotpassword';
-        $isGuest = UsniAdaptor::app()->user->isGuest;
-        if(!$isGuest)
+        if(UsniAdaptor::app()->user->isGuest == false)
         {
             return $this->goHome();
         }
+        $formDTO = new FormDTO();
         $postData = UsniAdaptor::app()->request->post();
-        if ($model->load($postData))
+        $formDTO->setPostData($postData);
+        SiteManager::getInstance()->processForgotPassword($formDTO);
+        if($formDTO->getActivationStatusIssue() == true)
         {
-            $person = CustomerUtil::getCustomerByEmail($model->email);
-            if ($person != false)
-            {
-                if ($person['status'] == Customer::STATUS_ACTIVE)
-                {
-                    $model->user = $person;
-                    $model->sendMail();
-                    FlashUtil::setMessage('forgotpassword', UsniAdaptor::t('userflash', 'Your login credentials are sent on registered email address.'));
-                }
-                else
-                {
-                    FlashUtil::setMessage('activationstatusissue', UsniAdaptor::t('userflash', 'Your account is not in active status.'));
-                }
-            }
-            else
-            {
-                FlashUtil::setMessage('notregisteredmailid', UsniAdaptor::t('userflash', 'The given email is not registered with us. Please enter a valid email.'));
-            }
+            FlashUtil::setMessage('warning', UsniAdaptor::t('userflash', 'Your account is not in active status.'));
         }
-        $model->email       = null;
-        $breadcrumbView     = new AccountBreadcrumb(['page' => UsniAdaptor::t('users', 'Forgot Password')]);
-        $this->getView()->params['breadcrumbs'] = $breadcrumbView->getBreadcrumbLinks();
-        $this->getView()->title = UsniAdaptor::t('users', 'Forgot Password') . '?';
-        $view               = new ForgotPasswordView(['model' => $model]);
-        $content            = $this->renderInnerContent([$view]);
-        return $this->render(FrontUtil::getDefaultInnerLayout(), ['content' => $content]);
+        elseif($formDTO->getNotRegisteredEmailId() == true)
+        {
+            FlashUtil::setMessage('danger', UsniAdaptor::t('userflash', 'The given email is not registered with us. Please enter a valid email.'));
+        }
+        elseif($formDTO->getIsTransactionSuccess() == true)
+        {
+            FlashUtil::setMessage('success', UsniAdaptor::t('userflash', 'Your login credentials are sent on registered email address.'));
+        }
+        return $this->render('/front/forgotpassword', ['formDTO' => $formDTO]);
     }
     
-    /**
-     * Process user save,
-     * @param Model $model
-     * @return string
-     */
-    public function processCustomerSave($model)
-    {
-        $scenario           = $model->scenario;
-        $postData           = UsniAdaptor::app()->request->post();
-        if ($model->customer->load($postData) 
-                && $model->person->load($postData)
-                    && $model->address->load($postData))
-        {
-            if(CustomerUtil::validateAndSaveCustomerData($model))
-            {
-                $model->customer->newPassword = $model->customer->password;
-                if($scenario == 'editprofile')
-                {
-                    $this->redirect(UsniAdaptor::createUrl('customer/site/my-account'));
-                }
-                else
-                {
-                    $model->sendMail();
-                    FlashUtil::setMessage('userregistration', UsniAdaptor::t('userflash', 'You have successfully registered with the system. An activation email has been sent at your registered email address.'));
-                    return $this->redirect(UsniAdaptor::createUrl('customer/site/login'));
-                }
-            }
-        }
-        if($scenario == 'editprofile')
-        {
-            $this->getView()->title = UsniAdaptor::t('users', 'Edit Profile');
-            $breadcrumbView     = new AccountBreadcrumb(['page' => $this->getView()->title]);
-        }
-        else
-        {
-            $this->getView()->title = UsniAdaptor::t('users', 'Register');
-            $breadcrumbView     = new AccountBreadcrumb(['page' => $this->getView()->title]);
-        }
-        $this->getView()->params['breadcrumbs'] = $breadcrumbView->getBreadcrumbLinks();
-        $customerEditView   = new RegistrationView(['model' => $model]);
-        $content            = $this->renderInnerContent([$customerEditView]);
-        return $this->render(FrontUtil::getDefaultInnerLayout(), ['content' => $content]);
-    }
-
     /**
      * Action register.
      * @return void
@@ -198,25 +127,27 @@ class SiteController extends BaseController
     {
         if(UsniAdaptor::app()->user->isGuest)
         {
-            $model  = $this->getEditFormInstance('registration');
-            return $this->processCustomerSave($model);
+            $formDTO = new FormDTO();
+            $formDTO->setScenario('registration');
+            $postData = UsniAdaptor::app()->request->post();
+            $formDTO->setPostData($postData);
+            $manager = new SiteManager();
+            $manager->processEdit($formDTO);
+            if($formDTO->getIsTransactionSuccess() == true)
+            {
+                FlashUtil::setMessage('success', UsniAdaptor::t('userflash', 'You have successfully registered with the system. An activation email has been sent at your registered email address.'));
+                return $this->redirect(UsniAdaptor::createUrl('customer/site/login'));
+            }
+            else
+            {
+                return $this->render('/front/registration', ['formDTO' => $formDTO]);
+            }
         }
         else
         {
-            $customer = UsniAdaptor::app()->user->getUserModel();
+            $customer = UsniAdaptor::app()->user->getIdentity();
             $this->redirect(UsniAdaptor::createUrl('/customer/site/edit-profile', ['id' => $customer->id]));
         } 
-    }
-    
-    /**
-     * Get edit form instance
-     * 
-     * @param $scenario string
-     * @return string
-     */
-    protected function getEditFormInstance($scenario)
-    {
-        return new CustomerEditForm(['scenario' => $scenario]);
     }
     
     /**
@@ -229,37 +160,31 @@ class SiteController extends BaseController
         {
             if($id == null)
             {
-                $id = UsniAdaptor::app()->user->getUserModel()->id;
+                $id = UsniAdaptor::app()->user->getIdentity()->id;
             }
-            $model              = new CustomerEditForm(['scenario' => 'editprofile']);
-            $customer           = Customer::findOne($id);
-            $model->customer    = $customer;
-            $model->customer->scenario = 'editprofile';
-            $model->person      = $customer->person;
-            $model->person->scenario = 'editprofile';
-            $model->address      = $customer->address;
-            $model->address->scenario = 'editprofile';
-            return $this->processCustomerSave($model);
+            $formDTO = new FormDTO();
+            $formDTO->setScenario('editprofile');
+            $postData = UsniAdaptor::app()->request->post();
+            $formDTO->setPostData($postData);
+            $formDTO->setId($id);
+            $manager = new SiteManager();
+            $manager->processEdit($formDTO);
+            if($formDTO->getIsTransactionSuccess())
+            {
+                FlashUtil::setMessage('success', UsniAdaptor::t('applicationflash', 'Record has been updated successfully.'));
+            }
+            return $this->render('/front/editprofile', ['formDTO' => $formDTO]);
         }
-        else
-        {
-            $this->redirect(UsniAdaptor::createUrl('/site/default/index'));
-        }
+        $this->redirect(UsniAdaptor::createUrl('/site/default/index'));
     }
 
     /**
-     * Action ViewProfile
+     * My account dashboard.
      * @return void
      */
     public function actionMyAccount()
     {
-        $viewHelper         = UsniAdaptor::app()->getModule('customer')->viewHelper;
-        $view               = $viewHelper->getInstance('myProfileView');
-        $breadcrumbView     = new AccountBreadcrumb(['page' => UsniAdaptor::t('users', 'My Account')]);
-        $this->getView()->title = UsniAdaptor::t('customer', 'My Account');
-        $this->getView()->params['breadcrumbs'] = $breadcrumbView->getBreadcrumbLinks();
-        $content = $this->renderInnerContent([$view]);
-        return $this->render(FrontUtil::getDefaultInnerLayout(), ['content' => $content]);
+        return $this->render('/front/myaccount', ['model' => UsniAdaptor::app()->user->getIdentity()]);
     }
     
     /**
@@ -268,35 +193,28 @@ class SiteController extends BaseController
      */
     public function actionChangePassword()
     {
-        $customer = UsniAdaptor::app()->user->getUserModel();
-        $model    = CustomerUtil::processChangePasswordAction($customer->id, UsniAdaptor::app()->request->post(), UsniAdaptor::app()->user->getUserModel(), 'front');
-        if ($model === false)
+        $customer   = UsniAdaptor::app()->user->getIdentity();
+        $postData   = ArrayUtil::getValue($_POST, ['ChangePasswordForm']);
+        $formDTO    = new FormDTO();
+        $formDTO->setPostData($postData);
+        $formDTO->setId($customer->id);
+        $formDTO->setModelClassName(Customer::className());
+        $manager    = new SiteManager();
+        $manager->processChangePassword($formDTO);
+        UsniAdaptor::app()->getSession()->setFlash('warning', UserUtil::getPasswordInstructions());
+        if($formDTO->getIsTransactionSuccess() === true)
         {
-            $this->goHome();
+            FlashUtil::setMessage('success', UsniAdaptor::t('userflash', 'Password has been changed successfully.'));
+            return $this->refresh();
         }
-        $this->getView()->title = UsniAdaptor::t('users', 'Change Password');
-        $breadcrumbView         = new AccountBreadcrumb(['page' => $this->getView()->title]);
-        $this->getView()->params['breadcrumbs'] = $breadcrumbView->getBreadcrumbLinks();
-        FlashUtil::setMessage('passwordinstructions', UserUtil::getPasswordInstructions());
-        $view       = new ChangePasswordView(['model' => $model]);
-        $content    = $this->renderInnerContent([$view]);
-        return $this->render(FrontUtil::getDefaultInnerLayout(), ['content' => $content]);
-    }
-
-    /**
-     * Get page titles.
-     * @return array
-     */
-    public function pageTitles()
-    {
-        return [
-            'login'             => UsniAdaptor::t('users', 'Login'),
-            'register'          => UsniAdaptor::t('customer', 'Register Account'),
-            'editProfile'       => UsniAdaptor::t('users', 'Edit Profile'),
-            'viewProfile'       => UsniAdaptor::t('users', 'View Profile'),
-            'changePassword'    => UsniAdaptor::t('users', 'Change Password'),
-            'forgotPassword'    => UsniAdaptor::t('users', 'Forgot Password')
-        ];
+        elseif($formDTO->getIsTransactionSuccess() === false)
+        {
+            throw new ForbiddenHttpException(\Yii::t('yii','You are not authorized to perform this action.'));
+        }
+        else
+        {
+            return $this->render('/front/changepassword', ['formDTO' => $formDTO]);
+        }
     }
 
     /**
@@ -307,35 +225,32 @@ class SiteController extends BaseController
      */
     public function actionValidateEmailAddress($hash, $email)
     {
-        $tableName  = UsniAdaptor::tablePrefix() . 'customer';
         if (UsniAdaptor::app()->user->getIsGuest())
         {
-            $user = UserUtil::activateUser($tableName, $hash, $email);  
-            if ($user !== false)
+            $result = SiteManager::getInstance()->processValidateEmailAddress($hash, $email);
+            if($result == true)
             {
-                UserUtil::setDefaultAuthAssignments($user['username'], 'customer');
-                $message = UsniAdaptor::t('users', 'Your email has been validated, Please login to continue.');
+                FlashUtil::setMessage('success', UsniAdaptor::t('users', 'Your email has been validated, Please login to continue.'));
             }
-            else
+            elseif($result == false)
             {
-                $message = UsniAdaptor::t('users', 'Your email validation fails. Please contact system admin.');
+                FlashUtil::setMessage('error', UsniAdaptor::t('users', 'Your email validation fails. Please contact system admin.'));
             }
-            FlashUtil::setMessage('validateEmail', $message);
             return $this->redirect(UsniAdaptor::createUrl('customer/site/login'));
         }
-        return $this->redirect(\yii\helpers\Url::home());
+        return $this->redirect(Url::home());
     }
 
     /**
      * Change user currency in the configuration.
+     * @param string $currency
      * @return void
      */
-    public function actionSetCurrency()
+    public function actionSetCurrency($currency)
     {
-        if($_GET['currency'] != null)
+        if($currency != null)
         {
-            $currManager = UsniAdaptor::app()->currencyManager;
-            $currManager->setCookie($_GET['currency']);
+            UsniAdaptor::app()->cookieManager->setCurrencyCookie($currency);
         }
     }
     
@@ -348,18 +263,16 @@ class SiteController extends BaseController
     {
         if($id != null)
         {
-            $store          = StoreUtil::getStoreById($id);
-            $storeManager   = UsniAdaptor::app()->storeManager;
+            $store          = StoreDAO::getById($id, UsniAdaptor::app()->languageManager->selectedLanguage);
             if(!empty($store))
             {
-                $storeManager->setCookie($id);
-                $currency = StoreUtil::getLocalValue('currency', $id);
-                UsniAdaptor::app()->currencyManager->setCookie($currency);
-                $language = StoreUtil::getLocalValue('language', $id);
-                $languageManager = UsniAdaptor::app()->languageManager;
-                $languageManager->setCookie($language, $languageManager->applicationLanguageCookieName);
+                UsniAdaptor::app()->cookieManager->setStoreCookie($id);
+                $currency = UsniAdaptor::app()->storeManager->getLocalValue('currency', $id);
+                UsniAdaptor::app()->cookieManager->setCurrencyCookie($currency);
+                $language = UsniAdaptor::app()->storeManager->getLocalValue('language', $id);
+                UsniAdaptor::app()->cookieManager->setLanguageCookie($language);
             }
-            return $this->goHome();
+            return $this->redirect(UsniAdaptor::app()->request->referrer);
         }
     }
     
@@ -369,13 +282,9 @@ class SiteController extends BaseController
      */
     public function actionOrderHistory()
     {
-        $this->getView()->title = UsniAdaptor::t('order', 'My Orders');
-        $breadcrumbView     = new AccountBreadcrumb(['page' => $this->getView()->title]);
-        $this->getView()->params['breadcrumbs'] = $breadcrumbView->getBreadcrumbLinks();
-        $viewHelper         = UsniAdaptor::app()->getModule('customer')->viewHelper;
-        $view               = $viewHelper->getInstance('myOrdersView');
-        $content            = $this->renderInnerContent([$view]);
-        return $this->render(FrontUtil::getDefaultInnerLayout(), ['content' => $content]);
+        $gridViewDTO = new OrderGridViewDTO();
+        SiteManager::getInstance()->processOrderHistory($gridViewDTO, $_GET);
+        return $this->render('/front/order/myorders', ['gridViewDTO' => $gridViewDTO]);
     }
     
     /**
@@ -385,38 +294,33 @@ class SiteController extends BaseController
      */
     public function actionOrderView($id)
     {
-        $user               = UsniAdaptor::app()->user->getUserModel();
-        $this->getView()->title = UsniAdaptor::t('order', 'View Order') . '#' . $id;
-        $breadcrumbView     = new AccountBreadcrumb(['page' => $this->getView()->title]);
-        $this->getView()->params['breadcrumbs'] = $breadcrumbView->getBreadcrumbLinks();
-        $order              = OrderUtil::getOrder($id);
-        if(empty($order))
+        $detailViewDTO = new DetailViewDTO();
+        $detailViewDTO->setId($id);
+        SiteManager::getInstance()->processOrderView($detailViewDTO, UsniAdaptor::app()->storeManager->selectedStoreId);
+        if($detailViewDTO->getEmptyOrder() == true)
         {
-            throw new \yii\web\NotFoundHttpException();
+            throw new InvalidParamException(UsniAdaptor::t('order', "Invalid order"));
         }
-        $isPermissible      = OrderPermissionUtil::doesUserHavePermissionToPerformAction($order, $user, 'viewother');
-        if($isPermissible)
+        elseif($detailViewDTO->getIsValidOrder() == true)
         {
-            $view               = new OrderView(['order' => $order]);
-            $content            = $this->renderInnerContent([$view]);
-            return $this->render(FrontUtil::getDefaultInnerLayout(), ['content' => $content]);
+            return $this->render('/front/order/view', ['detailViewDTO' => $detailViewDTO]);
         }
         else
         {
-            throw new \yii\web\ForbiddenHttpException(\Yii::t('yii', 'You are not allowed to perform this action.'));
+            throw new InvalidParamException(UsniAdaptor::t('order', "Invalid order"));
         }
     }
     
     /**
      * Change language for the application.
-     * @param string $language.
+     * @param string $language
      * @return void.
      */
     public function actionChangeLanguage($language = null)
     {
         if($language != null)
         {
-            UsniAdaptor::app()->languageManager->setCookie($language, UsniAdaptor::app()->languageManager->applicationLanguageCookieName);
+            UsniAdaptor::app()->cookieManager->setLanguageCookie($language);
         }
     }
     
@@ -445,6 +349,36 @@ class SiteController extends BaseController
             FileUploadUtil::deleteImage($model, $imageFieldName, 150, 150);
             $model->$imageFieldName = null;
             $model->save();
+        }
+    }
+    
+    /**
+     * Render my downloads
+     * @return string
+     */
+    public function actionDownloads()
+    {
+        $gridViewDTO = new GridViewDTO();
+        SiteManager::getInstance()->processDownloads($gridViewDTO, $_GET);
+        return $this->render('/front/mydownloads', ['gridViewDTO' => $gridViewDTO]);
+    }
+    
+    /**
+     * Download file.
+     * @param int $id
+     * @param int $orderId
+     */
+    public function actionDownload($id, $orderId)
+    {
+        $result = SiteManager::getInstance()->processDownload($id, $orderId, UsniAdaptor::app()->storeManager->selectedStoreId);
+        if($result == false)
+        {
+            throw new NotFoundHttpException();
+        }
+        if($result !== false && !empty($result))
+        {
+            FlashUtil::setMessage('error', $result);
+            return $this->redirect('customer/site/downloads');
         }
     }
 }

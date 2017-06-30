@@ -5,8 +5,9 @@
  */
 namespace common\modules\payment\components;
 
-use common\modules\payment\managers\cashondelivery\PaymentManager as CashOnDeliveryPaymentManager;
-use common\modules\paypal\managers\PaymentManager as PaypalManager;
+use common\modules\payment\business\BasePaymentProcessor;
+use common\modules\order\models\AdminCheckout;
+
 /**
  * PaymentFactory class file.
  * 
@@ -40,17 +41,17 @@ class PaymentFactory extends \yii\base\Component
     
     /**
      * Customer id associated with checkout
-     * @var type 
+     * @var int 
      */
     public $customerId;
     
     /**
      * Get instance of payment factory
-     * @return CashOnDeliveryPaymentManager|PaypalManager
+     * @return BasePaymentProcessor
      */
     public function getInstance()
     {
-        $className  = '\common\modules\payment\managers\\' . $this->type . '\PaymentManager'; 
+        $className  = '\common\modules\payment\business\\' . $this->type . '\PaymentProcessor'; 
         return new $className($this->getInstanceConfig());
     }
     
@@ -60,9 +61,11 @@ class PaymentFactory extends \yii\base\Component
      */
     protected function getInstanceConfig()
     {
-        return ['order' => $this->order, 
-                'checkoutDetails' => $this->checkoutDetails,
-                'cartDetails'     => $this->cartDetails,
-                'customerId'      => $this->customerId];
+        return [
+                    'order'             => $this->order, 
+                    'checkoutDetails'   => $this->checkoutDetails,
+                    'cartDetails'       => $this->cartDetails,
+                    'customerId'        => $this->customerId
+               ];
     }
 }

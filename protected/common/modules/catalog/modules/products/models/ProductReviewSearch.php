@@ -5,10 +5,10 @@
  */
 namespace products\models;
 
-use usni\library\components\TranslatedActiveDataProvider;
 use yii\base\Model;
-use usni\library\utils\AdminUtil;
 use usni\UsniAdaptor;
+use usni\library\dataproviders\ArrayRecordDataProvider;
+use common\modules\stores\dao\StoreDAO;
 /**
  * ProductReviewSearch class file.
  *
@@ -16,6 +16,8 @@ use usni\UsniAdaptor;
  */
 class ProductReviewSearch extends ProductReview
 {
+    use \usni\library\traits\SearchTrait;
+    
     /**
      * @inheritdoc
      */
@@ -45,25 +47,28 @@ class ProductReviewSearch extends ProductReview
     /**
      * Search based on get params.
      *
-     * @return usni\library\components\TranslatedActiveDataProvider
+     * @return ArrayRecordDataProvider
      */
     public function search()
     {
-        $currentStore           = UsniAdaptor::app()->storeManager->getCurrentStore();
-        $language               = UsniAdaptor::app()->languageManager->getContentLanguage();
-        $query                  = ProductReview::find();
+        $storeId                = UsniAdaptor::app()->storeManager->selectedStoreId;
+        $dataCategoryId         = StoreDAO::getDataCategoryId($storeId);
+        $query                  = new \yii\db\Query();
         $tableName              = $this->tableName();
         $trTableName            = UsniAdaptor::tablePrefix() . 'product_review_translated';
         $mappingTable           = UsniAdaptor::tablePrefix() . 'product_category_mapping';
         $productTable           = UsniAdaptor::tablePrefix() . 'product';
-        $query->select('tpr.*, tprt.review')
-              ->from(["$mappingTable tpcm, $productTable tp, $tableName tpr, $trTableName tprt"])
-              ->where('tpcm.data_category_id = :dci AND tpcm.product_id = tp.id AND tp.id = tpr.product_id 
-                      AND tpr.id = tprt.owner_id AND tprt.language = :lang', 
-                     [':dci' => $currentStore->data_category_id, ':lang' => $language])
+        $trProductTable         = UsniAdaptor::tablePrefix() . 'product_translated';
+        $query->select('tpr.*, tprt.review, tpt.name AS product_name')
+              ->from(["$mappingTable tpcm, $productTable tp, $tableName tpr, $trTableName tprt, $trProductTable tpt"])
+              ->where('tpcm.data_category_id = :dci AND tpcm.product_id = tp.id AND tpt.owner_id = tp.id AND tpt.language = :plang AND tp.id = tpr.product_id 
+                      AND tpr.status != :status AND tpr.id = tprt.owner_id AND tprt.language = :lang', 
+                     [':dci' => $dataCategoryId, ':lang' => $this->language, ':plang' => $this->language, ':status' => self::STATUS_DELETED])
               ->groupBy(['tp.id', 'tpr.id']);
-        $dataProvider   = new TranslatedActiveDataProvider([
-            'query' => $query,
+        $dataProvider   = new ArrayRecordDataProvider([
+            'query'     => $query,
+            'key'       => 'id',
+            'sort'      => ['attributes' => ['name', 'review', 'product_id', 'status']]
         ]);
 
         // Validate data
@@ -71,14 +76,13 @@ class ProductReviewSearch extends ProductReview
         {
             return $dataProvider;
         }
-        $query->andFilterWhere(['like', 'name', $this->name]);
+        $query->andFilterWhere(['like', 'tpr.name', $this->name]);
         $query->andFilterWhere(['like', 'review', $this->review]);
         $query->andFilterWhere(['tpr.product_id' => $this->product_id]);
         $query->andFilterWhere(['tpr.status' => $this->status]);
-        $user     = UsniAdaptor::app()->user->getUserModel();
-        if(!AdminUtil::doesUserHaveOthersPermissionsOnModel(Product::className(), $user))
+        if($this->canAccessOwnedRecordsOnly('productreview'))
         {
-            $query->andFilterWhere(['tpr.created_by' => $user->id]);
+            $query->andFilterWhere(['tpr.created_by' => $this->getUserId()]);
         }
         return $dataProvider;
     }

@@ -1,13 +1,9 @@
 <?php
-define('IS_LINUX', PHP_OS == 'Linux');
-define('IS_WINNT', PHP_OS == 'WINNT');
 define('DS', DIRECTORY_SEPARATOR);
 Yii::setAlias('common', dirname(__DIR__));
 Yii::setAlias('frontend', dirname(dirname(__DIR__)) . '/frontend');
 Yii::setAlias('backend', dirname(dirname(__DIR__)) . '/backend');
 Yii::setAlias('console', dirname(dirname(__DIR__)) . '/console');
-Yii::setAlias('usni', USNI_PATH);
-Yii::setAlias('approot', APPLICATION_PATH);
 Yii::setAlias('taxes', dirname(__DIR__). '/modules/localization/modules/tax');
 Yii::setAlias('productCategories', dirname(__DIR__). '/modules/catalog/modules/productCategories');
 Yii::setAlias('products', dirname(__DIR__). '/modules/catalog/modules/products');

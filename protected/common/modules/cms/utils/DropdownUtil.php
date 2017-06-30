@@ -6,8 +6,6 @@
 namespace common\modules\cms\utils;
 
 use usni\UsniAdaptor;
-use usni\library\components\UiHtml;
-use usni\library\extensions\bootstrap\widgets\UiLabel;
 use common\modules\cms\Module;
 /**
  * DropdownUtil class file
@@ -17,7 +15,7 @@ use common\modules\cms\Module;
 class DropdownUtil
 {
     /**
-     * Gets status dropdown for post.
+     * Gets status dropdown for cms.
      * @return array
      */
     public static function getStatusSelectOptions()
@@ -28,56 +26,5 @@ class DropdownUtil
                     Module::STATUS_ARCHIVED       => UsniAdaptor::t('cms', 'Archived'),
                     Module::STATUS_TRASHED        => UsniAdaptor::t('cms', 'Trashed'),
                ];
-    }
-
-    /**
-     * Renders label for the status.
-     * @param string $data ActiveRecord of the model.
-     * @return string
-     */
-    public static function renderLabel($data)
-    {
-        $value      = self::getLabel($data);
-        if ($value == UsniAdaptor::t('cms', 'Published'))
-        {
-            return UiLabel::widget(['content' => $value, 'modifier' => UiHtml::COLOR_SUCCESS]);
-        }
-        elseif ($value == UsniAdaptor::t('cms', 'Unpublished'))
-        {
-            return UiLabel::widget(['content' => $value, 'modifier' => UiHtml::COLOR_WARNING]);
-        }
-        elseif ($value == UsniAdaptor::t('cms', 'Archived'))
-        {
-            return UiLabel::widget(['content' => $value, 'modifier' => UiHtml::COLOR_DANGER]);
-        }
-        elseif ($value == UsniAdaptor::t('cms', 'Trashed'))
-        {
-            return UiLabel::widget(['content' => $value, 'modifier' => UiHtml::COLOR_DANGER]);
-        }
-    }
-    
-    /**
-     * Gets label for the status.
-     * @param string $data ActiveRecord of the model.
-     * @return string
-     */
-    public static function getLabel($data)
-    {
-        if ($data['status'] == Module::STATUS_PUBLISHED)
-        {
-            return UsniAdaptor::t('cms', 'Published');
-        }
-        else if ($data['status'] == Module::STATUS_UNPUBLISHED)
-        {
-            return UsniAdaptor::t('cms', 'Unpublished');
-        }
-        else if ($data['status'] == Module::STATUS_ARCHIVED)
-        {
-            return UsniAdaptor::t('cms', 'Archived');
-        }
-        else if($data['status'] == Module::STATUS_TRASHED)
-        {
-            return UsniAdaptor::t('cms', 'Trashed');
-        }
     }
 }

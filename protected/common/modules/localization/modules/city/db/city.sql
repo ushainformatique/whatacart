@@ -1,0 +1,2 @@
+insert into `tbl_city` (`id`, `name`, `country_id`, `created_by`, `created_datetime`, `modified_by`, `modified_datetime`) values('4','New Delhi','99','1','2014-09-08 09:04:30','1','2014-09-08 09:04:30');
+insert into `tbl_city` (`id`, `name`, `country_id`, `created_by`, `created_datetime`, `modified_by`, `modified_datetime`) values('5','karanch','156','1','2014-09-08 09:21:35','1','2014-09-09 08:13:04');

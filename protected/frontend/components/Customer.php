@@ -8,10 +8,9 @@ namespace frontend\components;
 use cart\models\Cart;
 use cart\models\Checkout;
 use usni\UsniAdaptor;
-use customer\models\Customer as CustomerModel;
 use wishlist\models\Wishlist;
 use products\models\CompareProducts;
-use common\utils\ApplicationUtil;
+use customer\business\Manager as CustomerBusinessManager;
 /**
  * Customer class file.
  * 
@@ -71,7 +70,7 @@ class Customer extends \yii\base\Component
         {
             $this->compareproducts = new CompareProducts();
         }
-        $this->customerId = ApplicationUtil::getCustomerId();
+        $this->customerId = UsniAdaptor::app()->user->getId();
     }
     
     /**
@@ -81,25 +80,8 @@ class Customer extends \yii\base\Component
     public function updateSession($property, $value)
     {
         $this->$property    = $value;
-        $this->customerId   = ApplicationUtil::getCustomerId();
-        $storeId = UsniAdaptor::app()->storeManager->getCurrentStore()->id;
-        UsniAdaptor::app()->getSession()->set('customer_' . $storeId . '_' . $this->customerId, serialize($this));
-        $this->updateMetadata();
-    }
-    
-    /**
-     * Updates metadata in db
-     * @return void
-     */
-    protected function updateMetadata()
-    {
-        $customer           = CustomerModel::findOne($this->customerId);
-        $metadata           = $customer->metadata;
-        $cartInfo           = serialize($this->cart->itemsList);
-        $metadata->customer_id = $this->customerId;
-        $metadata->cart     = $cartInfo;
-        $metadata->wishlist = serialize($this->wishlist->itemsList);
-        $metadata->compareproducts = serialize($this->compareproducts->itemsList);
-        $metadata->save();
+        $storeId = UsniAdaptor::app()->storeManager->selectedStoreId;
+        UsniAdaptor::app()->session->set('customer_' . $storeId . '_' . $this->customerId, serialize($this));
+        CustomerBusinessManager::getInstance(['userId' => $this->customerId])->updateMetadata($this->cart, $this->wishlist, $this->compareproducts);
     }
 }

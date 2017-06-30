@@ -1,52 +1,48 @@
 <?php
 return [
     'auth'      => [
-                        'dataManagerPath' => ['common\managers'],
-                        'controllerMap' => ['group' => 'backend\controllers\auth\GroupController']
+                        'dataManagerPath' => ['common\db']
                    ],
-    'install'   => ['controllerMap' => ['default' => 'backend\controllers\install\ExtendedDefaultController']],
-    'users'     => [
-                        'controllerMap' => ['default' => 'backend\controllers\users\DefaultController'],
-                        'components'   => [
-                        'viewHelper' => [
-                            'class' => 'usni\library\modules\users\components\ViewHelper',
-                            'userEditView' => 'backend\views\users\UserEditView'
-                        ]
-                    ]
+    'install'   => ['controllerMap' => ['default' => 'backend\controllers\install\DefaultController'],
+                    'moduleDataInstallSequence' => [
+                        'language', 
+                        'notification',
+                        'users', 
+                        'auth', 
+                        'localization/country',
+                        'localization/state',
+                        'localization/city',
+                        'localization/currency',
+                        'localization/lengthclass',
+                        'localization/weightclass',
+                        'localization/orderstatus',
+                        'localization/stockstatus',
+                        'localization/tax',
+                        'manufacturer',
+                        'cms',
+                        'dataCategories',
+                        'stores',
+                        'payment',
+                        'shipping',
+                        'sequence',
+                        'catalog/productCategories',
+                        'catalog/products',
+                        'order',
+                        'marketing',
+                        'marketing/newsletter',
+                        'customer'
+                    ]],
+    'home'      => ['controllerMap' => ['default' => 'backend\controllers\home\DefaultController']],
+    'localization/lengthclass'      => [
+                        'dataManager' => 'common\modules\localization\modules\lengthclass\db\LengthClassDataManager'
                    ],
-    'order'  => [
-                    'components'   => [
-                        'viewHelper' => [
-                            'class' => 'common\modules\order\components\ViewHelper',
-                        ]
-                    ]
+    'localization/weightclass'      => [
+                        'dataManager' => 'common\modules\localization\modules\weightclass\db\WeightClassDataManager'
                    ],
-    'settings'  => [
-                    'components'   => [
-                        'viewHelper' => [
-                            'class' => 'usni\library\modules\settings\components\ViewHelper',
-                            'menuSettingsView' => 'backend\views\settings\MenuSettingsView'
-                        ]
-                    ]
+    'localization/orderstatus'      => [
+                        'dataManager' => 'common\modules\localization\modules\orderstatus\db\OrderStatusDataManager'
                    ],
-    'language'  => [
-                    'components'   => [
-                        'viewHelper' => [
-                            'class' => 'common\modules\localization\modules\language\components\ViewHelper'
-                        ]
-                    ]
+    'localization/stockstatus'      => [
+                        'dataManager' => 'common\modules\localization\modules\stockstatus\db\StockStatusDataManager'
                    ],
-    'stores'  => [
-                    'components'   => [
-                        'viewHelper' => [
-                            'class' => 'common\modules\stores\components\ViewHelper'
-                        ]
-                    ]
-                   ],
-    'cart' => ['components'   => [
-                        'viewHelper' => [
-                                            'class' => 'cart\components\ViewHelper'
-                                        ]
-                        ]
-              ],
 ];

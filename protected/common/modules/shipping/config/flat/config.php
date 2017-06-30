@@ -7,8 +7,8 @@ return [
         'code'      => 'flat',
         'author'    => 'WhatACart',
         'version'   => '1.0',
-        'product_version' => '1.0.0',
-        'status'    => Extension::STATUS_ACTIVE,
+        'product_version' => '2.0.0',
+        'status'    => Extension::STATUS_INACTIVE,
         'category'  => 'shipping'
     ];
 

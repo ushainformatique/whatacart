@@ -5,17 +5,15 @@
  */
 namespace customer;
 
-use usni\library\components\UiSecuredModule;
+use usni\library\components\SecuredModule;
 use usni\UsniAdaptor;
-use customer\utils\CustomerPermissionUtil;
 use customer\models\Customer;
-use customer\views\LatestCustomerGridView;
-use usni\library\components\UiHtml;
 /**
- * Loads the customer module in the system.
+ * Provides functionality specific to customer.
+ * 
  * @package customer
  */
-class Module extends UiSecuredModule
+class Module extends SecuredModule
 {
 
     const CUSTOMER_GROUP = 'customer';
@@ -52,23 +50,30 @@ class Module extends UiSecuredModule
     }
     
     /**
-     * @inheritdoc
+     * inheritdoc
      */
-    public static function getPermissionUtil()
+    public function getPermissionModels()
     {
-        return CustomerPermissionUtil::className();
+        return [Customer::className()];
     }
     
     /**
-     * Gets dashboard content.
-     * @return string
+     * @inheritdoc
      */
-    public function getDashboardContent()
+    public function getPermissions()
     {
-        $customer   = new Customer();
-        $view       = new LatestCustomerGridView(['model' => $customer]);
-        $content    = UiHtml::panelContent($view->render(), ['class' => 'panel-dashboard']);
-        return UiHtml::tag('div', $content, ['class' => 'col-sm-6 col-xs-12']);
+        $permissions = parent::getPermissions();
+        $permissions['Customer']['customer.change-password']    = UsniAdaptor::t('users', 'Change Password');
+        $permissions['Customer']['customer.change-status']      = UsniAdaptor::t('users', 'Change Status');
+        $permissions['Customer']['customer.change-passwordother'] = UsniAdaptor::t('users', 'Change Others Password');
+        return $permissions;
+    }
+    
+    /**
+     * @inheritdoc
+     */
+    public function getModelToExcludedPermissions()
+    {
+        return [Customer::className() => ['updateother']];
     }
 }
-?>

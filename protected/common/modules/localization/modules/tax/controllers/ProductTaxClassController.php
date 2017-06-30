@@ -5,50 +5,99 @@
  */
 namespace taxes\controllers;
 
-use taxes\controllers\BaseController;
 use taxes\models\ProductTaxClass;
-use usni\UsniAdaptor;
-use taxes\utils\TaxUtil;
+use yii\filters\AccessControl;
+use usni\library\web\actions\CreateAction;
+use usni\library\web\actions\UpdateAction;
+use usni\library\web\actions\IndexAction;
+use usni\library\web\actions\ViewAction;
+use usni\library\web\actions\DeleteAction;
+use usni\library\web\actions\BulkDeleteAction;
+use taxes\business\ProductTaxClassManager;
 /**
  * ProductTaxClassController class file.
  * 
  * @package taxes\controllers
  */
-class ProductTaxClassController extends BaseController
+class ProductTaxClassController extends \usni\library\web\Controller
 {
     /**
-     * @inheritdoc
+     * inheritdoc
      */
-    protected function resolveModelClassName()
-    {
-        return ProductTaxClass::className();
-    }
-    
-    /**
-     * @inheritdoc
-     */
-    public function pageTitles()
+    public function behaviors()
     {
         return [
-                    'create'         => UsniAdaptor::t('application','Create') . ' ' . ProductTaxClass::getLabel(1),
-                    'update'         => UsniAdaptor::t('application','Update') . ' ' . ProductTaxClass::getLabel(1),
-                    'view'           => UsniAdaptor::t('application','View') . ' ' . ProductTaxClass::getLabel(1),
-                    'manage'         => UsniAdaptor::t('application','Manage') . ' ' . ProductTaxClass::getLabel(2)
-               ];
+            'access' => [
+                'class' => AccessControl::className(),
+                'rules' => [
+                    [
+                        'allow' => true,
+                        'actions' => ['index'],
+                        'roles' => ['producttaxclass.manage'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['view'],
+                        'roles' => ['producttaxclass.view'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['create'],
+                        'roles' => ['producttaxclass.create'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['update'],
+                        'roles' => ['producttaxclass.update'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['delete', 'bulk-delete'],
+                        'roles' => ['producttaxclass.delete'],
+                    ]
+                ],
+            ],
+        ];
     }
     
     /**
-     * @inheritdoc
+     * inheritdoc
      */
-    protected function deleteModel($model)
+    public function actions()
     {
-        $isAllowedToDelete = TaxUtil::checkIfProductTaxClassAllowedToDelete($model);
-        if(!$isAllowedToDelete)
-        {
-            $message = UsniAdaptor::t('taxflash', 'Delete failed as either this product tax class is associated with tax rule or product.');
-            UsniAdaptor::app()->getSession()->setFlash('deleteFailed', $message);
-            return false;
-        }
-        return parent::deleteModel($model);
+        $managerConfig = [
+                            'class'    => ProductTaxClassManager::className()
+                         ];
+        return [
+            'create' => ['class' => CreateAction::className(),
+                         'modelClass' => ProductTaxClass::className(),
+                         'updateUrl'  => 'update',
+                         'managerConfig' => $managerConfig,
+                         'viewFile' => '/producttaxclass/create',
+                        ],
+            'update' => ['class' => UpdateAction::className(),
+                         'modelClass' => ProductTaxClass::className(),
+                         'managerConfig' => $managerConfig,
+                         'viewFile' => '/producttaxclass/update',
+                        ],
+            'index'  => ['class' => IndexAction::className(),
+                         'modelClass' => ProductTaxClass::className(),
+                         'managerConfig' => $managerConfig,
+                         'viewFile' => '/producttaxclass/index',
+                        ],
+            'view'   => ['class' => ViewAction::className(),
+                         'modelClass' => ProductTaxClass::className(),
+                         'managerConfig' => $managerConfig,
+                         'viewFile' => '/producttaxclass/view'
+                        ],
+            'delete'   => ['class' => DeleteAction::className(),
+                         'modelClass' => ProductTaxClass::className(),
+                         'redirectUrl'=> 'index',
+                         'permission' => 'producttaxclass.deleteother'
+                        ],
+            'bulk-delete' => ['class' => BulkDeleteAction::className(),
+                              'modelClass' => ProductTaxClass::className()
+                        ],
+        ];
     }
 }

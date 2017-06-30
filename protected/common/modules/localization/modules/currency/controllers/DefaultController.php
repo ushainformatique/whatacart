@@ -6,61 +6,94 @@
 namespace common\modules\localization\modules\currency\controllers;
 
 use common\modules\localization\modules\currency\models\Currency;
-use common\modules\localization\controllers\LocalizationController;
-use usni\UsniAdaptor;
-use usni\library\utils\CacheUtil;
-use common\modules\localization\modules\currency\utils\CurrencyUtil;
+use yii\filters\AccessControl;
+use usni\library\web\actions\CreateAction;
+use usni\library\web\actions\UpdateAction;
+use usni\library\web\actions\IndexAction;
+use usni\library\web\actions\BulkEditAction;
+use usni\library\web\actions\BulkDeleteAction;
+use usni\library\web\actions\DeleteAction;
+use usni\library\web\actions\ViewAction;
 /**
  * DefaultController class file
+ * 
  * @package common\modules\localization\modules\currency\controllers
  */
-class DefaultController extends LocalizationController
+class DefaultController extends \usni\library\web\Controller
 {
-    use \usni\library\traits\EditViewTranslationTrait;
-    
     /**
-     * @inheritdoc
+     * inheritdoc
      */
-    protected function resolveModelClassName()
-    {
-        return Currency::className();
-    }
-    
-    /**
-     * @inheritdoc
-     */
-    public function pageTitles()
+    public function behaviors()
     {
         return [
-                    'create'         => UsniAdaptor::t('application','Create') . ' ' . Currency::getLabel(1),
-                    'update'         => UsniAdaptor::t('application','Update') . ' ' . Currency::getLabel(1),
-                    'view'           => UsniAdaptor::t('application','View') . ' ' . Currency::getLabel(1),
-                    'manage'         => UsniAdaptor::t('application','Manage') . ' ' . Currency::getLabel(2)
-               ];
+            'access' => [
+                'class' => AccessControl::className(),
+                'rules' => [
+                    [
+                        'allow' => true,
+                        'actions' => ['index'],
+                        'roles' => ['currency.manage'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['view'],
+                        'roles' => ['currency.view'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['create'],
+                        'roles' => ['currency.create'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['update', 'bulk-edit'],
+                        'roles' => ['currency.update'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['delete', 'bulk-delete'],
+                        'roles' => ['currency.delete'],
+                    ]
+                ],
+            ],
+        ];
     }
     
     /**
-     * @inheritdoc
+     * inheritdoc
      */
-    public function afterModelSave($model)
+    public function actions()
     {
-        CacheUtil::delete('allowedCurrenciesList');
-        return true;
-    }
-    
-    /**
-     * @inheritdoc
-     */
-    protected function deleteModel($model)
-    {
-        $isAllowed = CurrencyUtil::checkIfAllowedToDelete($model);
-        if($isAllowed == false)
-        {
-            $message = UsniAdaptor::t('applicationflash', 'The model could not be deleted.');
-            UsniAdaptor::app()->getSession()->setFlash('deleteFailed', $message);
-            return false;
-        }
-        return parent::deleteModel($model);
+        return [
+            'create' => ['class' => CreateAction::className(),
+                         'modelClass' => Currency::className(),
+                         'updateUrl'  => 'update',
+                         'viewFile' => '/create'
+                        ],
+            'update' => ['class' => UpdateAction::className(),
+                         'modelClass' => Currency::className(),
+                         'viewFile' => '/update'
+                        ],
+            'index'  => ['class' => IndexAction::className(),
+                         'modelClass' => Currency::className(),
+                         'viewFile' => '/index'
+                        ],
+            'view'   => ['class' => ViewAction::className(),
+                         'modelClass' => Currency::className(),
+                         'viewFile' => '/view'
+                        ],
+            'delete'   => ['class' => DeleteAction::className(),
+                           'modelClass' => Currency::className(),
+                           'redirectUrl'=> 'index',
+                           'permission' => 'currency.deleteother'
+                        ],
+            'bulk-edit' => ['class' => BulkEditAction::className(),
+                            'modelClass' => Currency::className()
+                        ],
+            'bulk-delete' => ['class' => BulkDeleteAction::className(),
+                              'modelClass' => Currency::className()
+                        ],
+        ];
     }
 }
-?>

@@ -5,17 +5,19 @@
  */
 namespace common\modules\localization\modules\country\models;
 
-use usni\library\components\TranslatedActiveDataProvider;
 use yii\base\Model;
-use usni\library\utils\AdminUtil;
 use usni\UsniAdaptor;
+use usni\library\dataproviders\ArrayRecordDataProvider;
 /**
- * CountrySearch class file
+ * CountrySearch class file.
+ * 
  * This is the search class for model Country.
  * @package common\modules\localization\modules\country\models
  */
 class CountrySearch extends Country
 {
+    use \usni\library\traits\SearchTrait;
+    
     /**
      * @inheritdoc
      */
@@ -41,35 +43,38 @@ class CountrySearch extends Country
     {
         return Model::scenarios();
     }
-
+    
     /**
      * Search based on get params.
      *
-     * @return usni\library\components\TranslatedActiveDataProvider
+     * @return ArrayDataProvider
      */
     public function search()
     {
-        $query          = Country::find();
-        $tableName      = UsniAdaptor::tablePrefix(). 'country';  
-        $query->innerJoinWith('translations');
-        $dataProvider   = new TranslatedActiveDataProvider([
-            'query' => $query,
-        ]);
+        $query          = new \yii\db\Query();
+        $tableName      = UsniAdaptor::tablePrefix() . 'country';
+        $trTableName    = UsniAdaptor::tablePrefix() . 'country_translated';
+        $query->select('c.*, ct.name')
+              ->from(["$tableName c"])
+              ->innerJoin("$trTableName ct", 'c.id = ct.owner_id')
+              ->where('ct.language = :lang', [':lang' => $this->language]);
+        $dataProvider = new ArrayRecordDataProvider([
+                                                        'query'     => $query,
+                                                        'key'       => 'id',
+                                                        'sort'      => ['attributes' => ['name', 'status', 'iso_code_2', 'iso_code_3']]
+                                                   ]);
 
-        // Validate data
-        if (!$this->validate())
+        if (!$this->validate()) 
         {
             return $dataProvider;
-        }
-        $query->andFilterWhere(['language' => UsniAdaptor::app()->languageManager->getContentLanguage()]);
+        }        
         $query->andFilterWhere(['like', 'name', $this->name]);
         $query->andFilterWhere(['status' => $this->status]);
         $query->andFilterWhere(['like', 'iso_code_2', $this->iso_code_2]);
         $query->andFilterWhere(['like', 'iso_code_3', $this->iso_code_3]);
-        $user     = UsniAdaptor::app()->user->getUserModel();
-        if(!AdminUtil::doesUserHaveOthersPermissionsOnModel(Country::className(), $user))
+        if($this->canAccessOwnedRecordsOnly('country'))
         {
-            $query->andFilterWhere([$tableName . '.created_by' => $user->id]);
+            $query->andFilterWhere(['c.created_by' => $this->getUserId()]);
         }
         return $dataProvider;
     }

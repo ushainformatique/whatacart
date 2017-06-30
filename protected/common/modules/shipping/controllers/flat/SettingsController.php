@@ -5,58 +5,53 @@
  */
 namespace common\modules\shipping\controllers\flat;
 
-use usni\library\components\UiBaseController;
 use usni\UsniAdaptor;
-use common\modules\shipping\models\flat\FlatRateEditForm;
-use common\modules\shipping\utils\flat\FlatShippingUtil;
-use common\modules\shipping\views\flat\FlatRateShippingEditView;
-use common\modules\stores\utils\StoreUtil;
 use usni\library\utils\FlashUtil;
+use common\modules\shipping\business\flat\Manager;
+use common\modules\shipping\dto\FlatShippingFormDTO;
+use yii\filters\AccessControl;
 /**
  * SettingsController class file
  *
  * @package common\modules\shipping\controllers\flat
  */
-class SettingsController extends UiBaseController
+class SettingsController extends \usni\library\web\Controller
 {
+    /**
+     * inheritdoc
+     */
+    public function behaviors()
+    {
+        return [
+            'access' => [
+                'class' => AccessControl::className(),
+                'rules' => [
+                    [
+                        'allow' => true,
+                        'actions' => ['index'],
+                        'roles' => ['extension.manage'],
+                    ]
+                ],
+            ],
+        ];
+    }
+    
     /**
      * @inheritdoc
      */
     public function actionIndex()
     {
-        $model              = new FlatRateEditForm();
-        $postData           = UsniAdaptor::app()->request->post();
-        if ($model->load($postData))
+        $formDTO = new FlatShippingFormDTO();
+        $formDTO->setPostData(UsniAdaptor::app()->request->post());
+        Manager::getInstance()->processSettings($formDTO);
+        if($formDTO->getIsTransactionSuccess() == true)
         {
-            if($model->applicableZones == FlatShippingUtil::SHIP_TO_ALL_ZONES)
-            {
-                $model->specificZones = [];
-            }
-            $model->specificZones = serialize($model->specificZones);
-            StoreUtil::processInsertOrUpdateConfiguration($model, 'flat', 'shipping');
-            FlashUtil::setMessage('flatShippingSettingsSaved', UsniAdaptor::t('paypal', 'Flat shipping settings are saved successfully'));
-            //Unserialize
-            $model->specificZones = unserialize($model->specificZones);
+            FlashUtil::setMessage('success', UsniAdaptor::t('shipping', 'Flat shipping settings are saved successfully'));
+            return $this->refresh();
         }
         else
         {
-            $model->attributes    = StoreUtil::getStoreConfgurationAttributesByCodeForStore('flat', 'shipping');
-            $model->specificZones = unserialize($model->specificZones);
+            return $this->render('/flat/settings', ['formDTO' => $formDTO]);
         }
-        $breadcrumbs      = [
-                                [
-                                    'label' => UsniAdaptor::t('shipping', 'Manage Shipping'),
-                                    'url'   => UsniAdaptor::createUrl('shipping/default/manage')
-                                ],
-                                [
-                                    'label' => UsniAdaptor::t('shipping', 'Flat Rate Settings')
-                                ]
-                            ];
-        $this->getView()->params['breadcrumbs']  = $breadcrumbs;
-        $shippingView       = FlatRateShippingEditView::className();
-        $view               = new $shippingView($model);
-        $content            = $this->renderColumnContent([$view]);
-        return $this->render('@usni/themes/bootstrap/views/layouts/main', ['content' => $content]);
     }
 }
-?>

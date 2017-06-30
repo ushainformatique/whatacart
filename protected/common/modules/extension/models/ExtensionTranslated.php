@@ -5,13 +5,13 @@
  */
 namespace common\modules\extension\models;
 
-use usni\library\components\UiSecuredActiveRecord;
+use usni\library\db\ActiveRecord;
 /**
  * ExtensionTranslated class file. 
  *
  * @package common\modules\extension\models
  */
-class ExtensionTranslated extends UiSecuredActiveRecord
+class ExtensionTranslated extends ActiveRecord
 {
 	/**
      * @inheritdoc

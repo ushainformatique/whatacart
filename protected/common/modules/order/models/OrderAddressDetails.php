@@ -5,14 +5,15 @@
  */
 namespace common\modules\order\models;
 
-use usni\library\components\UiSecuredActiveRecord;
+use usni\library\db\ActiveRecord;
 use usni\UsniAdaptor;
 use common\modules\order\utils\OrderUtil;
 /**
  * OrderAddressDetails active record.
+ * 
  * @package common\modules\Order\models
  */
-class OrderAddressDetails extends UiSecuredActiveRecord 
+class OrderAddressDetails extends ActiveRecord 
 {
 	/**
      * @inheritdoc

@@ -1,10 +1,11 @@
 <?php
 use usni\UsniAdaptor;
+use usni\library\utils\Html;
 ?>
 <table style="display: none;">
     <tr class="special-value-row-dummy">
         <td class="text-left">
-            <?php echo $dropdown; ?>
+            <?php echo Html::dropDownList('ProductSpecial[##rowCount##][group_id_dummy]', null, $groups, ['class' => 'form-control dummy-special']); ?>
         </td>
         <td class="text-right">
             <input type="text" name="ProductSpecial[##rowCount##][priority]" value="" placeholder="<?php echo UsniAdaptor::t('products', 'Priority');?>" class="form-control">

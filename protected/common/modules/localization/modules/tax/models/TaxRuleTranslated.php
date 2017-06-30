@@ -5,12 +5,13 @@
  */
 namespace taxes\models;
     
-use usni\library\components\UiSecuredActiveRecord;
+use usni\library\db\ActiveRecord;
 /**
- * TaxRuleTranslated class file
+ * TaxRuleTranslated class file.
+ * 
  * @package taxes\models;
  */
-class TaxRuleTranslated extends UiSecuredActiveRecord
+class TaxRuleTranslated extends ActiveRecord
 {
     /**
      * @inheritdoc
@@ -20,4 +21,3 @@ class TaxRuleTranslated extends UiSecuredActiveRecord
         return $this->hasOne(TaxRule::className(), ['id' => 'owner_id']);
     }
 }
-?>

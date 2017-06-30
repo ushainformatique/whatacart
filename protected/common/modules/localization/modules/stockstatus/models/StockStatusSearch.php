@@ -6,9 +6,8 @@
 namespace common\modules\localization\modules\stockstatus\models;
 
 use yii\base\Model;
-use usni\library\components\TranslatedActiveDataProvider;
-use usni\library\utils\AdminUtil;
 use usni\UsniAdaptor;
+use usni\library\dataproviders\ArrayRecordDataProvider;
 /**
  * StockStatusSearch class file
  * This is the search class for model StockStatus.
@@ -17,6 +16,8 @@ use usni\UsniAdaptor;
  */
 class StockStatusSearch extends StockStatus
 {
+    use \usni\library\traits\SearchTrait;
+    
     /**
      * @inheritdoc
      */
@@ -46,28 +47,31 @@ class StockStatusSearch extends StockStatus
     /**
      * Search based on get params.
      *
-     * @return yii\data\ActiveDataProvider
+     * @return ArrayDataProvider
      */
     public function search()
     {
-        $query          = StockStatus::find();
+        $query          = new \yii\db\Query();
         $tableName      = UsniAdaptor::tablePrefix() . 'stock_status';
-        $query->innerJoinWith('translations');
-        $dataProvider   = new TranslatedActiveDataProvider([
-            'query' => $query,
-        ]);
+        $trTableName    = UsniAdaptor::tablePrefix() . 'stock_status_translated';
+        $query->select('s.*, st.name')
+              ->from(["$tableName s"])
+              ->innerJoin("$trTableName st", 's.id = st.owner_id')
+              ->where('st.language = :lang', [':lang' => $this->language]);
+        $dataProvider = new ArrayRecordDataProvider([
+                                                        'query'     => $query,
+                                                        'key'       => 'id',
+                                                        'sort'      => ['attributes' => ['name']]
+                                                   ]);
 
-        // Validate data
-        if (!$this->validate())
+        if (!$this->validate()) 
         {
             return $dataProvider;
-        }
-        $query->andFilterWhere(['language' => UsniAdaptor::app()->languageManager->getContentLanguage()]);
+        }        
         $query->andFilterWhere(['like', 'name', $this->name]);
-        $user     = UsniAdaptor::app()->user->getUserModel();
-        if(!AdminUtil::doesUserHaveOthersPermissionsOnModel(StockStatus::className(), $user))
+        if($this->canAccessOwnedRecordsOnly('stockstatus'))
         {
-            $query->andFilterWhere([$tableName . '.created_by' => $user->id]);
+            $query->andFilterWhere(['s.created_by' => $this->getUserId()]);
         }
         return $dataProvider;
     }

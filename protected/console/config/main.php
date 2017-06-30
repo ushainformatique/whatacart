@@ -10,17 +10,13 @@ $config  = ArrayHelper::merge(
                                     'id'                    => 'whatacart-console',
                                     'basePath'              => dirname(__DIR__),
                                     'controllerNamespace'   => 'console\controllers',
-                                    'components'        => array(
-                                        'user'          => ['loginUrl' => ['/users/default/login'], 'class' => 'usni\library\components\UiConsoleUser'],
-                                        'languageManager'   => ['class' => 'console\components\LanguageManager',
-                                                                'contentLanguageCookieName' => 'whatacartConsoleContentLanguage',
-                                                                'applicationLanguageCookieName' => 'whatacartConsoleLanguage'],
-                                        'currencyManager'    => ['class' => 'console\components\CurrencyManager',
-                                                                 'applicationCurrencyCookieName' => 'consoleCurrency'],
-                                        'storeManager'       => ['class' => 'common\managers\StoreManager',
-                                                                 'applicationStoreCookieName' => 'consoleStore'],
-                                        'moduleManager'      => ['class' => 'usni\library\components\UiModuleManager']
-                                    )
+                                    //'controllerMap'         => ['message' => 'console\controllers\MessageController'],
+                                    'components'        => [
+                                                            'user'          => ['loginUrl' => ['/users/default/login'], 'class' => 'usni\library\console\ConsoleUser'],
+                                                            'languageManager'   => ['class' => 'usni\library\components\LanguageManager'],
+                                                            'currencyManager'   => ['class' => 'common\modules\localization\modules\currency\components\CurrencyManager'],
+                                                            'storeManager'      => ['class' => 'common\modules\stores\components\StoreManager']
+                                                            ]                                    
                     )
 );
 $instanceConfigFile = APPLICATION_PATH . '/protected/common/config/instanceConfig.php'; 

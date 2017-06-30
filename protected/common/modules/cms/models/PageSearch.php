@@ -5,10 +5,9 @@
  */
 namespace common\modules\cms\models;
 
-use usni\library\components\TranslatedActiveDataProvider;
 use yii\base\Model;
 use usni\UsniAdaptor;
-use usni\library\utils\AdminUtil;
+use usni\library\dataproviders\ArrayRecordDataProvider;
 /**
  * PageSearch class file
  * This is the search class for model Page.
@@ -16,7 +15,9 @@ use usni\library\utils\AdminUtil;
  * @package common\modules\cms\models
  */
 class PageSearch extends Page
-{   
+{
+    use \usni\library\traits\SearchTrait;
+    
     /**
      * @inheritdoc
      */
@@ -38,35 +39,42 @@ class PageSearch extends Page
     /**
      * Search based on get params.
      *
-     * @return yii\data\ActiveDataProvider
+     * @return ArrayRecordDataProvider
      */
     public function search()
     {
-        $language       = UsniAdaptor::app()->languageManager->getContentLanguage();
-        $query          = Page::find();
+        $query          = new \yii\db\Query();
         $tableName      = UsniAdaptor::tablePrefix() . 'page';
         $trTableName    = UsniAdaptor::tablePrefix() . 'page_translated';
         $query->select('tp.*, tpt.name, tpt.alias, tpt.menuitem, tpt.content, tpt.summary, tpt.metakeywords, tpt.metadescription')
               ->from(["$tableName tp"])
               ->innerJoin("$trTableName tpt", 'tp.id = tpt.owner_id')
-              ->where('tpt.language = :lang', [':lang' => $language]);
-        $dataProvider   = new TranslatedActiveDataProvider([
-            'query' => $query,
-        ]);
+              ->where('tpt.language = :lang', [':lang' => $this->language])
+              ->orderBy('tp.path');
+        $dataProvider = new ArrayRecordDataProvider([
+                                                        'query'     => $query,
+                                                        'key'       => 'id',
+                                                        'sort'      => ['attributes' => ['status']]
+                                                   ]);
 
-        // Validate data
-        if (!$this->validate())
+        if (!$this->validate()) 
         {
             return $dataProvider;
-        }
+        }        
         $query->andFilterWhere(['like', 'name', $this->name]);
-        $query->andFilterWhere(['parent_id' => $this->parent_id]);
         $query->andFilterWhere(['status' => $this->status]);
-        $user     = UsniAdaptor::app()->user->getUserModel();
-        if(!AdminUtil::doesUserHaveOthersPermissionsOnModel(Page::className(), $user))
+        if($this->canAccessOwnedRecordsOnly('page'))
         {
-            $query->andFilterWhere(['tp.created_by' => $user->id]);
+            $query->andFilterWhere(['tp.created_by' => $this->getUserId()]);
         }
         return $dataProvider;
+    }
+    
+    /**
+     * inheritdoc
+     */
+    public static function tableName()
+    {
+        return UsniAdaptor::tablePrefix() . 'page';
     }
 }

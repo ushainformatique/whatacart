@@ -5,7 +5,7 @@
  */
 namespace common\modules\order\models;
 
-use usni\library\components\UiSecuredActiveRecord;
+use usni\library\db\ActiveRecord;
 use usni\UsniAdaptor;
 use products\models\Product;
 /**
@@ -13,7 +13,7 @@ use products\models\Product;
  * 
  * @package common\modules\Order\models
  */
-class OrderProduct extends UiSecuredActiveRecord 
+class OrderProduct extends ActiveRecord 
 {
     /**
      * This would be use on order product detaiview screen.
@@ -56,7 +56,6 @@ class OrderProduct extends UiSecuredActiveRecord
                      'price'        => UsniAdaptor::t('products', 'Price'),
                      'total'        => UsniAdaptor::t('application', 'Total'),
                      'tax'          => UsniAdaptor::t('tax', 'Tax'),
-                     'reward'       => UsniAdaptor::t('products', 'Reward'),
                      'options_price'=> UsniAdaptor::t('products', 'Options Price')
                   ];
         return parent::getTranslatedAttributeLabels($labels);

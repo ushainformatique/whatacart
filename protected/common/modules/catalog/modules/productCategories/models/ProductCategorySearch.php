@@ -6,9 +6,9 @@
 namespace productCategories\models;
 
 use usni\UsniAdaptor;
-use productCategories\dataproviders\ProductCategoryActiveDataProvider;
 use yii\base\Model;
-use usni\library\utils\AdminUtil;
+use usni\library\dataproviders\ArrayRecordDataProvider;
+use common\modules\stores\dao\StoreDAO;
 /**
  * ProductCategorySearch class  file.
  * 
@@ -16,6 +16,8 @@ use usni\library\utils\AdminUtil;
  */
 class ProductCategorySearch extends ProductCategory
 {
+    use \usni\library\traits\SearchTrait;
+    
     /**
      * @inheritdoc
      */
@@ -35,29 +37,43 @@ class ProductCategorySearch extends ProductCategory
     /**
      * Search based on get params.
      *
-     * @return productCategories\dataproviders\ProductCategoryActiveDataProvider
+     * @return ArrayRecordDataProvider
      */
     public function search()
     {
-        $query          = ProductCategory::find();
-        $query->innerJoinWith('translations');
-        $dataProvider   = new ProductCategoryActiveDataProvider([
-            'query' => $query,
-            'filterModel' => $this,
-            'filteredColumns' => ['name', 'status', 'created_by', 'parent_id']
-        ]);
+        $dataCategoryId = StoreDAO::getDataCategoryId(UsniAdaptor::app()->storeManager->selectedStoreId);
+        $query          = new \yii\db\Query();
+        $tableName      = UsniAdaptor::tablePrefix() . 'product_category';
+        $trTableName    = UsniAdaptor::tablePrefix() . 'product_category_translated';
+        $query->select('tp.*, tpt.name, tpt.alias, tpt.metakeywords, tpt.metadescription, tpt.description')
+              ->from(["$tableName tp"])
+              ->innerJoin("$trTableName tpt", 'tp.id = tpt.owner_id AND tpt.language = :lang', [':lang' => $this->language])
+              ->where('tp.data_category_id = :dc', [':dc' => $dataCategoryId])
+              ->orderBy('path');
+        $dataProvider = new ArrayRecordDataProvider([
+                                                        'query'     => $query,
+                                                        'key'       => 'id',
+                                                        'sort'      => ['attributes' => ['status']]
+                                                   ]);
 
-        // Validate data
-        if (!$this->validate())
+        if (!$this->validate()) 
         {
             return $dataProvider;
-        }
-        $this->language = UsniAdaptor::app()->languageManager->getContentLanguage();
-        $user     = UsniAdaptor::app()->user->getUserModel();
-        if(!AdminUtil::doesUserHaveOthersPermissionsOnModel(ProductCategory::className(), $user))
+        }        
+        $query->andFilterWhere(['like', 'name', $this->name]);
+        $query->andFilterWhere(['status' => $this->status]);
+        if($this->canAccessOwnedRecordsOnly('productcategory'))
         {
-            $this->created_by = $user->id;
+            $query->andFilterWhere(['tp.created_by' => $this->getUserId()]);
         }
         return $dataProvider;
+    }
+    
+    /**
+     * inheritdoc
+     */
+    public static function tableName()
+    {
+        return UsniAdaptor::tablePrefix() . 'product_category';
     }
 }

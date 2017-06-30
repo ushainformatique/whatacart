@@ -5,8 +5,9 @@
  */
 namespace common\modules\cms\models;
 
-use usni\library\components\TranslatableActiveRecord;
+use usni\library\db\TranslatableActiveRecord;
 use usni\UsniAdaptor;
+use common\modules\cms\dao\PageDAO;
 /**
  * Page active record.
  * 
@@ -15,6 +16,29 @@ use usni\UsniAdaptor;
 class Page extends TranslatableActiveRecord
 {
     use \usni\library\traits\TreeModelTrait;
+    
+    /**
+     * @inheritdoc
+     */
+    public function beforeSave($insert)
+    {
+        if(parent::beforeSave($insert))
+        {
+            $this->level = $this->getLevel();
+            return true;
+        }
+       return false;
+    }
+    
+    /**
+     * @inheritdoc
+     */
+    public function afterSave($insert, $changedAttributes)
+    {
+        parent::afterSave($insert, $changedAttributes);
+        $this->updateChildrensLevel();
+        $this->updatePath();
+    }
     
     /**
      * @inheritdoc
@@ -33,10 +57,9 @@ class Page extends TranslatableActiveRecord
                     [['name', 'alias'],                                         'string', 'max' => 128],
                     [['parent_id'],                                         'default', 'value' => 0],
                     [['metakeywords', 'metadescription'],                       'safe'],
-                    ['theme', 'default', 'value' => 'classic'],
                     ['alias', 'match', 'pattern' => '/^[a-zA-Z0-9_-]+$/i'],
-                    [['id', 'name', 'menuitem', 'alias', 'content', 'summary', 'theme', 'parent_id', 'metakeywords', 
-                      'metadescription'], 'safe']
+                    [['id', 'name', 'menuitem', 'alias', 'content', 'summary', 'parent_id', 'metakeywords', 
+                      'metadescription', 'level', 'path'], 'safe']
                ];
     }
 
@@ -46,8 +69,9 @@ class Page extends TranslatableActiveRecord
     public function scenarios()
     {
         $scenario               = parent::scenarios();
-        $scenario['create']     = $scenario['update'] = ['name', 'menuitem', 'alias', 'content', 'summary', 'metakeywords', 
-                                                         'metadescription', 'status', 'custom_url', 'parent_id', 'theme'];
+        $commonAttributes       = ['name', 'menuitem', 'alias', 'content', 'summary', 'metakeywords', 'metadescription', 'status', 'custom_url', 
+                                   'parent_id', 'level', 'path'];
+        $scenario['create']     = $scenario['update'] = $commonAttributes;
         $scenario['bulkedit']   = ['parent_id', 'status'];
         return $scenario;
     }
@@ -121,5 +145,75 @@ class Page extends TranslatableActiveRecord
     public static function getTranslatableAttributes()
     {
         return ['name', 'menuitem', 'content', 'summary', 'metakeywords', 'metadescription', 'alias'];
+    }
+    
+    /**
+     * Get descendants based on a parent.
+     * @param int $parentId
+     * @param int $isChildren If only childrens have to be fetched
+     * @return boolean
+     */
+    public function descendants($parentId = 0, $isChildren = false)
+    {
+        $recordsData    = [];
+        $language       = $this->language;
+        $records        = PageDAO::getChildrens($parentId, $language);
+        if(!$isChildren)
+        {
+            foreach($records as $record)
+            {
+                $hasChildren    = false;
+                $childrens      = $this->descendants($record['id'], $isChildren);
+                if(count($childrens) > 0)
+                {
+                    $hasChildren = true;
+                }
+                $recordsData[]  = ['row'         => $record,
+                                   'hasChildren' => $hasChildren, 
+                                   'children'    => $childrens];
+            }
+            return $recordsData;
+        }
+        else
+        {
+            foreach($records as $record)
+            {
+                $recordsData[]  = ['row'         => $record,
+                                   'hasChildren' => false, 
+                                   'children'    => []];
+            }
+            return $recordsData;
+        }
+    }
+    
+    /**
+     * inheritdoc
+     */
+    public function getMultiLevelSelectOptions($textFieldName,
+                                               $accessOwnedModelsOnly = false,
+                                               $valueFieldName = 'id')
+    {
+        $childrens      = array_keys($this->getTreeRecordsInHierarchy());
+        $itemsArray     = [];
+        if($this->nodeList === null)
+        {
+            $this->nodeList  = $this->descendants(0, false);
+        }
+        $items   = static::flattenArray($this->nodeList);
+        foreach($items as $item)
+        {
+            $row = $item['row'];
+            if($this->$valueFieldName != $row[$valueFieldName])
+            {
+                if(($accessOwnedModelsOnly === true && $this->created_by == $row['created_by']) || ($accessOwnedModelsOnly === false))
+                {
+                    if(!in_array($row['id'], $childrens))
+                    {
+                        $itemsArray[$row[$valueFieldName]] = str_repeat('-', $row['level']) . $row[$textFieldName];
+                    }
+                }
+            }
+        }
+        return $itemsArray;
     }
 }

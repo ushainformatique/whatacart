@@ -43,7 +43,7 @@ class PaymentMethodEditForm extends Model
             [['payment_method', 'comments', 'agree'],  'safe'],
             [['agree'],         'required', 'isEmpty' => [$this, 'checkAgree'], 
                                             'requiredValue' => "1", 
-                                            'message' => UsniAdaptor::t('cart', 'User should agree to terms and conditions for the purchase')]
+                                            'message' => UsniAdaptor::t('cart', 'Customer should agree to terms and conditions for the purchase')]
         );
     }
 

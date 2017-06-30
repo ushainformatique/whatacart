@@ -1,11 +1,12 @@
 <?php
 namespace common\modules\order\models;
 
-use usni\library\components\TranslatableActiveRecord;
+use usni\library\db\TranslatableActiveRecord;
 use usni\UsniAdaptor;
 use common\modules\order\models\Order;
 /**
  * Invoice active record.
+ * 
  * @package common\modules\Order\models
  */
 class Invoice extends TranslatableActiveRecord 

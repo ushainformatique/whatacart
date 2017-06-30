@@ -75,7 +75,7 @@ class Guest extends \yii\base\Component
     public function updateSession($property, $value)
     {
         $this->$property = $value;
-        $storeId = UsniAdaptor::app()->storeManager->getCurrentStore()->id;
+        $storeId = UsniAdaptor::app()->storeManager->selectedStoreId;
         UsniAdaptor::app()->getSession()->set('guest_' . $storeId, serialize($this));
     }
 }

@@ -5,7 +5,7 @@
  */
 namespace products\models;
 
-use usni\library\components\UiSecuredActiveRecord;
+use usni\library\db\ActiveRecord;
 use usni\UsniAdaptor;
 use products\models\Product;
 
@@ -13,7 +13,7 @@ use products\models\Product;
  * This is the model class for table "product_special".
  * @package products\models
  */
-class ProductSpecial extends UiSecuredActiveRecord
+class ProductSpecial extends ActiveRecord
 {
     /**
      * @inheritdoc

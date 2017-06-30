@@ -6,16 +6,17 @@
 namespace common\modules\marketing\notifications;
 
 use newsletter\models\Newsletter;
-use usni\library\components\UiEmailNotification;
 use usni\library\modules\notification\models\Notification;
 use usni\UsniAdaptor;
-use common\modules\stores\utils\StoreUtil;
+use common\modules\stores\dao\StoreDAO;
 use common\modules\marketing\models\SendMailForm;
+use usni\library\notifications\EmailNotification;
 /**
  * CustomerSendMailNotification class file.
+ * 
  * @package common\modules\marketing\notifications
  */
-class CustomerSendMailNotification extends UiEmailNotification
+class CustomerSendMailNotification extends EmailNotification
 {
     /**
      * Contain send mail model.
@@ -58,7 +59,8 @@ class CustomerSendMailNotification extends UiEmailNotification
      */
     protected function getTemplateData()
     {        
-        $store = StoreUtil::getStoreById($this->model->store_id);
+        //@vikash TODO need to the add the language here when using it or pass newsletter attay having store name here.
+        $store = StoreDAO::getById($this->model->store_id, $this->language);
         return [
                     '{{appname}}'       => UsniAdaptor::app()->name,
                     '{{storename}}'     => $store['name'],
@@ -75,4 +77,3 @@ class CustomerSendMailNotification extends UiEmailNotification
         return array('{{####content####}}' => $data['templateContent']);
     }
 }
-?>

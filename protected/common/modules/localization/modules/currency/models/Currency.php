@@ -5,10 +5,11 @@
  */
 namespace common\modules\localization\modules\currency\models;
 
-use usni\library\components\TranslatableActiveRecord;
+use usni\library\db\TranslatableActiveRecord;
 use usni\UsniAdaptor;
 use common\modules\localization\modules\currency\models\CurrencyTranslated;
-use common\modules\localization\modules\currency\utils\CurrencyUtil;
+use yii\db\Exception;
+use common\modules\order\dao\OrderDAO;
 /**
  * Currency active record.
  * 
@@ -79,5 +80,39 @@ class Currency extends TranslatableActiveRecord
     public static function getTranslatableAttributes()
     {
         return ['name'];
+    }
+    
+    /**
+     * Check if allowed to delete.
+     * 
+     * @param Currency $model
+     * @return boolean
+     */
+    public function checkIfAllowedToDelete()
+    {
+        //Check the orders associated
+        $orders = OrderDAO::getOrdersByAttribute('currency_code', $this->code, $this->language);
+        if(empty($orders))
+        {
+            return true;
+        }
+        return false;
+    }
+    
+    /**
+     * inheritdoc
+     */
+    public function beforeDelete()
+    {
+        $isAllowedToDelete = $this->checkIfAllowedToDelete();
+        if($isAllowedToDelete == false)
+        {
+            throw new Exception('This model is associated to orders in the system.');
+        }
+        if($this->value == 1.00)
+        {
+            throw new Exception('This is base currency for the system and can not be deleted.');
+        }
+        return parent::beforeDelete();
     }
 }

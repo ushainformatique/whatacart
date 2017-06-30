@@ -6,39 +6,13 @@
 namespace cart\models;
 
 use yii\base\Model;
-use usni\UsniAdaptor;
 /**
  * ConfirmOrderForm class file
  * 
  * @package cart\models
+ * It might be used if there is need to configure extra parameters for review order.
  */
-
 class ConfirmOrderForm extends Model
 {
-    /**
-     * Content during checkout.
-     * @var string
-     */
-    public $content;
     
-    /**
-     * @inheritdoc
-     */
-    public function rules()
-    {
-        return array(
-                        [['content'],   'safe']
-                        
-                    );
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function attributeLabels()
-    {
-        return [
-                    'content'   => UsniAdaptor::t('application', 'Content'),
-               ];
-    }
 }

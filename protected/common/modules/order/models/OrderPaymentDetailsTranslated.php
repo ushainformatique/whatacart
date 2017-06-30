@@ -5,12 +5,12 @@
  */
 namespace common\modules\order\models;
     
-use usni\library\components\UiSecuredActiveRecord;
+use usni\library\db\ActiveRecord;
 /**
  * OrderPaymentDetailsTranslated class file
  * @package common\modules\order\models
  */
-class OrderPaymentDetailsTranslated extends UiSecuredActiveRecord
+class OrderPaymentDetailsTranslated extends ActiveRecord
 {
     /**
      * @inheritdoc

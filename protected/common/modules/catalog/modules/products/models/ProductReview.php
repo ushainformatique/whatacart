@@ -5,14 +5,12 @@
  */
 namespace products\models;
 
-use usni\library\components\TranslatableActiveRecord;
+use usni\library\db\TranslatableActiveRecord;
 use usni\UsniAdaptor;
 use products\models\Product;
-use usni\library\modules\users\models\User;
-use usni\library\modules\users\utils\UserUtil;
 
 /**
- * This is the model class for table "product_reviewss".
+ * This is the model class for table "product_reviews".
  */
 class ProductReview extends TranslatableActiveRecord
 {
@@ -37,13 +35,19 @@ class ProductReview extends TranslatableActiveRecord
     const STATUS_DELETED   = 0;
     
     /**
+     * New review posted event
+     */
+    const EVENT_NEW_REVIEW_POSTED = 'newReviewPosted';
+    
+    /**
      * @inheritdoc
      */
     public function rules()
     {
         return [
-                  [['name', 'review', 'product_id', 'status'], 'required'],
-                  [['name', 'review', 'product_id', 'status'], 'safe'],
+                  [['name', 'review', 'product_id', 'status', 'email'], 'required'],
+                  ['email', 'email'],
+                  [['name', 'review', 'product_id', 'status', 'email'], 'safe'],
                ];
     }
     
@@ -53,9 +57,9 @@ class ProductReview extends TranslatableActiveRecord
     public function scenarios()
     {
         $scenario = parent::scenarios();
-        $scenario['create']  = $scenario['update']    = ['name', 'review', 'product_id', 'status'];
+        $scenario['create']  = $scenario['update']    = ['name', 'review', 'product_id', 'status', 'email'];
         $scenario['approve'] = $scenario['unapprove'] = $scenario['delete']      =  $scenario['spam'] = $scenario['removespam'] = 
-        $scenario['bulkdelete'] = ['status'];
+        $scenario['bulkdelete'] = $scenario['undo'] = ['status'];
         return $scenario;
     }
 
@@ -66,7 +70,8 @@ class ProductReview extends TranslatableActiveRecord
     {
         return [
                     'name'             => UsniAdaptor::t('application', 'Name'),
-                    'review'           => UsniAdaptor::t('products', 'Review'), 
+                    'review'           => UsniAdaptor::t('products', 'Review'),
+                    'email'            => UsniAdaptor::t('users', 'Email')
                ];
     }
     
@@ -104,41 +109,5 @@ class ProductReview extends TranslatableActiveRecord
     public function getProduct()
     {
        return $this->hasOne(Product::className(), ['id' => 'product_id']);
-    }
-    
-    /**
-     * @inheritdoc
-     */
-    public function updateCreatedDateTimeFields($event)
-    {
-        $isInstalled = UsniAdaptor::app()->isInstalled();
-        if($this->shouldAddCreatedAndModifiedFields())
-        {
-            $this->addCreatedFields($event);
-            $userModel  = UsniAdaptor::app()->user->getUserModel();
-            if($isInstalled)
-            {   
-                if($userModel != null)
-                {
-                    $this->created_by = $userModel['id'];
-                }
-                else
-                {
-                    $this->created_by = 0;
-                }
-            }
-            else
-            {
-                if(!$isInstalled)
-                {
-                   $userModel = UserUtil::getUserById(User::SUPER_USER_ID);
-                }
-                $this->created_by = $userModel['id'];
-            }
-            if($this->created_datetime == null || $this->created_datetime == '0000-00-00 00:00:00')
-            {
-                $this->created_datetime = date('Y-m-d H:i:s');
-            }
-        }
     }
 }

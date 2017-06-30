@@ -5,65 +5,95 @@
  */
 namespace common\modules\dataCategories\controllers;
 
-use usni\library\components\UiAdminController;
 use common\modules\dataCategories\models\DataCategory;
-use usni\UsniAdaptor;
-use common\modules\dataCategories\utils\DataCategoryUtil;
+use yii\filters\AccessControl;
+use usni\library\web\actions\CreateAction;
+use usni\library\web\actions\IndexAction;
+use usni\library\web\actions\BulkEditAction;
+use usni\library\web\actions\BulkDeleteAction;
+use usni\library\web\actions\DeleteAction;
+use usni\library\web\actions\ViewAction;
+use usni\library\web\actions\UpdateAction;
 /**
  * DefaultController class file
  * 
  * @package common\modules\dataCategories\controllers
  */
-class DefaultController extends UiAdminController
+class DefaultController extends \usni\library\web\Controller
 {
-    use \usni\library\traits\EditViewTranslationTrait;
-    
     /**
-     * @inheritdoc
+     * inheritdoc
      */
-    protected function resolveModelClassName()
-    {
-        return DataCategory::className();
-    }
-    
-    /**
-     * @inheritdoc
-     */
-    protected function deleteModel($model)
-    {
-        $isAllowedToDelete = DataCategoryUtil::checkIfAllowedToDelete($model);
-        if(!$isAllowedToDelete)
-        {
-            $message = UsniAdaptor::t('datacategoryflash', 'Delete failed as either this is root category or stores are associated to data category');
-            UsniAdaptor::app()->getSession()->setFlash('deleteFailed', $message);
-            return false;
-        }
-        return parent::deleteModel($model);
-    }
-    
-    /**
-     * @inheritdoc
-     */
-    public function actionUpdate($id)
-    {
-        $model = DataCategory::findOne($id);
-        if($model['id'] == DataCategory::ROOT_CATEGORY_ID)
-        {
-            throw new \yii\web\ForbiddenHttpException(\Yii::t('yii','Root category could not be updated.'));
-        }
-        return parent::actionUpdate($id);
-    }
-    
-    /**
-     * @inheritdoc
-     */
-    public function pageTitles()
+    public function behaviors()
     {
         return [
-                    'create'         => UsniAdaptor::t('application','Create') . ' ' . DataCategory::getLabel(1),
-                    'update'         => UsniAdaptor::t('application','Update') . ' ' . DataCategory::getLabel(1),
-                    'view'           => UsniAdaptor::t('application','View') . ' ' . DataCategory::getLabel(1),
-                    'manage'         => UsniAdaptor::t('application','Manage') . ' ' . DataCategory::getLabel(1)
-               ];
+            'access' => [
+                'class' => AccessControl::className(),
+                'rules' => [
+                    [
+                        'allow' => true,
+                        'actions' => ['index'],
+                        'roles' => ['datacategory.manage'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['view'],
+                        'roles' => ['datacategory.view'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['create'],
+                        'roles' => ['datacategory.create'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['update', 'bulk-edit'],
+                        'roles' => ['datacategory.update'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['delete', 'bulk-delete'],
+                        'roles' => ['datacategory.delete'],
+                    ]
+                ],
+            ],
+        ];
+    }
+    
+    /**
+     * inheritdoc
+     */
+    public function actions()
+    {
+        return [
+            'create' => ['class' => CreateAction::className(),
+                         'modelClass' => DataCategory::className(),
+                         'updateUrl'  => 'update',
+                         'viewFile' => '/create'
+                        ],
+            'update' => ['class' => UpdateAction::className(),
+                         'modelClass' => DataCategory::className(),
+                         'viewFile' => '/update'
+                        ],
+            'index'  => ['class' => IndexAction::className(),
+                         'modelClass' => DataCategory::className(),
+                         'viewFile' => '/index'
+                        ],
+            'view'   => ['class' => ViewAction::className(),
+                         'modelClass' => DataCategory::className(),
+                         'viewFile' => '/view'
+                        ],
+            'delete'   => ['class' => DeleteAction::className(),
+                         'modelClass' => DataCategory::className(),
+                         'redirectUrl'=> 'index',
+                         'permission' => 'datacategory.deleteother'
+                        ],
+            'bulk-edit' => ['class' => BulkEditAction::className(),
+                            'modelClass' => DataCategory::className()
+                        ],
+            'bulk-delete' => ['class' => BulkDeleteAction::className(),
+                              'modelClass' => DataCategory::className()
+                        ],
+        ];
     }
 }

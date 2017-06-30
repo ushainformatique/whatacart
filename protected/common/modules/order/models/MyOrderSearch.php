@@ -6,10 +6,10 @@
 namespace common\modules\order\models;
 
 use yii\base\Model;
-use yii\data\ActiveDataProvider;
 use usni\UsniAdaptor;
 use usni\library\modules\users\models\Address;
-use usni\library\components\Sort;
+use yii\data\Sort;
+use usni\library\dataproviders\ArrayRecordDataProvider;
 /**
  * MyOrderSearch class file
  * This is the search class for model Order.
@@ -18,6 +18,8 @@ use usni\library\components\Sort;
  */
 class MyOrderSearch extends Order 
 {
+    use \usni\library\traits\SearchTrait;
+    
     /**
      * Payment method
      * @var string 
@@ -44,7 +46,7 @@ class MyOrderSearch extends Order
 	public function rules()
 	{
 		return [
-                    [['status', 'customer_id', 'shipping', 'unique_id', 'payment_method', 'amount', 'created_datetime'],       'safe'],
+                    [['status', 'customer_id', 'shipping', 'unique_id', 'payment_method', 'amount', 'created_datetime'],    'safe'],
                ];
 	}
     
@@ -59,29 +61,28 @@ class MyOrderSearch extends Order
     /**
      * Search based on get params.
      *
-     * @return ActiveDataProvider
+     * @return ArrayRecordDataProvider
      */
     public function search()
     {
-        $user               = UsniAdaptor::app()->user->getUserModel();
-        $query              = new \yii\db\Query();
-        $tableName          = UsniAdaptor::tablePrefix() . 'order';
-        $extensionTable     = UsniAdaptor::tablePrefix() . 'extension';
-        $trExtensionTable   = UsniAdaptor::tablePrefix() . 'extension_translated';
-        $orderAddressDetails = UsniAdaptor::tablePrefix() . 'order_address_details';
-        $orderPaymentDetails = UsniAdaptor::tablePrefix() . 'order_payment_details';
-        $orderInvoice       = UsniAdaptor::tablePrefix() . 'invoice';
-        $currentStore       = UsniAdaptor::app()->storeManager->getCurrentStore();
-        $query->select(["ot.*", "et.code", "ett.name", "CONCAT_WS(' ', oad.firstname, oad.lastname) AS username", "opd.payment_method", "opd.total_including_tax", "oi.id AS invoice_id"])
+        $query                  = new \yii\db\Query();
+        $tableName              = UsniAdaptor::tablePrefix() . 'order';
+        $extensionTable         = UsniAdaptor::tablePrefix() . 'extension';
+        $trExtensionTable       = UsniAdaptor::tablePrefix() . 'extension_translated';
+        $orderAddressDetails    = UsniAdaptor::tablePrefix() . 'order_address_details';
+        $orderPaymentDetails    = UsniAdaptor::tablePrefix() . 'order_payment_details';
+        $orderInvoice           = UsniAdaptor::tablePrefix() . 'invoice';
+        $currentStoreId         = UsniAdaptor::app()->storeManager->selectedStoreId;
+        $query->select(["ot.*", "et.code", "ett.name", "CONCAT_WS(' ', oad.firstname, oad.lastname) AS username", "opd.payment_method", "opd.total_including_tax", "oi.id AS invoice_id", "(opd.total_including_tax + opd.shipping_fee) AS amount"])
               ->from(["$tableName ot"])
               ->innerJoin("$orderAddressDetails oad", "ot.id = oad.order_id AND oad.type = :type", [':type' => Address::TYPE_BILLING_ADDRESS])
               ->innerJoin("$orderPaymentDetails opd", "ot.id = opd.order_id")
               ->innerJoin("$orderInvoice oi", "ot.id = oi.order_id")
               ->leftJoin("$extensionTable et", "ot.shipping = et.code AND et.category = :cat", [':cat' => 'shipping'])
-              ->leftJoin("$trExtensionTable ett", "et.id = ett.owner_id AND ett.language = :lan", [':lan' => UsniAdaptor::app()->languageManager->getContentLanguage()])
-              ->where('ot.store_id = :sid AND customer_id = :cid', [':sid' => $currentStore->id, ':cid' => $user->id]);
+              ->leftJoin("$trExtensionTable ett", "et.id = ett.owner_id AND ett.language = :lan", [':lan' => UsniAdaptor::app()->languageManager->selectedLanguage])
+              ->where('ot.store_id = :sid AND customer_id = :cid', [':sid' => $currentStoreId, ':cid' => $this->getUserId()]);
         
-        $dataProvider   = new ActiveDataProvider([
+        $dataProvider   = new ArrayRecordDataProvider([
             'query' => $query,
             'key'   => 'id'
         ]);

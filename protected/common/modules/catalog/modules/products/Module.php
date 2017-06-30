@@ -5,17 +5,14 @@
  */
 namespace products;
 
-use usni\library\components\UiSecuredModule;
+use usni\library\components\SecuredModule;
 use usni\UsniAdaptor;
-use products\models\Product;
-use products\views\LatestProductGridView;
-use usni\library\components\UiHtml;
 /**
- * Loads the products module in the system.
+ * Provides functionality related to products.
  *
- * @package product
+ * @package products
  */
-class Module extends UiSecuredModule
+class Module extends SecuredModule
 {
     /**
      * Overrides to register translations.
@@ -47,17 +44,4 @@ class Module extends UiSecuredModule
             'basePath' => '@approot/messages'
         ];
     }
-    
-    /**
-     * Gets dashboard content.
-     * @return string
-     */
-    public function getDashboardContent()
-    {
-        $product   = new Product();
-        $view      = new LatestProductGridView(['model' => $product]);
-        $content   = UiHtml::panelContent($view->render(), ['class' => 'panel-dashboard']);
-        return UiHtml::tag('div', $content, ['class' => 'col-sm-6 col-xs-12']);
-    }
 }
-?>

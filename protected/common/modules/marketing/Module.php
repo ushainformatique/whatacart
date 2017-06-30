@@ -5,14 +5,13 @@
  */
 namespace common\modules\marketing;
 
-use usni\library\components\UiSecuredModule;
 use usni\UsniAdaptor;
-use common\modules\marketing\utils\MarketingPermissionUtil;
 /**
- * Provides functionality related to entities specific to the catalog.
+ * Provides functionality related to marketing.
+ * 
  * @package common\modules\marketing
  */
-class Module extends UiSecuredModule
+class Module extends \usni\library\components\SecuredModule
 {
     /**
      * Overrides to register translations.
@@ -38,9 +37,12 @@ class Module extends UiSecuredModule
     /**
      * @inheritdoc
      */
-    public static function getPermissionUtil()
+    public function getPermissions()
     {
-        return MarketingPermissionUtil::className();
+        $permissions['MarketingModule'] = [
+                                                'access.marketing'  => UsniAdaptor::t('application', 'Access Tab'),
+                                                'marketing.mail'    => UsniAdaptor::t('marketing', 'Marketing Mails'),
+                                          ];
+        return $permissions;
     }
 }
-?>

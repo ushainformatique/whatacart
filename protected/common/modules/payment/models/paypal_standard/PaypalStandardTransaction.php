@@ -5,7 +5,7 @@
  */
 namespace common\modules\payment\models\paypal_standard;
 
-use usni\library\components\UiSecuredActiveRecord;
+use usni\library\db\ActiveRecord;
 use usni\UsniAdaptor;
 use common\modules\payment\utils\PaymentUtil;
 /**
@@ -13,7 +13,7 @@ use common\modules\payment\utils\PaymentUtil;
  *
  * @package common\modules\payment\models\paypal_standard
  */
-class PaypalStandardTransaction extends UiSecuredActiveRecord 
+class PaypalStandardTransaction extends ActiveRecord 
 {
     /**
      * Total amount for the order

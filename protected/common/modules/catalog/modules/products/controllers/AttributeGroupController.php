@@ -6,34 +6,97 @@
 namespace products\controllers;
 
 use products\models\ProductAttributeGroup;
-use common\modules\catalog\controllers\BaseController;
-use usni\UsniAdaptor;
+use yii\filters\AccessControl;
+use usni\library\web\actions\CreateAction;
+use usni\library\web\actions\UpdateAction;
+use products\business\AttributeGroupManager;
+use usni\library\web\actions\IndexAction;
+use usni\library\web\actions\DeleteAction;
+use usni\library\web\actions\BulkDeleteAction;
+use usni\library\web\actions\ViewAction;
 /**
  * AttributeGroupController class file.
+ * 
  * @package products\controllers
  */
-class AttributeGroupController extends BaseController
+class AttributeGroupController extends \usni\library\web\Controller
 {
-    use \usni\library\traits\EditViewTranslationTrait;
-    
     /**
-     * @inheritdoc
+     * inheritdoc
      */
-    protected function resolveModelClassName()
+    public function behaviors()
     {
-        return ProductAttributeGroup::className();
+        return [
+            'access' => [
+                'class' => AccessControl::className(),
+                'rules' => [
+                    [
+                        'allow' => true,
+                        'actions' => ['index'],
+                        'roles' => ['product.manage'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['view'],
+                        'roles' => ['product.view'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['create'],
+                        'roles' => ['product.create'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['update'],
+                        'roles' => ['product.update'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['delete', 'bulk-delete'],
+                        'roles' => ['product.delete'],
+                    ]
+                ],
+            ],
+        ];
     }
     
     /**
-     * @inheritdoc
+     * inheritdoc
      */
-    public function pageTitles()
+    public function actions()
     {
+        $managerConfig = ['class'    => AttributeGroupManager::className()];
         return [
-                    'create'         => UsniAdaptor::t('application','Create') . ' ' . ProductAttributeGroup::getLabel(1),
-                    'update'         => UsniAdaptor::t('application','Update') . ' ' . ProductAttributeGroup::getLabel(1),
-                    'view'           => UsniAdaptor::t('application','View') . ' ' . ProductAttributeGroup::getLabel(1),
-                    'manage'         => UsniAdaptor::t('application','Manage') . ' ' . ProductAttributeGroup::getLabel(2)
-               ];
+            'create' => ['class' => CreateAction::className(),
+                         'modelClass' => ProductAttributeGroup::className(),
+                         'updateUrl'  => 'update',
+                         'managerConfig' => $managerConfig,
+                         'viewFile' => '/attributegroup/create'
+                        ],
+            'update' => ['class' => UpdateAction::className(),
+                         'modelClass' => ProductAttributeGroup::className(),
+                         'managerConfig' => $managerConfig,
+                         'viewFile' => '/attributegroup/update',
+                        ],
+            'index'  => ['class' => IndexAction::className(),
+                         'modelClass' => ProductAttributeGroup::className(),
+                         'managerConfig' => $managerConfig,
+                         'viewFile' => '/attributegroup/index'
+                        ],
+            'view'   => ['class' => ViewAction::className(),
+                         'modelClass' => ProductAttributeGroup::className(),
+                         'managerConfig' => $managerConfig,
+                         'viewFile' => '/attributegroup/view'
+                        ],
+            'delete'   => ['class' => DeleteAction::className(),
+                         'modelClass' => ProductAttributeGroup::className(),
+                         'redirectUrl'=> 'index',
+                         'permission' => 'product.deleteother'
+                        ],
+            'bulk-delete' => ['class' => BulkDeleteAction::className(),
+                              'modelClass' => ProductAttributeGroup::className(),
+                              'managerConfig' => $managerConfig,
+                        ],
+        ];
     }
 }

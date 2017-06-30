@@ -5,104 +5,100 @@
  */
 namespace common\modules\manufacturer\controllers;
 
-use usni\library\utils\FileUploadUtil;
 use common\modules\manufacturer\models\Manufacturer;
-use usni\library\components\UiAdminController;
-use yii\db\ActiveRecord;
-use usni\UsniAdaptor;
-use usni\library\managers\UploadInstanceManager;
+use usni\library\web\actions\CreateAction;
+use usni\library\web\actions\UpdateAction;
+use usni\library\web\actions\IndexAction;
+use usni\library\web\actions\ViewAction;
+use usni\library\web\actions\DeleteAction;
+use usni\library\web\actions\BulkEditAction;
+use usni\library\web\actions\BulkDeleteAction;
+use yii\filters\AccessControl;
+use usni\library\web\actions\DeleteImageAction;
 /**
  * DefaultController class file
+ * 
  * @package common\modules\manufacturer\controllers
  */
-class DefaultController extends UiAdminController
+class DefaultController extends \usni\library\web\Controller
 {
     /**
-     * @inheritdoc
+     * inheritdoc
      */
-    protected function resolveModelClassName()
-    {
-        return Manufacturer::className();
-    }
-    
-    /**
-     * @inheritdoc
-     */
-    protected function beforeAssigningPostData($manufacturer)
-    {
-        assert($manufacturer instanceof ActiveRecord);
-        $manufacturer->savedImage = $manufacturer->image;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function beforeModelSave($manufacturer)
-    {
-        $config = [
-                        'model'             => $manufacturer,
-                        'attribute'         => 'image',
-                        'uploadInstanceAttribute' => 'uploadInstance',
-                        'type'              => 'image',
-                        'savedAttribute'    => 'savedImage',
-                        'fileMissingError'  => UsniAdaptor::t('application', 'Please upload image'),
-                  ];
-        $uploadInstanceManager = new UploadInstanceManager($config);
-        $result = $uploadInstanceManager->processUploadInstance();
-        if($result === false)
-        {
-            return false;
-        }
-        return true;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function afterModelSave($manufacturer)
-    {
-        if($manufacturer->image != null)
-        {
-            $config = [
-                            'model'             => $manufacturer, 
-                            'attribute'         => 'image', 
-                            'uploadInstance'    => $manufacturer->uploadInstance, 
-                            'savedFile'         => $manufacturer->savedImage
-                      ];
-            FileUploadUtil::save('image', $config);
-        }
-        return true;
-    }
-    
-    /**
-     * Force delete a model
-     * @param string $name
-     * @return void
-     */
-    public function actionForceDelete($name)
-    {
-        $modelClassName             = $this->resolveModelClassName();
-        $translatedModelClassName   = $this->resolveModelClassName() . 'Translated';
-        $data = $modelClassName::find()->where('name = :alias', [':alias' => $name])->one();
-        if(!empty($data))
-        {
-           $modelClassName::deleteAll('alias = :alias', [':alias' => $name]);
-           $translatedModelClassName::deleteAll('owner_id = :Oid', [':Oid' => $data->id]);
-        }
-        $this->redirect(Url::to($this->getBreadCrumbManageUrl(), true));
-    }
-    
-    /**
-     * @inheritdoc
-     */
-    public function pageTitles()
+    public function behaviors()
     {
         return [
-                    'create'         => UsniAdaptor::t('application','Create') . ' ' . Manufacturer::getLabel(1),
-                    'update'         => UsniAdaptor::t('application','Update') . ' ' . Manufacturer::getLabel(1),
-                    'view'           => UsniAdaptor::t('application','View') . ' ' . Manufacturer::getLabel(1),
-                    'manage'         => UsniAdaptor::t('application','Manage') . ' ' . Manufacturer::getLabel(2)
-               ];
+            'access' => [
+                'class' => AccessControl::className(),
+                'rules' => [
+                    [
+                        'allow' => true,
+                        'actions' => ['index'],
+                        'roles' => ['manufacturer.manage'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['view'],
+                        'roles' => ['manufacturer.view'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['create'],
+                        'roles' => ['manufacturer.create'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['update', 'bulk-edit', 'delete-image'],
+                        'roles' => ['manufacturer.update'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['delete', 'bulk-delete'],
+                        'roles' => ['manufacturer.delete'],
+                    ]
+                ],
+            ],
+        ];
+    }
+    
+    /**
+     * inheritdoc
+     */
+    public function actions()
+    {
+        return [
+            'create' => ['class' => CreateAction::className(),
+                         'modelClass' => Manufacturer::className(),
+                         'updateUrl'  => 'update',
+                         'viewFile' => '/create'
+                        ],
+            'update' => ['class' => UpdateAction::className(),
+                         'modelClass' => Manufacturer::className(),
+                         'viewFile' => '/update'
+                        ],
+            'index'  => ['class' => IndexAction::className(),
+                         'modelClass' => Manufacturer::className(),
+                         'viewFile' => '/index'],
+            'view'   => ['class' => ViewAction::className(),
+                         'modelClass' => Manufacturer::className(),
+                         'viewFile' => '/view'
+                        ],
+            'delete'   => ['class' => DeleteAction::className(),
+                         'modelClass' => Manufacturer::className(),
+                         'redirectUrl'=> 'index',
+                         'permission' => 'manufacturer.deleteother'
+                        ],
+            'bulk-edit' => ['class' => BulkEditAction::className(),
+                         'modelClass' => Manufacturer::className()
+                        ],
+            'bulk-delete' => ['class' => BulkDeleteAction::className(),
+                              'modelClass' => Manufacturer::className()
+                        ],
+            'delete-image' => [
+                            'class' => DeleteImageAction::className(),
+                            'modelClass' => Manufacturer::className(),
+                            'attribute' => 'image'
+                        ]
+        ];
     }
 }
-?>

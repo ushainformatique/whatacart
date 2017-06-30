@@ -5,60 +5,104 @@
  */
 namespace taxes\controllers;
 
-use taxes\controllers\BaseController;
 use taxes\models\Zone;
-use usni\UsniAdaptor;
-use taxes\utils\TaxUtil;
+use yii\filters\AccessControl;
+use taxes\business\ZoneManager;
+use usni\library\web\actions\CreateAction;
+use usni\library\web\actions\UpdateAction;
+use usni\library\web\actions\IndexAction;
+use usni\library\web\actions\ViewAction;
+use usni\library\web\actions\DeleteAction;
+use usni\library\web\actions\BulkDeleteAction;
+use taxes\dto\ZoneFormDTO;
+use taxes\dto\ZoneGridViewDTO;
 /**
- * ZoneController class file
+ * ZoneController class file.
+ * 
  * @package taxes\controllers
  */
-class ZoneController extends BaseController
+class ZoneController extends \usni\library\web\Controller
 {
-    use \usni\library\traits\EditViewTranslationTrait;
-    
     /**
-     * @inheritdoc
+     * inheritdoc
      */
-    protected function resolveModelClassName()
-    {
-        return Zone::className();
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function beforeModelSave($zone)
-    {
-        return true;
-    }
-    
-    /**
-     * @inheritdoc
-     */
-    public function pageTitles()
+    public function behaviors()
     {
         return [
-                    'create'         => UsniAdaptor::t('application','Create') . ' ' . Zone::getLabel(1),
-                    'update'         => UsniAdaptor::t('application','Update') . ' ' . Zone::getLabel(1),
-                    'view'           => UsniAdaptor::t('application','View') . ' ' . Zone::getLabel(1),
-                    'manage'         => UsniAdaptor::t('application','Manage') . ' ' . Zone::getLabel(2)
-               ];
+            'access' => [
+                'class' => AccessControl::className(),
+                'rules' => [
+                    [
+                        'allow' => true,
+                        'actions' => ['index'],
+                        'roles' => ['zone.manage'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['view'],
+                        'roles' => ['zone.view'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['create'],
+                        'roles' => ['zone.create'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['update'],
+                        'roles' => ['zone.update'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['delete', 'bulk-delete'],
+                        'roles' => ['zone.delete'],
+                    ],
+                ],
+            ],
+        ];
     }
     
     /**
-     * @inheritdoc
+     * inheritdoc
      */
-    protected function deleteModel($model)
+    public function actions()
     {
-        $isAllowedToDelete = TaxUtil::checkIfZoneAllowedToDelete($model);
-        if(!$isAllowedToDelete)
-        {
-            $message = UsniAdaptor::t('taxflash', 'Delete failed as this zone is associated with tax rate.');
-            UsniAdaptor::app()->getSession()->setFlash('deleteFailed', $message);
-            return false;
-        }
-        return parent::deleteModel($model);
+        $managerConfig = [
+                            'class'    => ZoneManager::className()
+                         ];
+        return [
+            'create' => ['class' => CreateAction::className(),
+                         'modelClass' => Zone::className(),
+                         'updateUrl'  => 'update',
+                         'managerConfig' => $managerConfig,
+                         'viewFile' => '/zone/create',
+                         'formDTOClass' => ZoneFormDTO::className()
+                        ],
+            'update' => ['class' => UpdateAction::className(),
+                         'modelClass' => Zone::className(),
+                         'managerConfig' => $managerConfig,
+                         'viewFile' => '/zone/update',
+                         'formDTOClass' => ZoneFormDTO::className()
+                        ],
+            'index'  => ['class' => IndexAction::className(),
+                         'modelClass' => Zone::className(),
+                         'managerConfig' => $managerConfig,
+                         'viewFile' => '/zone/index',
+                         'dtoClass' => ZoneGridViewDTO::className()
+                        ],
+            'view'   => ['class' => ViewAction::className(),
+                         'modelClass' => Zone::className(),
+                         'managerConfig' => $managerConfig,
+                         'viewFile' => '/zone/view'
+                        ],
+            'delete'   => ['class' => DeleteAction::className(),
+                           'modelClass' => Zone::className(),
+                           'redirectUrl'=> 'index',
+                           'permission' => 'zone.deleteother'
+                        ],
+            'bulk-delete' => ['class' => BulkDeleteAction::className(),
+                              'modelClass' => Zone::className()
+                        ],
+        ];
     }
 }
-?>

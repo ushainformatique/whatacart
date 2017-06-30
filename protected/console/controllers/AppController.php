@@ -2,10 +2,11 @@
 namespace console\controllers;
 
 use yii\console\Controller;
-use usni\library\modules\install\components\InstallManager;
+use usni\library\modules\install\business\InstallManager;
 use usni\library\modules\install\models\SettingsForm;
 use usni\UsniAdaptor;
-use usni\library\components\OutputBufferStreamer;
+use usni\library\modules\install\dto\InstallFormDTO;
+use yii\helpers\Console;
 /**
  * Run database related action and install the application
  *
@@ -81,11 +82,6 @@ class AppController extends Controller
      */
     public $environment;
     /**
-     * Front end theme.
-     * @var string
-     */
-    public $frontTheme;
-    /**
      * Site demo data.
      * @var string
      */
@@ -121,7 +117,6 @@ class AppController extends Controller
     {
         if(!UsniAdaptor::app()->isInstalled())
         {
-            $obRenderer         = new OutputBufferStreamer();
             $this->dbName = $this->prompt("Enter Database Name:", ['required' => true]);
             $this->dbUsername = $this->prompt("Enter Database Username:", ['required' => true]);
             $this->dbPassword = $this->prompt("Enter Database Password:", ['required' => true]);
@@ -130,7 +125,6 @@ class AppController extends Controller
             $this->superUsername = $this->prompt("Enter Super Username:", ['required' => true, 'default' => 'super']);
             $this->superPassword = $this->prompt("Enter Super Password:", ['required' => true, 'default' => 'admin']);
             $this->superEmail = $this->prompt("Enter Super Email:", ['required' => true]);
-            $this->frontTheme = $this->prompt("Enter Front Theme:", ['required' => true, 'default' => 'classic']);
             $this->timezone   = $this->prompt("Enter timezone for e.g. Asia/Kolkata:", ['required' => true, 'default' => 'Asia/Kolkata']);
             $this->environment = $this->select("Select environment:", ['test' => 'Test', 'prod' => 'Production', 'dev' => 'Development']);
             $installModel = new SettingsForm(['dbName' => $this->dbName, 
@@ -143,12 +137,58 @@ class AppController extends Controller
                                               'superUsername'   => $this->superUsername,
                                               'superEmail'      => $this->superEmail,
                                               'superPassword'   => $this->superPassword,
-                                              'frontTheme'      => $this->frontTheme,
                                               'timezone'        => $this->timezone,
                                               'environment'     => $this->environment,
                                               'logo'            => '']);
-            $manager = new InstallManager(['showBufferMessage' => false]);
-            $manager->runInstallation($installModel, $obRenderer, 'instance.php');
+            $formDTO            = new InstallFormDTO();
+            $formDTO->setScenario('create');
+            $formDTO->setModel($installModel);
+            $installManager     = new InstallManager();
+            $formDTO->setConfigFile('instance.php');
+            $installManager->setConfigFiles($formDTO);
+            $installManager->setDbComponent($formDTO);
+            Console::output(UsniAdaptor::t('install', 'Start building database'));
+            //Build database call
+            $installManager->buildDatabase($formDTO);
+            $this->outputMessages($formDTO);
+            Console::output(UsniAdaptor::t('install', 'Database creation successfull'));
+            Console::output("50");
+            //Save configuration in db
+            $installManager->saveSettingsInDatabase($formDTO);
+            Console::output(UsniAdaptor::t('install', 'Configuration saved successfully'));
+            Console::output("55");
+            //Add super user
+            $installManager->createSuperUser($formDTO);
+            Console::output(UsniAdaptor::t('install', 'Super user created successfully'));
+            Console::output("60");
+            //Add permissions
+            Console::output(UsniAdaptor::t('install', 'Start loading module permissions'));
+            $installManager->loadPermissions();
+            Console::output(UsniAdaptor::t('install', 'Module permissions loaded successfully') . "\n");
+            Console::output("65");
+            //Install data
+            $installManager->installDefaultAndDemoData($formDTO);
+            $this->outputMessages($formDTO);
+            Console::output("80");
+            //Final steps
+            $installManager->processFinalSteps($formDTO);
+            $this->outputMessages($formDTO);
+            Console::output("100");
+            Console::output("Application installed successfully");
         }
+    }
+    
+    /**
+     * Output messages
+     * @param InstallFormDTO $formDTO
+     */
+    private function outputMessages($formDTO)
+    {
+        $messages   = $formDTO->getMessages();
+        foreach($messages as $message)
+        {
+            Console::output($message);
+        }
+        $formDTO->setMessages([]);
     }
 }

@@ -8,7 +8,8 @@ namespace common\modules\marketing\models;
 use yii\base\Model;
 use usni\UsniAdaptor;
 /**
- * SendMailForm class file
+ * SendMailForm class file.
+ * 
  * @package common\modules\marketing\models
  */
 class SendMailForm extends Model
@@ -25,6 +26,11 @@ class SendMailForm extends Model
      * Notification constants
      */
     const NOTIFY_SENDMAIL = 'sendMail';
+    
+    /**
+     * Send mail event
+     */
+    const EVENT_SENDMAIL = 'sendMail';
     
     /**
      * Store customer id.
@@ -74,8 +80,7 @@ class SendMailForm extends Model
     public function rules()
     {
         return [
-                    [['subject', 'content'],                            'required'],
-                    [['store_id', 'to'],                                'safe'],
+                    [['subject', 'content', 'store_id'],                'required'],
                     [['customer_id', 'group_id', 'product_id'],         'safe'],
                     [['id', 'subject', 'content', 'store_id', 'to'],    'safe'],
                ];

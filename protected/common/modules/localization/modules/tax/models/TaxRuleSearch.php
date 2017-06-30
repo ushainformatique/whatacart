@@ -5,11 +5,10 @@
  */
 namespace taxes\models;
 
-use usni\library\components\TranslatedActiveDataProvider;
-use usni\library\utils\AdminUtil;
 use usni\UsniAdaptor;
 use yii\base\Model;
-use usni\library\components\Sort;
+use usni\library\dataproviders\ArrayRecordDataProvider;
+use taxes\behaviors\TaxRuleBehavior;
 /**
  * TaxRuleSearch class file
  * This is the search class for model TaxRule.
@@ -18,6 +17,18 @@ use usni\library\components\Sort;
  */
 class TaxRuleSearch extends TaxRule
 {
+    use \usni\library\traits\SearchTrait;
+    
+    /**
+     * @inheritdoc
+     */
+    public function behaviors()
+    {
+        return [
+            TaxRuleBehavior::className()
+        ];
+    }
+    
 	/**
      * @inheritdoc
      */
@@ -47,34 +58,42 @@ class TaxRuleSearch extends TaxRule
     /**
      * Search based on get params.
      *
-     * @return yii\data\ActiveDataProvider
+     * @return ArrayRecordDataProvider
      */
     public function search()
     {
-        $query          = TaxRule::find();
+        $query          = new \yii\db\Query();
         $tableName      = UsniAdaptor::tablePrefix() . 'tax_rule';
-        $query->innerJoinWith('translations');
-        $query->innerJoin(TaxRuleDetails::tableName(), $tableName . '.id = tax_rule_id');
-        $dataProvider   = new TranslatedActiveDataProvider([
-            'query' => $query,
-        ]);
-        $sort = new Sort(['attributes' => ['name', 'based_on']]);
-        $dataProvider->setSort($sort);
-        // Validate data
-        if (!$this->validate())
+        $trTableName    = UsniAdaptor::tablePrefix() . 'tax_rule_translated';
+        $query->select('tr.*, trt.name')
+              ->from(["$tableName tr"])
+              ->innerJoin("$trTableName trt", 'tr.id = trt.owner_id')
+              ->where('trt.language = :lang', [':lang' => $this->language]);
+        $dataProvider = new ArrayRecordDataProvider([
+                                                        'query'     => $query,
+                                                        'key'       => 'id',
+                                                        'sort'      => ['attributes' => ['name', 'based_on']]
+                                                   ]);
+
+        if (!$this->validate()) 
         {
             return $dataProvider;
-        }
-        $query->andFilterWhere(['language' => UsniAdaptor::app()->languageManager->getContentLanguage()]);
+        }        
         $query->andFilterWhere(['like', 'name', $this->name]);
         $query->andFilterWhere(['like', 'based_on',  $this->based_on]);
         $query->andFilterWhere(['customer_group_id' => $this->customerGroups]);
-        $user     = UsniAdaptor::app()->user->getUserModel();
-        if(!AdminUtil::doesUserHaveOthersPermissionsOnModel(TaxRule::className(), $user))
+        if($this->canAccessOwnedRecordsOnly('taxrule'))
         {
-            $query->andFilterWhere([$tableName . '.created_by' => $user->id]);
+            $query->andFilterWhere(['tr.created_by' => $this->getUserId()]);
         }
-        $query->groupBy('id');
+        $models = $dataProvider->getModels();
+        foreach($models as $index => $model)
+        {
+            $model['based_on_value'] = $this->getBasedOnDisplayValue($model);
+            $model['customer_group'] = $this->getCustomerGroupByTaxRuleDetails($model['id']);
+            $models[$index] = $model;
+        }
+        $dataProvider->setModels($models);
         return $dataProvider;
     }
 }

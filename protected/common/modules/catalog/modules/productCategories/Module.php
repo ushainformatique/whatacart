@@ -5,13 +5,14 @@
  */
 namespace productCategories;
 
-use usni\library\components\UiSecuredModule;
+use usni\library\components\SecuredModule;
 use usni\UsniAdaptor;
 /**
  * Provides functionality related to entities specific to the product category.
+ * 
  * @package productCategories
  */
-class Module extends UiSecuredModule
+class Module extends SecuredModule
 {
    /**
      * Overrides to register translations.
@@ -34,4 +35,3 @@ class Module extends UiSecuredModule
         ];
     }
 }
-?>

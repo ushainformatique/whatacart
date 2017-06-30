@@ -26,11 +26,10 @@ class ChangePasswordEmailNotification extends \usni\library\modules\users\notifi
      */
     protected function getTemplateData()
     {
-        return array('{{fullName}}' => $this->user->getName(),
+        return array('{{fullName}}' => $this->getFullName(),
                      '{{username}}' => $this->user->username,
                      '{{password}}' => $this->user->newPassword,
                      '{{loginUrl}}' => UsniAdaptor::createUrl('customer/default/login'),
                      '{{appname}}'  => UsniAdaptor::app()->name);
     }
 }
-?>

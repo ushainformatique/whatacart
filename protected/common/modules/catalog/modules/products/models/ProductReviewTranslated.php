@@ -5,12 +5,12 @@
  */
 namespace products\models;
     
-use usni\library\components\UiSecuredActiveRecord;
+use usni\library\db\ActiveRecord;
 /**
  * ProductReviewTranslated class file
  * @package common\modules\products\models
  */
-class ProductReviewTranslated extends UiSecuredActiveRecord
+class ProductReviewTranslated extends ActiveRecord
 {
     /**
      * @inheritdoc

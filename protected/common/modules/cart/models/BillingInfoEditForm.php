@@ -7,7 +7,7 @@ namespace cart\models;
 
 use yii\base\Model;
 use usni\UsniAdaptor;
-use usni\library\validators\UiEmailValidator;
+use usni\library\validators\EmailValidator;
 use usni\library\modules\users\models\Address;
 use usni\library\modules\users\models\Person;
 use usni\library\utils\ArrayUtil;
@@ -43,7 +43,7 @@ class BillingInfoEditForm extends Model
             //Person rules
             [['firstname', 'lastname'],         'string', 'max' => 32],
             ['email',                           'required'],
-            ['email',                           UiEmailValidator::className()],
+            ['email',                           EmailValidator::className()],
             ['mobilephone',                     'number'],
             //Address rules
             [['address1', 'city', 'country', 'postal_code', 'firstname', 'lastname', 'mobilephone'], 'required'],

@@ -5,13 +5,14 @@
  */
 namespace common\modules\dataCategories\models;
     
-use usni\library\components\UiSecuredActiveRecord;
+use usni\library\db\ActiveRecord;
 
 /**
- * DataCategoryTranslated class file
+ * DataCategoryTranslated class file.
+ * 
  * @package common\modules\dataCategories\models
  */
-class DataCategoryTranslated extends UiSecuredActiveRecord
+class DataCategoryTranslated extends ActiveRecord
 {
     /**
      * @inheritdoc
@@ -21,4 +22,3 @@ class DataCategoryTranslated extends UiSecuredActiveRecord
         return $this->hasOne(DataCategory::className(), ['id' => 'owner_id']);
     }
 }
-?>

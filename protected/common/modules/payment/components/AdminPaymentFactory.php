@@ -17,7 +17,7 @@ class AdminPaymentFactory extends PaymentFactory
      */
     public function getInstance()
     {
-        $className  = '\common\modules\payment\managers\\' . $this->type . '\AdminPaymentManager'; 
+        $className  = '\common\modules\payment\business\\' . $this->type . '\AdminPaymentProcessor'; 
         return new $className($this->getInstanceConfig());
     }
 }

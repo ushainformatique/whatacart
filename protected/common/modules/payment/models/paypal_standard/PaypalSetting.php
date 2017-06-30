@@ -5,15 +5,14 @@
  */
 namespace common\modules\payment\models\paypal_standard;
 
-use usni\library\validators\UiEmailValidator;
-use usni\library\components\UiFormModel;
+use usni\library\validators\EmailValidator;
 use usni\UsniAdaptor;
 /**
  * PaypalSetting class file.
  *
  * @package common\modules\payment\models\paypal_standard
  */
-class PaypalSetting extends UiFormModel
+class PaypalSetting extends \yii\base\Model
 {
     /**
      * @var string 
@@ -49,7 +48,7 @@ class PaypalSetting extends UiFormModel
     {
         return [
             [['business_email', 'return_url', 'cancel_url', 'notify_url', 'transactionType'], 'required'],
-            ['business_email',  UiEmailValidator::className()],
+            ['business_email',  EmailValidator::className()],
             [['business_email'], 'string', 'max' => 128],
             [['sandbox'], 'boolean'],
             [['return_url', 'cancel_url'], 'string', 'max' => 256],
@@ -79,12 +78,12 @@ class PaypalSetting extends UiFormModel
     public function attributeHints()
     {
         return [
-                    'business_email'    => UsniAdaptor::t('paypal', 'Business email for the paypal account'),
-                    'sandbox'           => UsniAdaptor::t('paypal', 'Enable sandbox'),
-                    'return_url'        => UsniAdaptor::t('paypal', 'Return Url after the order is successfully placed'),
-                    'cancel_url'        => UsniAdaptor::t('paypal', 'Cancel Url after the order is cancelled'),
-                    'notify_url'        => UsniAdaptor::t('paypal', 'Notify Url where IPN response messages would be sent'),
-                    'transactionType'   => UsniAdaptor::t('paypal', 'Transaction type for paypal Sale or Authorization')
+                    'business_email'    => UsniAdaptor::t('paypalhint', 'Business email for the paypal account'),
+                    'sandbox'           => UsniAdaptor::t('paypalhint', 'Enable sandbox'),
+                    'return_url'        => UsniAdaptor::t('paypalhint', 'Return Url after the order is successfully placed'),
+                    'cancel_url'        => UsniAdaptor::t('paypalhint', 'Cancel Url after the order is cancelled'),
+                    'notify_url'        => UsniAdaptor::t('paypalhint', 'Notify Url where IPN response messages would be sent'),
+                    'transactionType'   => UsniAdaptor::t('paypalhint', 'Transaction type for paypal Sale or Authorization')
                ];
     }
 }

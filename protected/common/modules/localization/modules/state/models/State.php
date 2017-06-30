@@ -5,12 +5,15 @@
  */
 namespace common\modules\localization\modules\state\models;
 
-use usni\library\components\TranslatableActiveRecord;
+use usni\library\db\TranslatableActiveRecord;
 use usni\UsniAdaptor;
 use common\modules\localization\modules\country\models\Country;
-use common\modules\localization\modules\state\utils\StateUtil;
+use yii\db\Exception;
+use common\modules\localization\modules\state\dao\StateDAO;
+use taxes\models\Zone;
 /**
  * State active record.
+ * 
  * @package common\modules\localization\modules\state\models
  */
 class State extends TranslatableActiveRecord
@@ -21,9 +24,8 @@ class State extends TranslatableActiveRecord
 	public function rules()
 	{
         return [
-                    ['name',                    'required'],
+                    [['name', 'country_id'],    'required'],
                     ['name',                    'validateName'],
-                    ['country_id',              'required'],
                     ['country_id',              'integer'],
                     ['code',                    'string'],
                     ['name',                    'string', 'max' => 32],
@@ -32,15 +34,15 @@ class State extends TranslatableActiveRecord
 	}
     
     /**
-     * validate Name
-     * @param string $attribute Attribute having user attribute related to login.
+     * Validate Name
+     * @param string $attribute
      * @param array  $params
      * @return void
      */
     public function validateName($attribute, $params)
     {
-        $state  = StateUtil::getStateBasedOnNameLanguageAndCountry($this);
-        if (!empty($state))
+        $state  = StateDAO::getStateBasedOnNameLanguageAndCountry($this->country_id, $this->name, $this->language);
+        if ($state !== false)
         {
             if(($this->scenario == 'create') || ($this->scenario == 'update' && $this->id != $state['id']))
             {
@@ -106,10 +108,25 @@ class State extends TranslatableActiveRecord
      */
     public function beforeDelete()
     {
-        if(parent::beforeDelete())
+        $isAllowedToDelete = $this->checkIfAllowedToDelete();
+        if($isAllowedToDelete == false)
         {
-            return StateUtil::checkIfStateAllowedToDelete($this);
+            throw new Exception('this state is associated with Zone.');
         }
-        return false;
+        return parent::beforeDelete();
+    }
+    
+    /**
+     * Check if state is allowed to delete.
+     * @return boolean
+     */
+    public function checkIfAllowedToDelete()
+    {
+        $zoneCount = Zone::find()->where('state_id = :sid', [':sid' => $this->id])->count();
+        if($zoneCount > 0)
+        {
+            return false;
+        }
+        return true;
     }
 }

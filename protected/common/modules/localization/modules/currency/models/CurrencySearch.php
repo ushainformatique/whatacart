@@ -5,10 +5,9 @@
  */
 namespace common\modules\localization\modules\currency\models;
 
-use usni\library\components\TranslatedActiveDataProvider;
 use yii\base\Model;
 use usni\UsniAdaptor;
-use usni\library\utils\AdminUtil;
+use usni\library\dataproviders\ArrayRecordDataProvider;
 /**
  * CurrencySearch class file
  * This is the search class for model Currency.
@@ -17,6 +16,8 @@ use usni\library\utils\AdminUtil;
  */
 class CurrencySearch extends Currency
 {
+    use \usni\library\traits\SearchTrait;
+    
     /**
      * @inheritdoc
      */
@@ -42,38 +43,38 @@ class CurrencySearch extends Currency
     {
         return Model::scenarios();
     }
-
+    
     /**
      * Search based on get params.
      *
-     * @return usni\library\components\TranslatedActiveDataProvider
+     * @return ArrayRecordDataProvider
      */
     public function search()
     {
-        $query          = Currency::find();
-        $tableName      = UsniAdaptor::tablePrefix() . 'currency'; 
-        $query->innerJoinWith('translations');
-        $dataProvider   = new TranslatedActiveDataProvider([
-            'query' => $query,
-        ]);
+        $query          = new \yii\db\Query();
+        $tableName      = UsniAdaptor::tablePrefix() . 'currency';
+        $trTableName    = UsniAdaptor::tablePrefix() . 'currency_translated';
+        $query->select('c.*, ct.name')
+              ->from(["$tableName c"])
+              ->innerJoin("$trTableName ct", 'c.id = ct.owner_id')
+              ->where('ct.language = :lang', [':lang' => $this->language]);
+        $dataProvider = new ArrayRecordDataProvider([
+                                                        'query'     => $query,
+                                                        'key'       => 'id',
+                                                        'sort'      => ['attributes' => ['name', 'code', 'value', 'status']]
+                                                   ]);
 
-        // Validate data
-        if (!$this->validate())
+        if (!$this->validate()) 
         {
             return $dataProvider;
-        }
-        $query->andFilterWhere(['language' => UsniAdaptor::app()->languageManager->getContentLanguage()]);
+        }        
         $query->andFilterWhere(['like', 'name', $this->name]);
         $query->andFilterWhere(['like', 'code', $this->code]);
-        $query->andFilterWhere(['like', 'symbol_left', $this->symbol_left]);
-        $query->andFilterWhere(['like', 'symbol_right', $this->symbol_right]);
-        $query->andFilterWhere(['like', 'decimal_place', $this->decimal_place]);
+        $query->andFilterWhere(['like', 'value', $this->value]);
         $query->andFilterWhere(['status' => $this->status]);
-        $query->andFilterWhere(['value' => $this->value]);
-        $user     = UsniAdaptor::app()->user->getUserModel();
-        if(!AdminUtil::doesUserHaveOthersPermissionsOnModel(Currency::className(), $user))
+        if($this->canAccessOwnedRecordsOnly('currency'))
         {
-            $query->andFilterWhere([$tableName . '.created_by' => $user->id]);
+            $query->andFilterWhere(['c.created_by' => $this->getUserId()]);
         }
         return $dataProvider;
     }

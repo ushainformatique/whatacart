@@ -5,14 +5,15 @@
  */
 namespace common\modules\order\models;
 
-use usni\library\components\TranslatableActiveRecord;
+use usni\library\db\TranslatableActiveRecord;
 use usni\UsniAdaptor;
 use customer\models\Customer;
 use usni\library\modules\users\models\Address;
 use common\modules\stores\models\Store;
-use common\modules\order\utils\OrderUtil;
-use common\modules\sequence\utils\SequenceUtil;
 use common\modules\order\models\Invoice;
+use common\modules\order\business\Manager as OrderManager;
+use yii\db\Exception;
+use usni\library\modules\users\models\User;
 /**
  * Order active record.
  *
@@ -20,11 +21,14 @@ use common\modules\order\models\Invoice;
  */
 class Order extends TranslatableActiveRecord 
 {
+    use \common\modules\sequence\traits\SequenceTrait;
+    use \common\modules\order\traits\OrderTrait;
+    
     /**
      * Order status constants
      */
     const STATUS_CANCELLED              = 'Cancelled';
-    const STATUS_CANCELLED_REVERSAL     = 'Cancelled Reversal';
+    const STATUS_CANCELLED_REVERSAL     = 'Canceled_Reversal';
     const STATUS_CHARGEBACK             = 'Chargeback';
     const STATUS_COMPLETED              = 'Completed';
     const STATUS_DENIED                 = 'Denied';
@@ -44,6 +48,13 @@ class Order extends TranslatableActiveRecord
     const NOTIFY_ORDERCOMPLETION    = 'orderCompletion';
     const NOTIFY_ORDERRECEIVED      = 'orderReceived';
     const NOTIFY_ORDERUPDATE        = 'orderUpdate';
+    
+    /**
+     * Events
+     */
+    CONST EVENT_NEW_ORDER_CREATED   = 'newOrderCreated';
+    CONST EVENT_ORDER_STATUS_UPDATE = 'orderStatusUpdated';
+    CONST EVENT_ORDER_COMPLETED     = 'orderCompleted';
     
     /**
      * @inheritdoc
@@ -159,45 +170,14 @@ class Order extends TranslatableActiveRecord
     /**
      * @inheritdoc
      */
-    public function beforeDelete()
-    {
-        if(parent::beforeDelete())
-        {
-            $orderPaymentDetails = $this->orderPaymentDetails;
-            $orderPaymentDetails->delete();
-            OrderAddressDetails::deleteAll('order_id = :Oid AND type = :type', [':Oid' => $this->id, ':type' => Address::TYPE_BILLING_ADDRESS]);
-            OrderAddressDetails::deleteAll('order_id = :Oid AND type = :type', [':Oid' => $this->id, ':type' => Address::TYPE_SHIPPING_ADDRESS]);
-            OrderProduct::deleteAll('order_id = :Oid', [':Oid' => $this->id]);
-            OrderPaymentTransactionMap::deleteAll('order_id = :Oid', [':Oid' => $this->id]);
-            $orderHistory = OrderUtil::getOrderHistory($this->id);
-            foreach ($orderHistory as $history)
-            {
-                OrderHistoryTranslated::deleteAll('owner_id = :id', [':id' => $history['owner_id']]);
-            }
-            OrderHistory::deleteAll('order_id = :Oid', [':Oid' => $this->id]);
-            $transactionTable = OrderUtil::getTransactionTableToPaymentMethodMap($this->orderPaymentDetails->payment_method);
-            UsniAdaptor::app()->db->createCommand()->delete($transactionTable, ['order_id' => $this->id])->execute();
-            $invoices = $this->invoices;
-            foreach($invoices as $invoice)
-            {
-                $invoice->delete();
-            }
-            return true;
-        }
-        return false;
-    }
-    
-    /**
-     * @inheritdoc
-     */
     public function beforeSave($insert)
     {
         if(parent::beforeSave($insert))
         {
             if($this->unique_id == 0 || $this->unique_id == null)
             {
-                $this->unique_id = OrderUtil::getUniqueId('order_sequence_no');
-                SequenceUtil::updateSequenceNumber('order_sequence_no');
+                $this->unique_id = $this->getUniqueId('order_sequence_no');
+                $this->updateSequenceNumber('order_sequence_no');
             }
             return true;
         }
@@ -211,5 +191,45 @@ class Order extends TranslatableActiveRecord
     public function getInvoices()
     {
         return $this->hasMany(Invoice::className(), ['order_id' => 'id']);
+    }
+    
+    /**
+     * Add  order history.
+     * @param string $comment
+     * @param boolean $notifyCustomer
+     */
+    public function addHistory($comment, $notifyCustomer = true)
+    {
+        $this->saveOrderHistory($this, $comment, $notifyCustomer);
+    }
+    
+    /**
+     * inheritdoc
+     */
+    public function beforeDelete()
+    {
+        $isValidOrder   = OrderManager::getInstance()->isValidOrderId($this->id);
+        if($isValidOrder == false)
+        {
+            throw new Exception('this order is not valid.');
+        }
+        return parent::beforeDelete();
+    }
+    
+    /**
+     * @inheritdoc
+     */
+    public function updateAuthorField($userField)
+    {
+        //If interface is admin then created_by and modified_by should not be logged in user. it should be customer.
+        $isInstalled    = UsniAdaptor::app()->installed;
+        if(!$isInstalled)
+        {
+           $this->$userField = User::SUPER_USER_ID;
+        }
+        else
+        {
+            $this->$userField = $this->customer_id;
+        }
     }
 }

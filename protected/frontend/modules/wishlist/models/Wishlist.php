@@ -9,6 +9,7 @@ use usni\library\utils\ArrayUtil;
 use usni\UsniAdaptor;
 /**
  * Class storing the data in the wishlist
+ * 
  * @package cart\models
  */
 class Wishlist extends \yii\base\Component

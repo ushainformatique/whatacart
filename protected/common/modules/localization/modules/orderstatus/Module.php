@@ -5,14 +5,14 @@
  */
 namespace common\modules\localization\modules\orderstatus;
 
-use usni\library\components\UiSecuredModule;
+use usni\library\components\SecuredModule;
 use usni\UsniAdaptor;
 /**
  * Provides functionality related to order status.
  * 
  * @package common\modules\localization\modules\orderstatus
  */
-class Module extends UiSecuredModule
+class Module extends SecuredModule
 {  
     public $controllerNamespace = 'common\modules\localization\modules\orderstatus\controllers';
     

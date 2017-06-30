@@ -5,12 +5,13 @@
  */
 namespace common\modules\localization\modules\state\models;
     
-use usni\library\components\UiSecuredActiveRecord;
+use usni\library\db\ActiveRecord;
 /**
- * StateTranslated class file
+ * StateTranslated class file.
+ * 
  * @package common\modules\localization\modules\state\models
  */
-class StateTranslated extends UiSecuredActiveRecord
+class StateTranslated extends ActiveRecord
 {
     /**
      * @inheritdoc
@@ -20,4 +21,3 @@ class StateTranslated extends UiSecuredActiveRecord
         return $this->hasOne(State::className(), ['id' => 'owner_id']);
     }
 }
-?>

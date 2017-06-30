@@ -5,63 +5,55 @@
  */
 namespace common\modules\payment\controllers\cashondelivery;
 
-use usni\library\components\UiAdminController;
 use usni\UsniAdaptor;
-use common\modules\payment\models\cashondelivery\CashOnDeliverySetting;
-use common\modules\payment\views\cashondelivery\CashOnDeliverySettingsEditView;
 use usni\library\utils\FlashUtil;
-use common\modules\stores\utils\StoreUtil;
+use common\modules\payment\dto\CashOnDeliveryFormDTO;
+use common\modules\payment\business\cashondelivery\Manager;
+use usni\library\utils\ArrayUtil;
+use yii\filters\AccessControl;
 /**
  * SettingsController class file
  *
  * @package common\modules\payment\controllers\cashondelivery
  */
-class SettingsController extends UiAdminController
+class SettingsController extends \usni\library\web\Controller
 {
     /**
-     * @inheritdoc
+     * inheritdoc
      */
-    public function actionIndex()
+    public function behaviors()
     {
-        $model = new CashOnDeliverySetting();
-        if(isset($_POST['CashOnDeliverySetting']))
-        {
-            $model->attributes  = $_POST['CashOnDeliverySetting'];
-            if($model->validate())
-            {
-                $currStore = UsniAdaptor::app()->storeManager->getCurrentStore();
-                StoreUtil::insertOrUpdateConfiguration('cashondelivery', 'payment', 'order_status', $model->order_status, $currStore->id);
-            }
-            if(empty($model->errors))
-            {
-                FlashUtil::setMessage('cashondeliverySettingsSaved', UsniAdaptor::t('payment', 'Settings are saved successfully'));
-            }
-        }
-        else
-        {
-            $model->attributes  = StoreUtil::getStoreConfgurationAttributesByCodeForStore('cashondelivery', 'payment');
-        }
-        $breadcrumbs      = [
-                                [
-                                    'label' => UsniAdaptor::t('payment', 'Manage Payments'),
-                                    'url'   => UsniAdaptor::createUrl('payment/default/manage')
-                                ],
-                                [
-                                    'label' => UsniAdaptor::t('payment', 'Cash On Delivery Settings')
-                                ]
-                            ];
-        $this->getView()->params['breadcrumbs']  = $breadcrumbs;
-        $view               = new CashOnDeliverySettingsEditView($model);
-        $content            = $this->renderColumnContent([$view]);
-        return $this->render($this->getDefaultLayout(), ['content' => $content]);
+        return [
+            'access' => [
+                'class' => AccessControl::className(),
+                'rules' => [
+                    [
+                        'allow' => true,
+                        'actions' => ['index'],
+                        'roles' => ['extension.manage'],
+                    ],
+                ],
+            ],
+        ];
     }
     
     /**
      * @inheritdoc
      */
-    protected function resolveModelClassName()
+    public function actionIndex()
     {
-        return null;
+        $formDTO    = new CashOnDeliveryFormDTO();
+        $postData   = ArrayUtil::getValue($_POST, ['CashOnDeliverySetting']);
+        $formDTO->setPostData($postData);
+        Manager::getInstance()->processSettings($formDTO);
+        if($formDTO->getIsTransactionSuccess() === true)
+        {
+            FlashUtil::setMessage('success', UsniAdaptor::t('paymentflash', 'Settings are saved successfully.'));
+            return $this->refresh();
+        }
+        else
+        {
+            return $this->render('/cashondelivery/settings', ['formDTO' => $formDTO]);
+        }
     }
 }
-?>

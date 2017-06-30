@@ -5,13 +5,14 @@
  */
 namespace common\modules\payment;
 
-use usni\library\components\UiSecuredModule;
+use usni\library\components\SecuredModule;
 use usni\UsniAdaptor;
 /**
- * Provides functionality related to payment methods.
+ * Provides functionality related to payments.
+ * 
  * @package common\modules\payment
  */
-class Module extends UiSecuredModule
+class Module extends SecuredModule
 {  
     public $controllerNamespace = 'common\modules\payment\controllers';
     
@@ -22,6 +23,7 @@ class Module extends UiSecuredModule
     {
         parent::init();
         $this->registerTranslations();
+        $this->registerLogTargets();
     }
     
     /**
@@ -51,5 +53,38 @@ class Module extends UiSecuredModule
             'basePath' => '@app/messages'
         ];
     }
+    
+    /**
+     * Register log targets
+     */
+    public function registerLogTargets()
+    {
+        $targets = UsniAdaptor::app()->log->targets;
+        $targets[] = \Yii::createObject([
+                        'class' => 'yii\log\FileTarget',
+                        'logFile' => '@runtime/logs/paypal_standard.log',
+                        'levels' => ['error', 'warning', 'info'],
+                        'logVars' => ['_GET', '_POST', '_SESSION'],
+                        'categories' => ['paypal_standard'],
+                    ]);
+        $targets[] = \Yii::createObject([
+                        'class' => 'yii\log\FileTarget',
+                        'logFile' => '@runtime/logs/paypal_express.log',
+                        'levels' => ['error', 'warning', 'info'],
+                        'logVars' => ['_GET', '_POST', '_SESSION'],
+                        'categories' => ['paypal_express'],
+                    ]);
+        UsniAdaptor::app()->log->targets = $targets;
+    }
+    
+    /**
+     * @inheritdoc
+     */
+    public function getPermissions()
+    {
+        $permissions['PaymentModule'] = [
+                                                'access.payment'  => UsniAdaptor::t('application', 'Access Tab'),
+                                          ];
+        return $permissions;
+    }
 }
-?>

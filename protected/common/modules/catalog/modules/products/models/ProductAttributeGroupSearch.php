@@ -5,12 +5,10 @@
  */
 namespace products\models;
 
-use usni\library\components\TranslatedActiveDataProvider;
 use yii\base\Model;
 use products\models\ProductAttributeGroup;
 use usni\UsniAdaptor;
-use usni\library\utils\AdminUtil;
-
+use usni\library\dataproviders\ArrayRecordDataProvider;
 /**
  * ProductAttributeGroupSearch class file
  * This is the search class for model ProductAttributeGroup.
@@ -19,6 +17,8 @@ use usni\library\utils\AdminUtil;
  */
 class ProductAttributeGroupSearch extends ProductAttributeGroup
 {
+    use \usni\library\traits\SearchTrait;
+    
     /**
      * @inheritdoc
      */
@@ -54,30 +54,40 @@ class ProductAttributeGroupSearch extends ProductAttributeGroup
     /**
      * Search based on get params.
      *
-     * @return yii\data\ActiveDataProvider
+     * @return ArrayRecordDataProvider
      */
     public function search()
     {
-        $query          = ProductAttributeGroup::find();
-        $tableName      = ProductAttributeGroup::tableName();  
-        $query->innerJoinWith('translations');
-        $dataProvider   = new TranslatedActiveDataProvider([
-            'query' => $query,
-        ]);
+        $query          = new \yii\db\Query();
+        $tableName      = UsniAdaptor::tablePrefix() . 'product_attribute_group';
+        $trTableName    = UsniAdaptor::tablePrefix() . 'product_attribute_group_translated';
+        $query->select('ag.*, agt.name')
+              ->from(["$tableName ag"])
+              ->innerJoin("$trTableName agt", 'ag.id = agt.owner_id')
+              ->where('agt.language = :lang', [':lang' => $this->language]);
+        $dataProvider = new ArrayRecordDataProvider([
+                                                        'query'     => $query,
+                                                        'key'       => 'id',
+                                                        'sort'      => ['attributes' => ['name']]
+                                                   ]);
 
-        // Validate data
-        if (!$this->validate())
+        if (!$this->validate()) 
         {
             return $dataProvider;
-        }
-        $query->andFilterWhere(['language' => UsniAdaptor::app()->languageManager->getContentLanguage()]);
+        }        
         $query->andFilterWhere(['like', 'name', $this->name]);
-        $query->andFilterWhere(['like', 'sort_order', $this->sort_order]);
-        $user     = UsniAdaptor::app()->user->getUserModel();
-        if(!AdminUtil::doesUserHaveOthersPermissionsOnModel(ProductAttributeGroup::className(), $user))
+        if($this->canAccessOwnedRecordsOnly('product'))
         {
-            $query->andFilterWhere([$tableName . '.created_by' => $user->id]);
+            $query->andFilterWhere(['ag.created_by' => $this->getUserId()]);
         }
         return $dataProvider;
+    }
+    
+    /**
+     * inheritdoc
+     */
+    public static function tableName()
+    {
+        return UsniAdaptor::tablePrefix() . 'product_attribute_group';
     }
 }

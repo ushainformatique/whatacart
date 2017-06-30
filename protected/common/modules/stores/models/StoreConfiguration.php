@@ -6,13 +6,13 @@
 namespace common\modules\stores\models;
 
 use usni\UsniAdaptor;
-use usni\library\components\UiSecuredActiveRecord;
+use usni\library\db\ActiveRecord;
 /**
  * StoreConfiguration active record.
  *
  * @package common\modules\stores\models
  */
-class StoreConfiguration extends UiSecuredActiveRecord
+class StoreConfiguration extends ActiveRecord
 {   
     /**
      * @inheritdoc
@@ -21,7 +21,7 @@ class StoreConfiguration extends UiSecuredActiveRecord
 	{
 		return [
                     [
-                        [['store_id', 'code', 'key', 'value', 'category'],                 'required'],
+                        [['store_id', 'code', 'key', 'value', 'category'],  'required'],
                         [['store_id', 'code', 'key', 'value', 'category'],  'safe'],
                     ]
                ];
@@ -67,12 +67,4 @@ class StoreConfiguration extends UiSecuredActiveRecord
 	{
 		return [];
 	}
-    
-    /**
-     * @inheritdoc
-     */
-    public function shouldAddCreatedAndModifiedFields()
-    {
-        return false;
-    }
 }

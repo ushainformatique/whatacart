@@ -6,48 +6,95 @@
 namespace common\modules\localization\modules\city\controllers;
 
 use common\modules\localization\modules\city\models\City;
-use common\modules\localization\controllers\LocalizationController;
-use usni\UsniAdaptor;
+use yii\filters\AccessControl;
+use usni\library\web\actions\CreateAction;
+use usni\library\web\actions\UpdateAction;
+use common\modules\localization\modules\city\dto\FormDTO;
+use usni\library\web\actions\IndexAction;
+use common\modules\localization\modules\city\dto\GridViewDTO;
+use usni\library\web\actions\DeleteAction;
+use usni\library\web\actions\BulkDeleteAction;
+use usni\library\web\actions\ViewAction;
 /**
- * DefaultController class file
+ * DefaultController class file.
+ * 
  * @package common\modules\localization\modules\city\controllers
  */
-class DefaultController extends LocalizationController
+class DefaultController extends \usni\library\web\Controller
 {
-    use \usni\library\traits\EditViewTranslationTrait;
-    
     /**
-     * @inheritdoc
+     * inheritdoc
      */
-    protected function resolveModelClassName()
-    {
-        return City::className();
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function beforeModelSave($city)
-    {
-        if(isset($_POST['City']['country_id']) && is_array($_POST['City']['country_id']))
-        {
-            $city->country_id = $_POST['City']['country_id'][0];
-            $city->save();
-        }
-        return true;
-    }
-    
-    /**
-     * @inheritdoc
-     */
-    public function pageTitles()
+    public function behaviors()
     {
         return [
-                    'create'         => UsniAdaptor::t('application','Create') . ' ' . City::getLabel(1),
-                    'update'         => UsniAdaptor::t('application','Update') . ' ' . City::getLabel(1),
-                    'view'           => UsniAdaptor::t('application','View') . ' ' . City::getLabel(1),
-                    'manage'         => UsniAdaptor::t('application','Manage') . ' ' . City::getLabel(2)
-               ];
+            'access' => [
+                'class' => AccessControl::className(),
+                'rules' => [
+                    [
+                        'allow' => true,
+                        'actions' => ['index'],
+                        'roles' => ['city.manage'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['view'],
+                        'roles' => ['city.view'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['create'],
+                        'roles' => ['city.create'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['update'],
+                        'roles' => ['city.update'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['delete', 'bulk-delete'],
+                        'roles' => ['city.delete'],
+                    ]
+                ],
+            ],
+        ];
+    }
+    
+    /**
+     * inheritdoc
+     */
+    public function actions()
+    {
+        return [
+            'create' => ['class' => CreateAction::className(),
+                         'modelClass' => City::className(),
+                         'updateUrl'  => 'update',
+                         'formDTOClass' => FormDTO::className(),
+                         'viewFile' => '/create'
+                        ],
+            'update' => ['class' => UpdateAction::className(),
+                         'modelClass' => City::className(),
+                         'formDTOClass' => FormDTO::className(),
+                         'viewFile' => '/update'
+                        ],
+            'index'  => ['class' => IndexAction::className(),
+                         'modelClass' => City::className(),
+                         'dtoClass' => GridViewDTO::className(),
+                         'viewFile' => '/index'
+                        ],
+            'view'   => ['class' => ViewAction::className(),
+                         'modelClass' => City::className(),
+                         'viewFile' => '/view'
+                        ],
+            'delete'   => ['class' => DeleteAction::className(),
+                           'modelClass' => City::className(),
+                           'redirectUrl'=> 'index',
+                           'permission' => 'city.deleteother'
+                        ],
+            'bulk-delete' => ['class' => BulkDeleteAction::className(),
+                              'modelClass' => City::className()
+                        ],
+        ];
     }
 }
-?>

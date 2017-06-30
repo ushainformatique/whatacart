@@ -11,7 +11,7 @@ use usni\UsniAdaptor;
  *
  * @package common\modules\payment\models\paypal_standard
  */
-class PaypalOrderStatus extends \usni\library\components\UiFormModel
+class PaypalOrderStatus extends \yii\base\Model
 {
     /**
      * @var string 

@@ -97,20 +97,22 @@ class IpnListener {
 
         $ch = curl_init();
 
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
-        curl_setopt($ch, CURLOPT_CAINFO, dirname(__FILE__) . "/cert/api_cert_chain.crt");
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        //@Mayank the fields are commented so as to take default values and only pass required fields
+        //curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
+        //curl_setopt($ch, CURLOPT_CAINFO, dirname(__FILE__) . "/cert/api_cert_chain.crt");
         curl_setopt($ch, CURLOPT_URL, $uri);
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $encoded_data);
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, $this->follow_location);
         curl_setopt($ch, CURLOPT_TIMEOUT, $this->timeout);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_HEADER, true);
+        curl_setopt($ch, CURLOPT_HEADER, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
 
-        if ($this->force_ssl_v3) {
-            curl_setopt($ch, CURLOPT_SSLVERSION, 3);
-        }
+//        if ($this->force_ssl_v3) {
+//            curl_setopt($ch, CURLOPT_SSLVERSION, 3);
+//        }
 
         $this->response = curl_exec($ch);
         $this->response_status = strval(curl_getinfo($ch, CURLINFO_HTTP_CODE));

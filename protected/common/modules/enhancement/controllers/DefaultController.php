@@ -6,22 +6,52 @@
 namespace common\modules\enhancement\controllers;
 
 use common\modules\extension\models\Extension;
-use common\modules\extension\models\ExtensionSearch;
-use common\modules\enhancement\views\EnhancementGridView;
 use usni\UsniAdaptor;
+use yii\filters\AccessControl;
+use common\modules\enhancement\business\Manager;
+use usni\library\web\actions\IndexAction;
 /**
  * DefaultController class file
  *
  * @package common\modules\enhancement\controllers
  */
-class DefaultController extends \usni\library\components\UiAdminController
+class DefaultController extends \usni\library\web\Controller
 {
     /**
-     * @inheritdoc
+     * inheritdoc
      */
-    protected function resolveModelClassName()
+    public function behaviors()
     {
-        return Extension::className();
+        return [
+            'access' => [
+                'class' => AccessControl::className(),
+                'rules' => [
+                    [
+                        'allow' => true,
+                        'actions' => ['index'],
+                        'roles' => ['extension.manage'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['change-status'],
+                        'roles' => ['extension.update'],
+                    ],
+                ],
+            ],
+        ];
+    }
+    
+    /**
+     * inheritdoc
+     */
+    public function actions()
+    {
+        return [
+            'index'  => ['class' => IndexAction::className(),
+                         'modelClass' => Extension::className(),
+                         'viewFile' => '/index'
+                        ]
+        ];
     }
     
     /**
@@ -32,41 +62,7 @@ class DefaultController extends \usni\library\components\UiAdminController
      */
     public function actionChangeStatus($id, $status)
     {
-        $extensions = Extension::findOne($id);
-        $extensions->status = $status;
-        $extensions->save();
-        return $this->renderGridView();
-    }
-    
-    /**
-     * @inheritdoc
-     */
-    protected function getFilterModel($model)
-    {
-        $filterModel = new ExtensionSearch();
-        $filterModel->load($_GET, 'ExtensionSearch');
-        $filterModel->category = 'enhancement';
-        return $filterModel;
-    }
-    
-    /**
-     * @inheritdoc
-     */
-    protected function resolveGridViewClassName($model)
-    {
-        return EnhancementGridView::className();
-    }
-    
-    /**
-     * @inheritdoc
-     */
-    public function getGridViewBreadcrumb($model)
-    {
-        return [
-            [
-                'label' => UsniAdaptor::t('application', 'Manage') . ' ' . UsniAdaptor::t('enhancement', 'Enhancements')
-            ]
-        ];
+        Manager::getInstance()->processChangeStatus($id, $status);
+        return $this->redirect(UsniAdaptor::createUrl('enhancement/default/index'));
     }
 }
-?>

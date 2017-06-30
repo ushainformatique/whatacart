@@ -5,13 +5,14 @@
  */
 namespace common\modules\localization\modules\lengthclass\models;
     
-use usni\library\components\UiSecuredActiveRecord;
+use usni\library\db\ActiveRecord;
 
 /**
- * LengthClassTranslated class file
+ * LengthClassTranslated class file.
+ * 
  * @package common\modules\localization\modules\lengthclass\models
  */
-class LengthClassTranslated extends UiSecuredActiveRecord
+class LengthClassTranslated extends ActiveRecord
 {
     /**
      * @inheritdoc
@@ -21,4 +22,3 @@ class LengthClassTranslated extends UiSecuredActiveRecord
         return $this->hasOne(LengthClass::className(), ['id' => 'owner_id']);
     }
 }
-?>

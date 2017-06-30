@@ -5,13 +5,14 @@
  */
 namespace common\modules\sequence\models;
 
-use usni\library\components\UiSecuredActiveRecord;
+use usni\library\db\ActiveRecord;
 use usni\UsniAdaptor;
 /**
  * Sequence active record.
+ * 
  * @package common\modules\Order\models
  */
-class Sequence extends UiSecuredActiveRecord 
+class Sequence extends ActiveRecord 
 {
 	/**
      * @inheritdoc

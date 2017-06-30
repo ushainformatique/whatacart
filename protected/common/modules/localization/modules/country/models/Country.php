@@ -5,7 +5,7 @@
  */
 namespace common\modules\localization\modules\country\models;
 
-use usni\library\components\TranslatableActiveRecord;
+use usni\library\db\TranslatableActiveRecord;
 use usni\UsniAdaptor;
 /**
  * Country active record.
@@ -24,7 +24,7 @@ class Country extends TranslatableActiveRecord
                     ['name',                                   'unique', 'targetClass' => CountryTranslated::className(), 'targetAttribute' => ['name', 'language'], 'on' => 'create'],
                     ['name', 'unique', 'targetClass' => CountryTranslated::className(), 'targetAttribute' => ['name', 'language'], 'filter' => ['!=', 'owner_id', $this->id], 'on' => 'update'],
                     [['postcode_required', 'status'],          'integer'],
-                    ['name',                                   'string', 'max'=>384],
+                    ['name',                                   'string', 'max' => 64],
                     ['iso_code_2',                             'string', 'max' => 2],
                     ['iso_code_3',                             'string', 'max' => 3],
                     ['address_format',                         'safe'],

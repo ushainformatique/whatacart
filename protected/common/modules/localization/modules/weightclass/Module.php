@@ -5,13 +5,13 @@
  */
 namespace common\modules\localization\modules\weightclass;
 
-use usni\library\components\UiSecuredModule;
+use usni\library\components\SecuredModule;
 use usni\UsniAdaptor;
 /**
  * Provides functionality specific to the weightclass.
  * @package common\modules\localization\modules\weightclass
  */
-class Module extends UiSecuredModule
+class Module extends SecuredModule
 {
     /**
      * Overrides to register translations.

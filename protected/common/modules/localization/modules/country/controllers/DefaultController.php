@@ -6,35 +6,90 @@
 namespace common\modules\localization\modules\country\controllers;
 
 use common\modules\localization\modules\country\models\Country;
-use common\modules\localization\controllers\LocalizationController;
-use usni\UsniAdaptor;
+use usni\library\web\actions\CreateAction;
+use usni\library\web\actions\UpdateAction;
+use yii\filters\AccessControl;
+use usni\library\web\actions\IndexAction;
+use usni\library\web\actions\DeleteAction;
+use usni\library\web\actions\BulkDeleteAction;
+use usni\library\web\actions\ViewAction;
 /**
- * DefaultController class file
+ * DefaultController class file.
+ * 
  * @package common\modules\localization\modules\country\controllers
  */
-class DefaultController extends LocalizationController
+class DefaultController extends \usni\library\web\Controller
 {
-    use \usni\library\traits\EditViewTranslationTrait;
-    
     /**
-     * @inheritdoc
+     * inheritdoc
      */
-    protected function resolveModelClassName()
-    {
-        return Country::className();
-    }
-    
-    /**
-     * @inheritdoc
-     */
-    public function pageTitles()
+    public function behaviors()
     {
         return [
-                    'create'         => UsniAdaptor::t('application','Create') . ' ' . Country::getLabel(1),
-                    'update'         => UsniAdaptor::t('application','Update') . ' ' . Country::getLabel(1),
-                    'view'           => UsniAdaptor::t('application','View') . ' ' . Country::getLabel(1),
-                    'manage'         => UsniAdaptor::t('application','Manage') . ' ' . Country::getLabel(2)
-               ];
+            'access' => [
+                'class' => AccessControl::className(),
+                'rules' => [
+                    [
+                        'allow' => true,
+                        'actions' => ['index'],
+                        'roles' => ['country.manage'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['view'],
+                        'roles' => ['country.view'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['create'],
+                        'roles' => ['country.create'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['update'],
+                        'roles' => ['country.update'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['delete', 'bulk-delete'],
+                        'roles' => ['country.delete'],
+                    ]
+                ],
+            ],
+        ];
+    }
+    
+    /**
+     * inheritdoc
+     */
+    public function actions()
+    {
+        return [
+            'create' => ['class' => CreateAction::className(),
+                         'modelClass' => Country::className(),
+                         'updateUrl'  => 'update',
+                         'viewFile' => '/create'
+                        ],
+            'update' => ['class' => UpdateAction::className(),
+                         'modelClass' => Country::className(),
+                         'viewFile' => '/update'
+                        ],
+            'index'  => ['class' => IndexAction::className(),
+                         'modelClass' => Country::className(),
+                         'viewFile' => '/index',
+                        ],
+            'view'   => ['class' => ViewAction::className(),
+                         'modelClass' => Country::className(),
+                         'viewFile' => '/view'
+                        ],
+            'delete'   => ['class' => DeleteAction::className(),
+                         'modelClass' => Country::className(),
+                         'redirectUrl'=> 'index',
+                         'permission' => 'country.deleteother'
+                        ],
+            'bulk-delete' => ['class' => BulkDeleteAction::className(),
+                              'modelClass' => Country::className()
+                        ],
+        ];
     }
 }
-?>

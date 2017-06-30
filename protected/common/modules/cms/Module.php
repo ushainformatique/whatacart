@@ -5,15 +5,15 @@
  */
 namespace common\modules\cms;
 
-use usni\library\components\UiSecuredModule;
+use usni\library\components\SecuredModule;
 use usni\UsniAdaptor;
-use common\modules\cms\utils\CmsPermissionUtil;
+use common\modules\cms\models\Page;
 /**
- * Provides functionality relates to cms
+ * Provides functionality related to content management.
  * 
  * @package common\modules\cms
  */
-class Module extends UiSecuredModule
+class Module extends SecuredModule
 {
     /**
      * Status constant for published.
@@ -64,8 +64,10 @@ class Module extends UiSecuredModule
     /**
      * @inheritdoc
      */
-    public static function getPermissionUtil()
+    public function getPermissionModels()
     {
-        return CmsPermissionUtil::className();
+        return array(
+            Page::className()
+        );
     }
 }

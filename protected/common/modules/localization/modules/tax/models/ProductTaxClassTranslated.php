@@ -5,12 +5,13 @@
  */
 namespace taxes\models;
     
-use usni\library\components\UiSecuredActiveRecord;
+use usni\library\db\ActiveRecord;
 /**
- * ProductTaxClassTranslated class file
+ * ProductTaxClassTranslated class file.
+ * 
  * @package taxes\models;
  */
-class ProductTaxClassTranslated extends UiSecuredActiveRecord
+class ProductTaxClassTranslated extends ActiveRecord
 {
     /**
      * @inheritdoc
@@ -20,4 +21,3 @@ class ProductTaxClassTranslated extends UiSecuredActiveRecord
         return $this->hasOne(ProductTaxClass::className(), ['id' => 'owner_id']);
     }
 }
-?>

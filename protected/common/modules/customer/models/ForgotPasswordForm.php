@@ -5,10 +5,9 @@
  */
 namespace customer\models;
 
-use usni\library\validators\UiEmailValidator;
-use usni\library\modules\notification\utils\NotificationUtil;
-use usni\library\modules\notification\models\Notification;
+use usni\library\validators\EmailValidator;
 use customer\notifications\ForgotPasswordEmailNotification;
+use customer\services\NotificationService;
 use usni\UsniAdaptor;
 /**
  * ForgotPasswordForm class file
@@ -17,6 +16,16 @@ use usni\UsniAdaptor;
  */
 class ForgotPasswordForm extends \yii\base\Model
 {
+    /**
+     * @inheritdoc
+     */
+    public function behaviors()
+    {
+        return [
+                    'notifyService' => NotificationService::className(),
+               ];
+    }
+    
     /**
      * Customer email
      * @var string 
@@ -36,7 +45,7 @@ class ForgotPasswordForm extends \yii\base\Model
     {
         return [
                     ['email', 'required'],
-                    ['email', UiEmailValidator::className()]
+                    ['email', EmailValidator::className()]
             ];
     }
     
@@ -59,29 +68,13 @@ class ForgotPasswordForm extends \yii\base\Model
     }
     
     /**
-     * Sends user registration email
-     * @return boolean
+     * Sends forgot password mail.
      */
     public function sendMail()
     {
-        $mailer             = UsniAdaptor::app()->mailer;
-        $emailNotification  = new ForgotPasswordEmailNotification(['user' => $this->user]);
-        $mailer->emailNotification = $emailNotification;
-        $message            = $mailer->compose();
-        $toAddress          = $this->user['email'];
-        list($fromName, $fromAddress) = NotificationUtil::getSystemFromAddressData();
-        $isSent             = $message->setFrom([$fromAddress => $fromName])
-                            ->setTo($toAddress)
-                            ->setSubject($emailNotification->getSubject())
-                            ->send();
-        $data               = serialize(array(
-                                'fromName'    => $fromName,
-                                'fromAddress' => $fromAddress,
-                                'toAddress'   => $toAddress,
-                                'subject'     => $emailNotification->getSubject(),
-                                'body'        => $message->toString()));
-        $status             = $isSent === true ? Notification::STATUS_SENT : Notification::STATUS_PENDING;
-        //Save notification
-        return NotificationUtil::saveEmailNotification($emailNotification, $status, $data);
+        $this->emailNotification            = new ForgotPasswordEmailNotification(['user' => $this->user]);
+        $this->to                           = $this->user['email'];
+        $this->emailNotification->subject   = UsniAdaptor::t('customer', 'Forgot Password Request');
+        $this->processSend();
     }
 }

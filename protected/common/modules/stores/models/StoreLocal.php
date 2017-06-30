@@ -12,7 +12,7 @@ use usni\UsniAdaptor;
  * 
  * @package common\modules\stores\models
  */
-class StoreLocal extends \usni\library\components\UiFormModel
+class StoreLocal extends \yii\base\Model
 {
     public $country;
     public $timezone;

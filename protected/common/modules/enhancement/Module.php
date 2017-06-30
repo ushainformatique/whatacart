@@ -5,13 +5,14 @@
  */
 namespace common\modules\enhancement;
 
-use usni\library\components\UiSecuredModule;
+use usni\library\components\SecuredModule;
 use usni\UsniAdaptor;
 /**
- * Provides functionality relates to enhancement
+ * Provides functionality relates to enhancements in the system.
+ * 
  * @package common\modules\enhancement
  */
-class Module extends UiSecuredModule
+class Module extends SecuredModule
 {
     /**
      * Overrides to register translations.
@@ -43,5 +44,15 @@ class Module extends UiSecuredModule
             'basePath' => '@approot/messages'
         ];
     }
+    
+    /**
+     * @inheritdoc
+     */
+    public function getPermissions()
+    {
+        $permissions['EnhancementModule'] = [
+                                                'access.enhancement'  => UsniAdaptor::t('application', 'Access Tab'),
+                                          ];
+        return $permissions;
+    }
 }
-?>

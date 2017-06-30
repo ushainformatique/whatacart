@@ -7,15 +7,17 @@ namespace newsletter\models;
 
 use yii\base\Model;
 use usni\UsniAdaptor;
-use usni\library\utils\AdminUtil;
-use usni\library\components\TranslatedActiveDataProvider;
+use usni\library\dataproviders\ArrayRecordDataProvider;
 /**
- * NewsletterSearch class file
+ * NewsletterSearch class file.
+ * 
  * This is the search class for model Newsletter.
  * @package newsletter\models
  */
 class NewsletterSearch extends Newsletter
 {
+    use \usni\library\traits\SearchTrait;
+    
     /**
      * @inheritdoc
      */
@@ -44,27 +46,32 @@ class NewsletterSearch extends Newsletter
     
     /**
      * Search based on get params.
-     * @return yii\data\ActiveDataProvider
+     * @return ArrayRecordDataProvider
      */
     public function search()
     {
-        $query          = Newsletter::find();
-        $query->innerJoinWith('translations');
-        $dataProvider   = new TranslatedActiveDataProvider([
-            'query' => $query,
-        ]);
+        $query          = new \yii\db\Query();
+        $tableName      = UsniAdaptor::tablePrefix() . 'newsletter';
+        $trTableName    = UsniAdaptor::tablePrefix() . 'newsletter_translated';
+        $query->select('n.*, nt.content')
+              ->from(["$tableName n"])
+              ->innerJoin("$trTableName nt", 'n.id = nt.owner_id')
+              ->where('nt.language = :lang', [':lang' => $this->language]);
+        $dataProvider = new ArrayRecordDataProvider([
+                                                        'query'     => $query,
+                                                        'key'       => 'id',
+                                                        'sort'      => ['attributes' => ['subject', 'content']]
+                                                   ]);
 
-        // Validate data
-        if (!$this->validate())
+        if (!$this->validate()) 
         {
             return $dataProvider;
-        }
+        }        
         $query->andFilterWhere(['like', 'subject', $this->subject]);
         $query->andFilterWhere(['like', 'content', $this->content]);
-        $user     = UsniAdaptor::app()->user->getUserModel();
-        if(!AdminUtil::doesUserHaveOthersPermissionsOnModel(Newsletter::className(), $user))
+        if($this->canAccessOwnedRecordsOnly('newsletter'))
         {
-            $query->andFilterWhere([$this->tableName() . '.created_by' => $user->id]);
+            $query->andFilterWhere(['n.created_by' => $this->getUserId()]);
         }
         return $dataProvider;
     }

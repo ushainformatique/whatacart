@@ -5,13 +5,13 @@
  */
 namespace frontend\modules\site;
 
-use usni\library\components\UiSecuredModule;
 use usni\UsniAdaptor;
 /**
- * Loads the site module in the system.
+ * Provides functionality related to frontend
+ * 
  * @package frontend\modules\site
  */
-class Module extends UiSecuredModule
+class Module extends \usni\library\components\Module
 {
     /**
      * Overrides to register translations.

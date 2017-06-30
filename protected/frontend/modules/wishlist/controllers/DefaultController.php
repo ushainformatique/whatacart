@@ -6,17 +6,15 @@
 namespace wishlist\controllers;
 
 use frontend\controllers\BaseController;
-use wishlist\views\DetailView;
 use usni\UsniAdaptor;
 use yii\helpers\Json;
-use frontend\utils\FrontUtil;
-use wishlist\utils\WishlistUtil;
-use customer\components\AccountBreadcrumb;
 use common\utils\ApplicationUtil;
-use wishlist\views\WishlistSubView;
-use common\modules\stores\utils\StoreUtil;
+use wishlist\widgets\WishlistSubView;
+use wishlist\widgets\TopNavWishlist;
+use wishlist\business\Manager;
 /**
  * DefaultController class file
+ * 
  * @package cart\controllers
  */
 class DefaultController extends BaseController
@@ -29,7 +27,7 @@ class DefaultController extends BaseController
     {
         $wishlist   = ApplicationUtil::getWishList();
         $wishlist->addItem($_POST['productId']);
-        $data       = WishlistUtil::renderWishlistInTopnav();
+        $data       = TopNavWishlist::widget();
         $result     = ['success' => true, 'data' => $data];
         echo Json::encode($result);
     }
@@ -40,14 +38,11 @@ class DefaultController extends BaseController
      */
     public function actionView()
     {
-        $wishlistSetting = StoreUtil::getSettingValue('allow_wishlist');
+        $wishlistSetting = UsniAdaptor::app()->storeManager->getSettingValue('allow_wishlist');
         if($wishlistSetting)
         {
-            $breadcrumbView     = new AccountBreadcrumb(['page' => UsniAdaptor::t('wishlist', 'My Wish List')]);
-            $this->getView()->params['breadcrumbs'] = $breadcrumbView->getBreadcrumbLinks();
-            $detailView  = new DetailView();
-            $content     = $this->renderInnerContent([$detailView]);
-            return $this->render(FrontUtil::getDefaultInnerLayout(), ['content' => $content]);
+            $products = Manager::getInstance()->prepareWishlist(ApplicationUtil::getWishList());
+            return $this->render('/view', ['products' => $products]);
         }
         else
         {
@@ -63,14 +58,13 @@ class DefaultController extends BaseController
     {
         if(UsniAdaptor::app()->request->getIsAjax())
         {
-            $wishlist          = ApplicationUtil::getWishList();
+            $wishlist           = ApplicationUtil::getWishList();
             $wishlist->removeItem($_POST['product_id']);
-            $headerContent     = WishlistUtil::renderWishlistInTopnav();
-            $view              = new WishlistSubView();
-            $detail            = $view->render();
+            $headerContent      = TopNavWishlist::widget();
+            $products           = Manager::getInstance()->prepareWishlist(ApplicationUtil::getWishList());
+            $detail             = WishlistSubView::widget(['products' => $products]);
             return Json::encode(['success' => true, 'content' => $detail, 'headerWishlistContent' => $headerContent]);
         }
         return Json::encode([]);
     }
 }
-?>

@@ -6,23 +6,14 @@
 namespace cart\controllers;
 
 use frontend\controllers\BaseController;
-use cart\views\CheckoutView;
-use cart\models\DeliveryOptionsEditForm;
-use cart\models\PaymentMethodEditForm;
-use frontend\utils\FrontUtil;
-use common\modules\order\models\Order;
 use usni\UsniAdaptor;
-use common\modules\payment\components\PaymentFactory;
 use cart\models\Cart;
-use frontend\components\Breadcrumb;
-use yii\base\Model;
-use cart\views\ReviewOrderView;
-use common\modules\shipping\utils\ShippingUtil;
 use common\utils\ApplicationUtil;
-use common\modules\stores\utils\StoreUtil;
 use usni\library\utils\FlashUtil;
-use cart\models\ConfirmOrderForm;
-
+use cart\business\CheckoutManager;
+use cart\dto\CheckoutDTO;
+use cart\dto\ReviewDTO;
+use common\modules\payment\components\PaymentFactory;
 /**
  * CheckoutController class file
  *
@@ -31,12 +22,21 @@ use cart\models\ConfirmOrderForm;
 class CheckoutController extends BaseController
 {
     /**
-     * @inheritdoc
+     * @var CheckoutManager 
      */
-    public function init()
+    public $checkoutManager;
+    
+    /**
+     * inheritdoc
+     */
+    public function beforeAction($action)
     {
-        parent::init();
-        $this->checkAndRedirectIfCartEmpty();
+        if(parent::beforeAction($action))
+        {
+            $this->checkoutManager = CheckoutManager::getInstance(['paymentFactoryClassName' => PaymentFactory::className()]);
+            return true;
+        }
+        return false;
     }
     
     /**
@@ -45,7 +45,8 @@ class CheckoutController extends BaseController
      */
     public function actionIndex()
     {
-        $guestCheckoutSetting       = StoreUtil::getSettingValue('guest_checkout');
+        $this->checkAndRedirectIfCartEmpty();
+        $guestCheckoutSetting       = UsniAdaptor::app()->storeManager->getSettingValue('guest_checkout');
         if(!$guestCheckoutSetting && UsniAdaptor::app()->user->isGuest === true)
         {
             return $this->redirect(UsniAdaptor::createUrl('customer/site/login'));
@@ -55,65 +56,23 @@ class CheckoutController extends BaseController
             $cart = ApplicationUtil::getCart();
             if($cart->shouldProceedForCheckout() === false)
             {
-                FlashUtil::setMessage('outOfStockCheckoutNowAllowed', UsniAdaptor::t('cartflash', "Either products in the cart are not in stock or out of stock checkout is not allowed. Please contact system admin."));
+                FlashUtil::setMessage('warning', UsniAdaptor::t('cartflash', "Either products in the cart are not in stock or out of stock checkout is not allowed. Please contact system admin."));
                 return $this->redirect(UsniAdaptor::createUrl('cart/default/view'));
             }
-            $billingInfoEditForm    = ApplicationUtil::getCheckoutFormModel('billingInfoEditForm');
-            $deliveryInfoEditForm   = ApplicationUtil::getCheckoutFormModel('deliveryInfoEditForm');
-            $deliveryOptionsEditForm    = ApplicationUtil::getCheckoutFormModel('deliveryOptionsEditForm');
-            $paymentMethodEditForm  = ApplicationUtil::getCheckoutFormModel('paymentMethodEditForm');
-            if(isset($_POST['BillingInfoEditForm']))
+            $checkoutDTO    = new CheckoutDTO();
+            $checkoutDTO->setCustomerId(ApplicationUtil::getCustomerId());
+            $checkoutDTO->setPostData($_POST);
+            $checkoutDTO->setCheckout(ApplicationUtil::getCheckout());
+            $checkoutDTO->setCart(ApplicationUtil::getCart());
+            $checkoutDTO->setInterface('front');
+            $this->checkoutManager->processCheckout($checkoutDTO);
+            if($checkoutDTO->getResult() === true)
             {
-                $billingInfoEditForm->attributes = $_POST['BillingInfoEditForm'];
-                if($cart->isShippingRequired())
-                {
-                    $deliveryInfoEditForm->attributes = $_POST['DeliveryInfoEditForm'];
-                    $deliveryOptionsEditForm->attributes = $_POST['DeliveryOptionsEditForm'];
-                }
-                $paymentMethodEditForm->attributes = $_POST['PaymentMethodEditForm'];
-                if($cart->isShippingRequired())
-                {
-                    $isValid = Model::validateMultiple([$billingInfoEditForm, $deliveryInfoEditForm, $deliveryOptionsEditForm, $paymentMethodEditForm]);
-                }
-                else
-                {
-                    $isValid = Model::validateMultiple([$billingInfoEditForm, $paymentMethodEditForm]);
-                }
-                if($isValid)
-                {
-                    $this->setModelInSession($billingInfoEditForm, 'billingInfoEditForm');
-                    if($cart->isShippingRequired())
-                    {
-                        $this->setModelInSession($deliveryInfoEditForm, 'deliveryInfoEditForm');
-                        $this->setModelInSession($deliveryOptionsEditForm, 'deliveryOptionsEditForm');
-                    }
-                    $this->setModelInSession($paymentMethodEditForm, 'paymentMethodEditForm');
-                    $this->processOrderCreation();
-                    return $this->redirect(UsniAdaptor::createUrl('cart/checkout/review-order'));
-                }
+                $checkoutDTO->getCheckout()->updateSession();
+                return $this->redirect(UsniAdaptor::createUrl('cart/checkout/review-order'));
             }
-            $breadcrumbView = new Breadcrumb(['page' => UsniAdaptor::t('cart', 'Checkout')]);
-            $this->getView()->params['breadcrumbs'] = $breadcrumbView->getBreadcrumbLinks();
-            $this->getView()->title                 = UsniAdaptor::t('cart', 'Checkout');
-            $checkoutView   = new CheckoutView(['billingInfoEditForm' => $billingInfoEditForm,
-                                                'deliveryInfoEditForm'=> $deliveryInfoEditForm,
-                                                'deliveryOptionsEditForm' => $deliveryOptionsEditForm,
-                                                'paymentMethodEditForm' => $paymentMethodEditForm]);
-            $content        = $this->renderInnerContent([$checkoutView]);
-            return $this->render(FrontUtil::getDefaultInnerLayout(), ['content' => $content]);
+            return $this->render('/checkout', ['formDTO' => $checkoutDTO]);
         }
-    }
-    
-    /**
-     * Sets model in session and forward request
-     * @param Model $model
-     * @param string $checkoutViewModelForm
-     */
-    protected function setModelInSession($model, $checkoutViewModelForm)
-    {
-        $checkout = ApplicationUtil::getCheckout();
-        $checkout->$checkoutViewModelForm = $model;
-        $checkout->updateSession();
     }
     
     /**
@@ -122,89 +81,46 @@ class CheckoutController extends BaseController
      */
     public function actionReviewOrder()
     {
-        $cart = ApplicationUtil::getCart();
+        $cart       = ApplicationUtil::getCart();
+        $checkout   = ApplicationUtil::getCheckout();
+        //Each time on review order screen check if currency is changed then redirect to home page.
+        $selectedCurrency = UsniAdaptor::app()->currencyManager->selectedCurrency;
+        if($selectedCurrency != $checkout->order->currency_code)
+        {
+            return $this->goHome();
+        }
         if($cart->shouldProceedForCheckout() === false)
         {
-            FlashUtil::setMessage('outOfStockCheckoutNowAllowed', UsniAdaptor::t('cartflash', "Either products in the cart are not in stock or out of stock checkout is not allowed. Please contact system admin."));
+            FlashUtil::setMessage('warning', UsniAdaptor::t('cartflash', "Either products in the cart are not in stock or out of stock checkout is not allowed. Please contact system admin."));
             return $this->redirect(UsniAdaptor::createUrl('cart/default/view'));
         }
-        $model          = new ConfirmOrderForm();
-        $breadcrumbView = new Breadcrumb(['page' => UsniAdaptor::t('cart', 'Review Order')]);
-        $this->getView()->params['breadcrumbs'] = $breadcrumbView->getBreadcrumbLinks();
-        $this->getView()->title                 = UsniAdaptor::t('cart', 'Review Order');
-        $checkoutView   = new ReviewOrderView(['model' => $model]);
-        $content        = $this->renderInnerContent([$checkoutView]);
-        return $this->render(FrontUtil::getDefaultInnerLayout(), ['content' => $content]);
+        $reviewDTO      = new ReviewDTO();
+        $this->checkoutManager->populateReviewDTO($reviewDTO, $checkout, $cart);
+        $type           = ApplicationUtil::getCheckout()->paymentMethodEditForm->payment_method;
+        $confirmRoute   = "payment/$type/confirm";
+        $formContent    = UsniAdaptor::app()->runAction($confirmRoute);
+        $reviewDTO->setPaymentFormContent($formContent);
+        return $this->render('/revieworder', ['reviewDTO' => $reviewDTO]);
     }
     
     /**
-     * Process order creation
-     * @return Order
-     */
-    protected function processOrderCreation()
-    {
-        $checkout = ApplicationUtil::getCheckout();
-        $store    = UsniAdaptor::app()->storeManager->getCurrentStore();
-        $order    = $checkout->order;
-        $order->store_id    = $store->id;
-        $order->interface   = 'front';
-        $paymentMethod   = $checkout->paymentMethodEditForm->payment_method;
-        $shippingMethod  = $checkout->deliveryOptionsEditForm->shipping;
-        if($shippingMethod != null)
-        {
-            if($checkout->deliveryOptionsEditForm->shipping_fee == null)
-            {
-                $checkout->deliveryOptionsEditForm->shipping_fee = ShippingUtil::getCalculatedPriceByType($shippingMethod, ApplicationUtil::getCart());
-            }
-        }
-        $checkout->updateSession();
-        $paymentFactoryClassName = $this->getPaymentFactoryClassName();
-        $paymentFactory     = new $paymentFactoryClassName([  'type' => $paymentMethod,
-                                                    'order' => $order, 
-                                                    'checkoutDetails' => ApplicationUtil::getCheckout(),
-                                                    'cartDetails'     => ApplicationUtil::getCart(),
-                                                    'customerId'      => ApplicationUtil::getCustomerId()]);
-        $instance           = $paymentFactory->getInstance();
-        $instance->processPurchase();
-        $this->setModelInSession($order, 'order');
-    }
-
-
-    /**
      * Complete order
-     * @param string $orderId
      * @return string
      */
     public function actionCompleteOrder()
     {
-        $checkout      = ApplicationUtil::getCheckout();
-        $order         = $checkout->order;
+        $checkout       = ApplicationUtil::getCheckout();
+        $order          = $checkout->order;
         if(empty($order) || $order->isNewRecord)
         {
             return $this->goHome();
         }
-        $paymentFactoryClassName = $this->getPaymentFactoryClassName();
-        $paymentFactory     = new $paymentFactoryClassName([  'type' => $checkout->paymentMethodEditForm->payment_method,
-                                                              'order' => $order]);
-        $instance           = $paymentFactory->getInstance();
-        $instance->processConfirm();
-        $breadcrumbLinks = [
-                                [
-                                    'label' => UsniAdaptor::t('cart', 'Shopping Cart'),
-                                    'url'   => UsniAdaptor::createUrl('cart/default/view')
-                                ],
-                                [
-                                    'label' => UsniAdaptor::t('cart', 'Checkout'),
-                                    'url'   => UsniAdaptor::createUrl('cart/checkout/index')
-                                ],
-                                [
-                                    'label' => UsniAdaptor::t('cart', 'Completed Order')
-                                ]
-                            ];
-        $this->getView()->params['breadcrumbs'] = $breadcrumbLinks;
-        $this->getView()->title                 = UsniAdaptor::t('cart', 'Checkout');
-        $viewHelper    = UsniAdaptor::app()->getModule('cart')->viewHelper;
-        $completeView  = $viewHelper->getInstance('completeOrderView', ['order' => $order]);
+        $checkoutDTO    = new CheckoutDTO();
+        $checkoutDTO->setCheckout(ApplicationUtil::getCheckout());
+        $checkoutDTO->setCart(ApplicationUtil::getCart());
+        $checkoutDTO->setCustomerId(ApplicationUtil::getCustomerId());
+        $checkoutDTO->setInterface('front');
+        $this->checkoutManager->processComplete($checkoutDTO);
         //Reinstantiate the components
         if(UsniAdaptor::app()->user->isGuest)
         {
@@ -214,20 +130,8 @@ class CheckoutController extends BaseController
         {
             UsniAdaptor::app()->customer->updateSession('cart', new Cart());
         }
-        $checkout->deliveryOptionsEditForm  = new DeliveryOptionsEditForm();
-        $checkout->paymentMethodEditForm    = new PaymentMethodEditForm();
-        $checkout->order                    = new Order();
-        $checkout->updateSession();
-        $content       = $this->renderInnerContent([$completeView]);
-        return $this->render(FrontUtil::getDefaultInnerLayout(), ['content' => $content]);
-    }
-    
-    /**
-     * @inheritdoc
-     */
-    protected function getPaymentFactoryClassName()
-    {
-        return PaymentFactory::className();
+        $checkoutDTO->getCheckout()->updateSession();
+        return $this->render('/completeorder', ['order' => $order]);
     }
     
     /**
@@ -236,8 +140,8 @@ class CheckoutController extends BaseController
      */
     protected function checkAndRedirectIfCartEmpty()
     {
-        $isEmpty = ApplicationUtil::isCartEmpty();
-        if($isEmpty)
+        $cart = ApplicationUtil::getCart();
+        if($cart->itemsList->count() == 0)
         {
             return $this->redirect(UsniAdaptor::createUrl('cart/default/view'));
         }

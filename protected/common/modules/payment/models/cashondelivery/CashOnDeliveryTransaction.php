@@ -5,7 +5,7 @@
  */
 namespace common\modules\payment\models\cashondelivery;
 
-use usni\library\components\UiSecuredActiveRecord;
+use usni\library\db\ActiveRecord;
 use usni\UsniAdaptor;
 use common\modules\payment\utils\PaymentUtil;
 /**
@@ -13,7 +13,7 @@ use common\modules\payment\utils\PaymentUtil;
  *
  * @package common\modules\paypal\models
  */
-class CashOnDeliveryTransaction extends UiSecuredActiveRecord 
+class CashOnDeliveryTransaction extends ActiveRecord 
 {
     /**
      * Total amount for the order
@@ -40,6 +40,7 @@ class CashOnDeliveryTransaction extends UiSecuredActiveRecord
     {
         return [
             [['payment_status','transaction_id', 'amount', 'received_date', 'order_id'], 'required'],
+            [['amount', 'transaction_fee'], 'number'],
             [['payment_status','transaction_id', 'transaction_fee', 'amount', 'totalAmount', 
                                                        'alreadyPaidAmount', 'pendingAmount', 'received_date', 'order_id'], 'safe'],
         ];

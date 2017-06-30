@@ -6,14 +6,14 @@
 namespace products\notifications;
 
 use products\models\Product;
-use usni\library\components\UiEmailNotification;
 use usni\library\modules\notification\models\Notification;
+use usni\library\notifications\EmailNotification;
 /**
  * ProductReviewEmailNotification class file.
  *
  * @package products\notifications
  */
-class ProductReviewEmailNotification extends UiEmailNotification
+class ProductReviewEmailNotification extends EmailNotification
 {
     /**
      * Review Data
@@ -66,11 +66,17 @@ class ProductReviewEmailNotification extends UiEmailNotification
     }
     
     /**
-     * @inheritdoc
+     * inheritdoc
      */
-    public function setSubject($subject)
+    public function setSubject()
     {
-        $this->subject = str_replace('{{productName}}', $this->review['product_name'], $subject);
+        if($this->template != false)
+        {
+            $this->subject = strtr($this->template['subject'], ['{{productName}}' => $this->review['product_name']]);
+        }
+        else
+        {
+            $this->subject = $this->getDefaultSubject();
+        }
     }
 }
-?>

@@ -5,13 +5,13 @@
  */
 namespace common\modules\cms\models;
     
-use usni\library\components\UiSecuredActiveRecord;
+use usni\library\db\ActiveRecord;
 
 /**
  * PageTranslated class file
  * @package common\modules\cms\models
  */
-class PageTranslated extends UiSecuredActiveRecord
+class PageTranslated extends ActiveRecord
 {
     /**
      * @inheritdoc

@@ -6,51 +6,90 @@
 namespace common\modules\localization\modules\stockstatus\controllers;
 
 use common\modules\localization\modules\stockstatus\models\StockStatus;
-use common\modules\localization\controllers\LocalizationController;
-use usni\UsniAdaptor;
-use common\modules\localization\modules\stockstatus\utils\StockStatusUtil;
+use yii\filters\AccessControl;
+use usni\library\web\actions\CreateAction;
+use usni\library\web\actions\UpdateAction;
+use usni\library\web\actions\IndexAction;
+use usni\library\web\actions\ViewAction;
+use usni\library\web\actions\DeleteAction;
+use usni\library\web\actions\BulkDeleteAction;
 /**
  * DefaultController class file
  * 
  * @package common\modules\localization\modules\stockstatus\controllers
  */
-class DefaultController extends LocalizationController
+class DefaultController extends \usni\library\web\Controller
 {
-    use \usni\library\traits\EditViewTranslationTrait;
-    
     /**
-     * @inheritdoc
+     * inheritdoc
      */
-    protected function resolveModelClassName()
-    {
-        return StockStatus::className();
-    }
-    
-    /**
-     * @inheritdoc
-     */
-    public function pageTitles()
+    public function behaviors()
     {
         return [
-                    'create'         => UsniAdaptor::t('application','Create') . ' ' . StockStatus::getLabel(1),
-                    'update'         => UsniAdaptor::t('application','Update') . ' ' . StockStatus::getLabel(1),
-                    'view'           => UsniAdaptor::t('application','View') . ' ' . StockStatus::getLabel(1),
-                    'manage'         => UsniAdaptor::t('application','Manage') . ' ' . StockStatus::getLabel(1)
-               ];
+            'access' => [
+                'class' => AccessControl::className(),
+                'rules' => [
+                    [
+                        'allow' => true,
+                        'actions' => ['index'],
+                        'roles' => ['stockstatus.manage'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['view'],
+                        'roles' => ['stockstatus.view'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['create'],
+                        'roles' => ['stockstatus.create'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['update'],
+                        'roles' => ['stockstatus.update'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['delete', 'bulk-delete'],
+                        'roles' => ['stockstatus.delete'],
+                    ]
+                ],
+            ],
+        ];
     }
     
     /**
-     * @inheritdoc
+     * inheritdoc
      */
-    protected function deleteModel($model)
+    public function actions()
     {
-        $isAllowedToDelete = StockStatusUtil::checkIfAllowedToDelete($model);
-        if(!$isAllowedToDelete)
-        {
-            $message = UsniAdaptor::t('stockstatusflash', 'The model could not be deleted as products are associated to it.');
-            UsniAdaptor::app()->getSession()->setFlash('deleteFailed', $message);
-            return false;
-        }
-        return parent::deleteModel($model);
+        return [
+            'create' => ['class' => CreateAction::className(),
+                         'modelClass' => StockStatus::className(),
+                         'updateUrl'  => 'update',
+                         'viewFile' => '/create'
+                        ],
+            'update' => ['class' => UpdateAction::className(),
+                         'modelClass' => StockStatus::className(),
+                         'viewFile' => '/update'
+                        ],
+            'index'  => ['class' => IndexAction::className(),
+                         'modelClass' => StockStatus::className(),
+                         'viewFile' => '/index'
+                        ],
+            'view'   => ['class' => ViewAction::className(),
+                         'modelClass' => StockStatus::className(),
+                         'viewFile' => '/view'
+                        ],
+            'delete'   => ['class' => DeleteAction::className(),
+                         'modelClass' => StockStatus::className(),
+                         'redirectUrl'=> 'index',
+                         'permission' => 'stockstatus.deleteother'
+                        ],
+            'bulk-delete' => ['class' => BulkDeleteAction::className(),
+                              'modelClass' => StockStatus::className()
+                        ],
+        ];
     }
 }

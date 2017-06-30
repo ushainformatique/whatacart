@@ -5,10 +5,11 @@
  */
 namespace newsletter\models;
 
-use usni\library\components\TranslatableActiveRecord;
+use usni\library\db\TranslatableActiveRecord;
 use usni\UsniAdaptor;
 /**
  * Newsletter active record.
+ * 
  * @package newsletter\models
  */
 class Newsletter extends TranslatableActiveRecord
@@ -24,6 +25,11 @@ class Newsletter extends TranslatableActiveRecord
     const ALL_SUBSCRIBERS    = 1;
     const ALL_CUSTOMERS      = 2;
     
+    /**
+     * Send newsletter event
+     */
+    const EVENT_SENDNEWSLETTER = 'sendNewsletter';
+    
     
     /**
      * @inheritdoc
@@ -31,9 +37,9 @@ class Newsletter extends TranslatableActiveRecord
     public function rules()
     {
         return [
-                    [['subject', 'content'],                            'required'],
-                    [['store_id', 'to'],                                'safe'],
-                    [['id', 'subject', 'content', 'store_id', 'to'],    'safe'],
+                    [['subject', 'content'],                                    'required'],
+                    [['store_id', 'to'],                                        'safe'],
+                    [['id', 'subject', 'content', 'store_id', 'to'],  'safe'],
                ];
     }
 
@@ -42,8 +48,8 @@ class Newsletter extends TranslatableActiveRecord
      */
     public function scenarios()
     {
-        $scenarios          = parent::scenarios();
-        $scenarios['send']  = $scenarios['create'] = ['subject', 'content', 'store_id', 'to'];
+        $scenarios              = parent::scenarios();
+        $scenarios['create']    = $scenarios['update'] = ['subject', 'content', 'store_id', 'to'];
         return $scenarios;
     }
 

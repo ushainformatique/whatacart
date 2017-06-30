@@ -6,9 +6,8 @@
 namespace common\modules\localization\modules\weightclass\models;
 
 use yii\base\Model;
-use usni\library\components\TranslatedActiveDataProvider;
 use usni\UsniAdaptor;
-use usni\library\utils\AdminUtil;
+use usni\library\dataproviders\ArrayRecordDataProvider;
 /**
  * WeightClassSearch class file
  * This is the search class for model WeightClass.
@@ -17,6 +16,8 @@ use usni\library\utils\AdminUtil;
  */
 class WeightClassSearch extends WeightClass
 {
+    use \usni\library\traits\SearchTrait;
+    
     /**
      * @inheritdoc
      */
@@ -42,34 +43,37 @@ class WeightClassSearch extends WeightClass
     {
         return Model::scenarios();
     }
-
+    
     /**
      * Search based on get params.
      *
-     * @return yii\data\ActiveDataProvider
+     * @return ArrayRecordDataProvider
      */
     public function search()
     {
-        $query          = WeightClass::find();
+        $query          = new \yii\db\Query();
         $tableName      = UsniAdaptor::tablePrefix() . 'weight_class';
-        $query->innerJoinWith('translations');
-        $dataProvider   = new TranslatedActiveDataProvider([
-            'query' => $query,
-        ]);
+        $trTableName    = UsniAdaptor::tablePrefix() . 'weight_class_translated';
+        $query->select('w.*, wt.name')
+              ->from(["$tableName w"])
+              ->innerJoin("$trTableName wt", 'w.id = wt.owner_id')
+              ->where('wt.language = :lang', [':lang' => $this->language]);
+        $dataProvider = new ArrayRecordDataProvider([
+                                                        'query'     => $query,
+                                                        'key'       => 'id',
+                                                        'sort'      => ['attributes' => ['name', 'value', 'unit']]
+                                                   ]);
 
-        // Validate data
-        if (!$this->validate())
+        if (!$this->validate()) 
         {
             return $dataProvider;
-        }
-        $query->andFilterWhere(['language' => UsniAdaptor::app()->languageManager->getContentLanguage()]);
+        }        
         $query->andFilterWhere(['like', 'name', $this->name]);
-        $query->andFilterWhere(['like', 'unit', $this->unit]);
         $query->andFilterWhere(['like', 'value', $this->value]);
-        $user     = UsniAdaptor::app()->user->getUserModel();
-        if(!AdminUtil::doesUserHaveOthersPermissionsOnModel(WeightClass::className(), $user))
+        $query->andFilterWhere(['like', 'unit', $this->unit]);
+        if($this->canAccessOwnedRecordsOnly('weightclass'))
         {
-            $query->andFilterWhere([$tableName . '.created_by' => $user->id]);
+            $query->andFilterWhere(['w.created_by' => $this->getUserId()]);
         }
         return $dataProvider;
     }

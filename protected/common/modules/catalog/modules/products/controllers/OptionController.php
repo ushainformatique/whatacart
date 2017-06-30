@@ -5,113 +5,136 @@
  */
 namespace products\controllers;
 
-use common\modules\catalog\controllers\BaseController;
-use products\views\ProductOptionEditView;
 use products\models\ProductOption;
 use usni\UsniAdaptor;
-use products\utils\ProductUtil;
-use products\models\ProductOptionMapping;
-use products\views\AssignProductOptionEditView;
-use products\views\AssignProductOptionValuesView;
-use products\models\Product;
-use products\views\AssignProductOptionsListView;
-use usni\library\utils\PermissionUtil;
+use yii\filters\AccessControl;
+use usni\library\web\actions\CreateAction;
+use products\business\ProductOptionManager;
+use usni\library\web\actions\UpdateAction;
+use usni\library\web\actions\IndexAction;
+use usni\library\web\actions\DeleteAction;
+use usni\library\web\actions\BulkDeleteAction;
+use usni\library\web\actions\ViewAction;
+use yii\base\InvalidParamException;
 use yii\web\ForbiddenHttpException;
-use usni\library\utils\ArrayUtil;
+use products\dto\AssignOptionDTO;
+use products\dao\OptionDAO;
+use products\business\Manager as ProductBusinessManager;
+use products\dao\ProductDAO;
 /**
  * OptionController class file.
  * 
  * @package products\controllers
  */
-class OptionController extends BaseController
+class OptionController extends \usni\library\web\Controller
 {
     /**
-     * @inheritdoc
+     * inheritdoc
      */
-    protected function resolveModelClassName()
+    public function behaviors()
     {
-        return ProductOption::className();
+        return [
+            'access' => [
+                'class' => AccessControl::className(),
+                'rules' => [
+                    [
+                        'allow' => true,
+                        'actions' => ['index'],
+                        'roles' => ['product.manage'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['view'],
+                        'roles' => ['product.view'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['create'],
+                        'roles' => ['product.create'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['update', 'assign', 'get-product-values', 'save-assignment'],
+                        'roles' => ['product.update'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['delete', 'bulk-delete'],
+                        'roles' => ['product.delete'],
+                    ]
+                ],
+            ],
+        ];
     }
     
     /**
-     * @inheritdoc
+     * inheritdoc
      */
-    public function actionCreate()
+    public function actions()
     {
-        $option             = new ProductOption(['scenario' => 'create']);
-        return $this->processInsertOrUpdate($option);
-    }
-    
-    /**
-     * @inheritdoc
-     */
-    public function actionUpdate($id)
-    {
-        $option = ProductOption::findOne($id);
-        $user   = UsniAdaptor::app()->user->getUserModel();
-        if(PermissionUtil::doesUserHavePermissionToPerformAction($option, $user, 'productoption.updateother') == false)
-        {
-            throw new ForbiddenHttpException(\Yii::t('yii','You are not authorized to perform this action.'));
-        }
-        $option->scenario       = 'update';
-        return $this->processInsertOrUpdate($option);
-    }
-    
-    /**
-     * Process insert or update
-     * @param string $option
-     * @return string
-     */
-    protected function processInsertOrUpdate($option)
-    {
-        if(ProductUtil::validateAndSaveProductOptionData($_POST, $option))
-        {
-            return $this->redirect(UsniAdaptor::createUrl('/catalog/products/option/manage'));
-        }
-        $this->setBreadCrumbs($option);
-        $editView           = new ProductOptionEditView($option);
-        $content            = $this->renderColumnContent([$editView]);
-        return $this->render($this->getDefaultLayout(), array('content' => $content));
+        $managerConfig = ['class'    => ProductOptionManager::className()];
+        return [
+            'create' => ['class' => CreateAction::className(),
+                         'modelClass' => ProductOption::className(),
+                         'updateUrl'  => 'update',
+                         'managerConfig' => $managerConfig,
+                         'viewFile' => '/productoption/create',
+                        ],
+            'update' => ['class' => UpdateAction::className(),
+                         'modelClass' => ProductOption::className(),
+                         'managerConfig' => $managerConfig,
+                         'viewFile' => '/productoption/update',
+                        ],
+            'index'  => ['class' => IndexAction::className(),
+                         'modelClass' => ProductOption::className(),
+                         'managerConfig' => $managerConfig,
+                         'viewFile' => '/productoption/index',
+                        ],
+            'view'   => ['class' => ViewAction::className(),
+                         'modelClass' => ProductOption::className(),
+                         'managerConfig' => $managerConfig,
+                         'viewFile' => '/productoption/view'
+                        ],
+            'delete'   => ['class' => DeleteAction::className(),
+                           'modelClass' => ProductOption::className(),
+                           'redirectUrl'=> 'index',
+                           'permission' => 'product.deleteother'
+                        ],
+            'bulk-delete' => ['class' => BulkDeleteAction::className(),
+                              'modelClass' => ProductOption::className(),
+                              'managerConfig' => $managerConfig,
+                        ],
+        ];
     }
     
     /**
      * Assign product options to product
-     * @param int $product_id
+     * @param int $productId
      * @return string
      */
-    public function actionProductOptions($product_id)
+    public function actionAssign($productId)
     {
-        if(ProductUtil::checkIfProductAllowedToPerformAction($product_id) == false)
+        $manager        = new ProductOptionManager();
+        $isValidProduct = ProductBusinessManager::getInstance()->isValidProductId($productId);
+        if(!$isValidProduct)
         {
-            throw new \yii\web\NotFoundHttpException();
+            throw new InvalidParamException("Invalid product id $productId");
         }
-        $product    = Product::findOne($product_id);
-        $user       = UsniAdaptor::app()->user->getUserModel();
-        if(PermissionUtil::doesUserHavePermissionToPerformAction($product, $user, 'product.updateother') == true)
+        $product        = ProductDAO::getById($productId, UsniAdaptor::app()->languageManager->selectedLanguage);
+        $isPermissible  = true;
+        if($product['created_by'] != UsniAdaptor::app()->user->getId())
         {
-            $breadcrumbs   = [
-                                [
-                                    'label' => UsniAdaptor::t('application', 'Manage') . ' ' . Product::getLabel(2),
-                                    'url'   => UsniAdaptor::createUrl('/catalog/products/default/manage')
-                                ],
-                                [
-                                    'label' => $product->name,
-                                    'url'   => UsniAdaptor::createUrl('/catalog/products/default/view', ['id' => $product_id])
-                                ],
-                                [
-                                    'label' => UsniAdaptor::t('application', 'Manage') . ' ' . ProductOption::getLabel(2)
-                                ]
-                             ];
-            $this->getView()->params['breadcrumbs']  = $breadcrumbs;
-            $model              = new ProductOptionMapping();
-            $model->product_id  = $product_id;
-            $assignView         = new AssignProductOptionEditView(['model' => $model]);
-            $content            = $this->renderColumnContent([$assignView]);
-            return $this->render($this->getDefaultLayout(), array('content' => $content));
+            $isPermissible      = UsniAdaptor::app()->user->can('product.updateother');
+        }
+        if(!$isPermissible)
+        {
+            throw new ForbiddenHttpException(\Yii::t('yii','You are not authorized to perform this action.'));
         }
         else
         {
-            throw new ForbiddenHttpException(\Yii::t('yii','You are not authorized to perform this action.'));
+            $optionDTO          = new AssignOptionDTO();
+            $manager->processAssignOptions($productId, $optionDTO);
+            return $this->render('/assignOptionEdit', ['formDTO' => $optionDTO]);
         }
     }
     
@@ -123,72 +146,22 @@ class OptionController extends BaseController
      */
     public function actionGetProductValues($productId, $optionId)
     {
-        $productOptionMappings  = ProductUtil::getAssigedProductOptionValues($productId, $optionId);
-        $optionValuesView       = new AssignProductOptionValuesView(['optionId' => $optionId, 'optionMappings' => $productOptionMappings]);
-        echo $this->getView()->renderAjaxWithClass($optionValuesView);
+        $language               = UsniAdaptor::app()->languageManager->selectedLanguage;
+        $assignedOptionsMapping = OptionDAO::getAssignedOptionValues($productId, $optionId, $language);
+        $optionValues           = OptionDAO::getOptionValues($optionId, $language);
+        echo $this->renderAjax('/_assignOptionValues', ['optionValues' => $optionValues, 'assignedOptionsMapping' => $assignedOptionsMapping]);
     }
     
     /**
-     * Assign product options.
+     * Save option value assignment for the option.
      * @return void
      */
-    public function actionAssign()
+    public function actionSaveAssignment()
     {
-        $productId  = $_POST['ProductOptionMapping']['product_id'];
-        $optionId   = $_POST['ProductOptionMapping']['option_id'];
-        $optionValueIdData = ArrayUtil::getValue($_POST['ProductOptionMapping'], 'option_value_id', []);
-        $records    = ProductOptionMapping::find()->where('option_id = :aid AND product_id = :pid', [
-                                                                                                    ':aid' => $optionId,
-                                                                                                    ':pid' => $productId
-                                                                                                ])->all();
-        foreach($records as $record)
-        {
-            $record->delete();
-        }
-        if(!empty($optionValueIdData))
-        {
-            ProductUtil::saveOptionMappingDetails($productId, $optionId, $_POST['ProductOptionMapping']);
-        }
-        $product    = Product::findOne($productId);
-        $view       = new AssignProductOptionsListView(['product' => $product, 'shouldRenderActionColumn' => false]);
-        echo $view->render();
-    }
-    
-    /**
-     * Process delete of option for the product.
-     * @param int $mappingId
-     * @return void
-     */
-    public function actionRemove($mappingId)
-    {
-        $model          = ProductOptionMapping::findOne($mappingId);
-        $this->deleteModel($model);
-        echo "Success";
-    }
-    
-    /**
-     * @inheritdoc
-     */
-    public function pageTitles()
-    {
-        return [
-                    'create'            => UsniAdaptor::t('application','Create') . ' ' . ProductOption::getLabel(1),
-                    'update'            => UsniAdaptor::t('application','Update') . ' ' . ProductOption::getLabel(1),
-                    'view'              => UsniAdaptor::t('application','View') . ' ' . ProductOption::getLabel(1),
-                    'manage'            => UsniAdaptor::t('application','Manage') . ' ' . ProductOption::getLabel(2),
-                    'product-options'   => UsniAdaptor::t('products', 'Product Options')
-               ];
-    }
-    
-    /**
-     * @inheritdoc
-     */
-    protected function getActionToPermissionsMap()
-    {
-        $permissionsMap                         = parent::getActionToPermissionsMap();
-        $permissionsMap['product-options']      = 'product.update';
-        $permissionsMap['get-product-values']   = 'product.update';
-        $permissionsMap['assign']               = 'product.update';
-        return $permissionsMap;
+        $manager    = new ProductOptionManager();
+        $postData   = UsniAdaptor::app()->request->post('ProductOptionMapping');
+        $manager->processSaveOptionValueAssignment($postData);
+        $assignedOptions = ProductBusinessManager::getInstance()->getAssignedOptions($postData['product_id']);
+        echo $this->renderAjax('/_manageOptionValuesSubView', ['assignedOptions' => $assignedOptions]);
     }
 }

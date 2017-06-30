@@ -6,50 +6,90 @@
 namespace common\modules\localization\modules\orderstatus\controllers;
 
 use common\modules\localization\modules\orderstatus\models\OrderStatus;
-use common\modules\localization\controllers\LocalizationController;
-use usni\UsniAdaptor;
-use common\modules\localization\modules\orderstatus\utils\OrderStatusUtil;
+use yii\filters\AccessControl;
+use usni\library\web\actions\CreateAction;
+use usni\library\web\actions\UpdateAction;
+use usni\library\web\actions\IndexAction;
+use usni\library\web\actions\DeleteAction;
+use usni\library\web\actions\BulkDeleteAction;
+use usni\library\web\actions\ViewAction;
 /**
  * DefaultController class file
  * 
  * @package common\modules\orderstatus\controllers
  */
-class DefaultController extends LocalizationController
+class DefaultController extends \usni\library\web\Controller
 {
-    use \usni\library\traits\EditViewTranslationTrait;
     /**
-     * @inheritdoc
+     * inheritdoc
      */
-    protected function resolveModelClassName()
-    {
-        return OrderStatus::className();
-    }
-    
-    /**
-     * @inheritdoc
-     */
-    public function pageTitles()
+    public function behaviors()
     {
         return [
-                    'create'         => UsniAdaptor::t('application','Create') . ' ' . OrderStatus::getLabel(1),
-                    'update'         => UsniAdaptor::t('application','Update') . ' ' . OrderStatus::getLabel(1),
-                    'view'           => UsniAdaptor::t('application','View') . ' ' . OrderStatus::getLabel(1),
-                    'manage'         => UsniAdaptor::t('application','Manage') . ' ' . OrderStatus::getLabel(1)
-               ];
+            'access' => [
+                'class' => AccessControl::className(),
+                'rules' => [
+                    [
+                        'allow' => true,
+                        'actions' => ['index'],
+                        'roles' => ['orderstatus.manage'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['view'],
+                        'roles' => ['orderstatus.view'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['create'],
+                        'roles' => ['orderstatus.create'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['update'],
+                        'roles' => ['orderstatus.update'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['delete', 'bulk-delete'],
+                        'roles' => ['orderstatus.delete'],
+                    ]
+                ],
+            ],
+        ];
     }
     
     /**
-     * @inheritdoc
+     * inheritdoc
      */
-    protected function deleteModel($model)
+    public function actions()
     {
-        $isAllowedToDelete = OrderStatusUtil::checkIfAllowedToDelete($model);
-        if(!$isAllowedToDelete)
-        {
-            $message = UsniAdaptor::t('orderstatusflash', 'The model could not be deleted as orders are associated to it.');
-            UsniAdaptor::app()->getSession()->setFlash('deleteFailed', $message);
-            return false;
-        }
-        return parent::deleteModel($model);
+        return [
+            'create' => ['class' => CreateAction::className(),
+                         'modelClass' => OrderStatus::className(),
+                         'updateUrl'  => 'update',
+                         'viewFile' => '/create'
+                        ],
+            'update' => ['class' => UpdateAction::className(),
+                         'modelClass' => OrderStatus::className(),
+                         'viewFile' => '/update'
+                        ],
+            'index'  => ['class' => IndexAction::className(),
+                         'modelClass' => OrderStatus::className(),
+                         'viewFile' => '/index'
+                        ],
+            'view'   => ['class' => ViewAction::className(),
+                         'modelClass' => OrderStatus::className(),
+                         'viewFile' => '/view'
+                        ],
+            'delete'   => ['class' => DeleteAction::className(),
+                           'modelClass' => OrderStatus::className(),
+                           'redirectUrl'=> 'index',
+                           'permission' => 'orderstatus.deleteother'
+                        ],
+            'bulk-delete' => ['class' => BulkDeleteAction::className(),
+                              'modelClass' => OrderStatus::className()
+                        ],
+        ];
     }
 }

@@ -6,10 +6,9 @@
 namespace common\modules\localization\modules\orderstatus\models;
 
 use yii\base\Model;
-use usni\library\components\TranslatedActiveDataProvider;
-use usni\library\utils\AdminUtil;
 use common\modules\localization\modules\orderstatus\models\OrderStatus;
 use usni\UsniAdaptor;
+use usni\library\dataproviders\ArrayRecordDataProvider;
 /**
  * OrderStatusSearch class file
  * This is the search class for model OrderStatus.
@@ -18,6 +17,8 @@ use usni\UsniAdaptor;
  */
 class OrderStatusSearch extends OrderStatus
 {
+    use \usni\library\traits\SearchTrait;
+    
     /**
      * @inheritdoc
      */
@@ -47,28 +48,31 @@ class OrderStatusSearch extends OrderStatus
     /**
      * Search based on get params.
      *
-     * @return yii\data\ActiveDataProvider
+     * @return ArrayRecordDataProvider
      */
     public function search()
     {
-        $query          = OrderStatus::find();
-        $tableName      = UsniAdaptor::tablePrefix(). 'order_status';  
-        $query->innerJoinWith('translations');
-        $dataProvider   = new TranslatedActiveDataProvider([
-            'query' => $query,
-        ]);
+        $query          = new \yii\db\Query();
+        $tableName      = UsniAdaptor::tablePrefix() . 'order_status';
+        $trTableName    = UsniAdaptor::tablePrefix() . 'order_status_translated';
+        $query->select('o.*, ot.name')
+              ->from(["$tableName o"])
+              ->innerJoin("$trTableName ot", 'o.id = ot.owner_id')
+              ->where('ot.language = :lang', [':lang' => $this->language]);
+        $dataProvider = new ArrayRecordDataProvider([
+                                                        'query'     => $query,
+                                                        'key'       => 'id',
+                                                        'sort'      => ['attributes' => ['name']]
+                                                   ]);
 
-        // Validate data
-        if (!$this->validate())
+        if (!$this->validate()) 
         {
             return $dataProvider;
-        }
-        $query->andFilterWhere(['language' => UsniAdaptor::app()->languageManager->getContentLanguage()]);
+        }        
         $query->andFilterWhere(['like', 'name', $this->name]);
-        $user     = UsniAdaptor::app()->user->getUserModel();
-        if(!AdminUtil::doesUserHaveOthersPermissionsOnModel(OrderStatus::className(), $user))
+        if($this->canAccessOwnedRecordsOnly('orderstatus'))
         {
-            $query->andFilterWhere([$tableName . '.created_by' => $user->id]);
+            $query->andFilterWhere(['o.created_by' => $this->getUserId()]);
         }
         return $dataProvider;
     }

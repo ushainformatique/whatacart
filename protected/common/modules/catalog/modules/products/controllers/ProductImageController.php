@@ -5,54 +5,46 @@
  */
 namespace products\controllers;
 
-use products\models\ProductImage;
-use usni\UsniAdaptor;
-use common\modules\catalog\controllers\BaseController;
-use common\modules\catalog\utils\CatalogPermissionUtil;
+use products\business\ImageManager;
+use yii\web\ForbiddenHttpException;
+use yii\filters\AccessControl;
 /**
- * ProductImageController class file
+ * ProductImageController class file.
+ * 
  * @package products\controllers
  */
-class ProductImageController extends BaseController
+class ProductImageController extends \usni\library\web\Controller
 {
     /**
-     * @inheritdoc
+     * inheritdoc
      */
-    protected function resolveModelClassName()
+    public function behaviors()
     {
-        return ProductImage::className();
-    }
-    
-    /**
-     * Get model title
-     * @return string
-     */
-    protected static function getModelTitle()
-    {
-        return UsniAdaptor::t('products', 'Product Image');
+        return [
+            'access' => [
+                'class' => AccessControl::className(),
+                'rules' => [
+                    [
+                        'allow' => true,
+                        'actions' => ['delete'],
+                        'roles' => ['product.delete'],
+                    ]
+                ],
+            ],
+        ];
     }
     
     /**
      * Process delete.
      * @param int $id
-     * @param array $config
-     * @return void
+     * @throws ForbiddenHttpException
      */
-    protected function processDelete($id, $config = [])
+    public function actionDelete($id)
     {
-        $user           = UsniAdaptor::app()->user->getUserModel();
-        $modelClassName = $this->resolveModelClassName();
-        $model          = $this->loadModel($modelClassName, $id);
-        $isPermissible  = CatalogPermissionUtil::doesUserHavePermissionToPerformAction($model, $user, 'deleteother');
-        if(!$isPermissible)
+        $result = ImageManager::getInstance()->processDeleteImage($id);
+        if($result == false)
         {
-            throw new \yii\web\ForbiddenHttpException(\Yii::t('yii','You are not authorized to perform this action.'));
-        }
-        else
-        {
-            $this->deleteModel($model);
-            echo "Success";
+            throw new ForbiddenHttpException(\Yii::t('yii','You are not authorized to perform this action.'));
         }
     }
 }
-?>

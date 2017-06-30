@@ -6,51 +6,90 @@
 namespace common\modules\localization\modules\weightclass\controllers;
 
 use common\modules\localization\modules\weightclass\models\WeightClass;
-use common\modules\localization\controllers\LocalizationController;
-use usni\UsniAdaptor;
-use common\modules\localization\modules\weightclass\utils\WeightClassUtil;
+use yii\filters\AccessControl;
+use usni\library\web\actions\CreateAction;
+use usni\library\web\actions\UpdateAction;
+use usni\library\web\actions\IndexAction;
+use usni\library\web\actions\DeleteAction;
+use usni\library\web\actions\BulkDeleteAction;
+use usni\library\web\actions\ViewAction;
 /**
  * DefaultController class file
  * 
  * @package common\modules\localization\modules\weightclass\controllers
  */
-class DefaultController extends LocalizationController
+class DefaultController extends \usni\library\web\Controller
 {
-    use \usni\library\traits\EditViewTranslationTrait;
-    
     /**
-     * @inheritdoc
+     * inheritdoc
      */
-    protected function resolveModelClassName()
-    {
-        return WeightClass::className();
-    }
-    
-    /**
-     * @inheritdoc
-     */
-    public function pageTitles()
+    public function behaviors()
     {
         return [
-                    'create'         => UsniAdaptor::t('application','Create') . ' ' . WeightClass::getLabel(1),
-                    'update'         => UsniAdaptor::t('application','Update') . ' ' . WeightClass::getLabel(1),
-                    'view'           => UsniAdaptor::t('application','View') . ' ' . WeightClass::getLabel(1),
-                    'manage'         => UsniAdaptor::t('application','Manage') . ' ' . WeightClass::getLabel(2)
-               ];
+            'access' => [
+                'class' => AccessControl::className(),
+                'rules' => [
+                    [
+                        'allow' => true,
+                        'actions' => ['index'],
+                        'roles' => ['weightclass.manage'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['view'],
+                        'roles' => ['weightclass.view'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['create'],
+                        'roles' => ['weightclass.create'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['update'],
+                        'roles' => ['weightclass.update'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['delete', 'bulk-delete'],
+                        'roles' => ['weightclass.delete'],
+                    ]
+                ],
+            ],
+        ];
     }
     
     /**
-     * @inheritdoc
+     * inheritdoc
      */
-    protected function deleteModel($model)
+    public function actions()
     {
-        $isAllowedToDelete = WeightClassUtil::checkIfAllowedToDelete($model);
-        if(!$isAllowedToDelete)
-        {
-            $message = UsniAdaptor::t('applicationflash', 'The model could not be deleted.');
-            UsniAdaptor::app()->getSession()->setFlash('deleteFailed', $message);
-            return false;
-        }
-        return parent::deleteModel($model);
+        return [
+            'create' => ['class' => CreateAction::className(),
+                         'modelClass' => WeightClass::className(),
+                         'updateUrl'  => 'update',
+                         'viewFile' => '/create'
+                        ],
+            'update' => ['class' => UpdateAction::className(),
+                         'modelClass' => WeightClass::className(),
+                         'viewFile' => '/update'
+                        ],
+            'index'  => ['class' => IndexAction::className(),
+                         'modelClass' => WeightClass::className(),
+                         'viewFile' => '/index'
+                        ],
+            'view'   => ['class' => ViewAction::className(),
+                         'modelClass' => WeightClass::className(),
+                         'viewFile' => '/view'
+                        ],
+            'delete'   => ['class' => DeleteAction::className(),
+                           'modelClass' => WeightClass::className(),
+                           'redirectUrl'=> 'index',
+                           'permission' => 'weightclass.deleteother'
+                        ],
+            'bulk-delete' => ['class' => BulkDeleteAction::className(),
+                              'modelClass' => WeightClass::className()
+                        ],
+        ];
     }
 }

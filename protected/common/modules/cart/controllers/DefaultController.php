@@ -8,12 +8,11 @@ namespace cart\controllers;
 use frontend\controllers\BaseController;
 use usni\UsniAdaptor;
 use yii\helpers\Json;
-use frontend\utils\FrontUtil;
-use cart\views\HeaderCartSubView;
-use frontend\components\Breadcrumb;
-use cart\utils\CartUtil;
+use cart\widgets\HeaderCartSubView;
 use common\utils\ApplicationUtil;
-use products\utils\ProductUtil;
+use cart\dto\CartDTO;
+use cart\business\Manager;
+use cart\widgets\SiteCartSubView;
 /**
  * DefaultController class file
  *
@@ -22,31 +21,49 @@ use products\utils\ProductUtil;
 class DefaultController extends BaseController
 {
     /**
+     * @var Manager 
+     */
+    public $manager;
+    
+    /**
+     * inheritdoc
+     */
+    public function beforeAction($action)
+    {
+        if(parent::beforeAction($action))
+        {
+            $this->manager = Manager::getInstance();
+            return true;
+        }
+        return false;
+    }
+    
+    /**
      * Add product to add to cart
      * @return string json result
      */
     public function actionAddToCart()
     {
-        $product  = ProductUtil::getProduct($_POST['product_id']);
-        $isDetail = (bool)$_POST['isDetail'];
-        $cart     = ApplicationUtil::getCart();      
-        $inputOptions   = [];
-        if(isset($_POST['ProductOptionMapping']['option']))
-        {
-            $inputOptions = $_POST['ProductOptionMapping']['option'];
-        }
-        $result = CartUtil::processAddToCartItem($cart, $product, $_POST['quantity'], $inputOptions);
+        $isDetail       = (bool)$_POST['isDetail'];
+        $cart           = ApplicationUtil::getCart();      
+        //Populate dtos
+        $cartDTO    = new CartDTO();
+        $cartDTO->setPostData($_POST);
+        $cartDTO->setCart($cart);
+        $cartDTO->setCustomerId(ApplicationUtil::getCustomerId());
+        $this->manager->addItem($cartDTO);
+        $result = $cartDTO->getResult();
         if($result['success'] === true)
         {
-            $subView    = new HeaderCartSubView();
-            $data       = $subView->render();
+            $cartDTO->getCart()->updateSession();
+            $data       = HeaderCartSubView::widget();
             $result['data'] = $data;
         }
         elseif($result['qtyError'] === true)
         {
             if($isDetail == false)
             {
-                $this->redirect(UsniAdaptor::createUrl('products/site/detail', ['id' => $product['id']]))->send();
+                $this->redirect(UsniAdaptor::createUrl('products/site/detail', ['id' => $_POST['product_id']]))->send();
             }
         }
         echo Json::encode($result);
@@ -58,13 +75,7 @@ class DefaultController extends BaseController
      */
     public function actionView()
     {
-        $this->getView()->title = UsniAdaptor::t('cart', 'Shopping Cart');
-        $breadcrumbView     = new Breadcrumb(['page' => $this->getView()->title]);
-        $this->getView()->params['breadcrumbs'] = $breadcrumbView->getBreadcrumbLinks();
-        $viewHelper         = UsniAdaptor::app()->getModule('cart')->viewHelper;
-        $detailView         = $viewHelper->getInstance('cartDetailView');
-        $content     = $this->renderInnerContent([$detailView]);
-        return $this->render(FrontUtil::getDefaultInnerLayout(), ['content' => $content]);
+        return $this->render('/view');
     }
     
     /**
@@ -75,8 +86,11 @@ class DefaultController extends BaseController
     {
         if(UsniAdaptor::app()->request->getIsAjax())
         {
-            $cart              = ApplicationUtil::getCart();
-            $cart->removeItem($_POST['item_code']);
+            $cart       = ApplicationUtil::getCart();
+            $cartDTO    = new CartDTO();
+            $cartDTO->setCart($cart);
+            $this->manager->removeItem($_POST['item_code'], $cartDTO);
+            $cartDTO->getCart()->updateSession();
         }
         return Json::encode([]);
     }
@@ -89,32 +103,21 @@ class DefaultController extends BaseController
     {
         if(UsniAdaptor::app()->request->getIsAjax())
         {
-            $cart              = ApplicationUtil::getCart();
-            $itemCode          = $_POST['item_code'];
-            $productId         = CartUtil::getProductAndOptionsByItemCode($itemCode);
-            $product           = ProductUtil::getProduct($productId);
-            if($_POST['qty'] < 1)
+            $cart           = ApplicationUtil::getCart();
+            $cartDTO        = new CartDTO();
+            $cartDTO->setCart($cart);
+            $cartDTO->setPostData($_POST);
+            $result         = $this->manager->updateItem($cartDTO);
+            if($result === true)
             {
-                return Json::encode(['error' => UsniAdaptor::t('cart', 'Input quantity should be >= 1')]);
-            }
-            if($product['minimum_quantity'] > $_POST['qty'])
-            {
-                return Json::encode(['error' => UsniAdaptor::t('cart', 'Input quantity should be >= minimum quantity')]);
+                $cart->updateSession();
+                $headerCartContent = HeaderCartSubView::widget();
+                $content           = SiteCartSubView::widget();
+                return Json::encode(['content' => $content, 'headerCartContent' => $headerCartContent]);
             }
             else
             {
-                $cart->itemsList[$itemCode]['qty'] = $_POST['qty'];
-                //Check price for the updated quantity may be discount has applied
-                $priceExcludingTax  = ProductUtil::getFinalPrice($product, UsniAdaptor::app()->user->getUserModel(), $_POST['qty']);
-                $cart->updatePriceForProduct($product, $priceExcludingTax);
-                $cart->updateSession();
-                $headerSubView     = new HeaderCartSubView();
-                $headerCartContent = $headerSubView->render();
-                //$cartSubView       = new CartSubView();
-                $viewHelper        = UsniAdaptor::app()->getModule('cart')->viewHelper;
-                $cartSubView       = $viewHelper->getInstance('cartSubView');
-                $content           = $cartSubView->render();
-                return Json::encode(['content' => $content, 'headerCartContent' => $headerCartContent]);
+                return $result;
             }
         }
         return Json::encode([]);

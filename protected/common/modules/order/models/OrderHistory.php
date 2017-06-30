@@ -5,7 +5,7 @@
  */
 namespace common\modules\order\models;
 
-use usni\library\components\TranslatableActiveRecord;
+use usni\library\db\TranslatableActiveRecord;
 use usni\UsniAdaptor;
 /**
  * OrderHistory class file.
@@ -21,6 +21,7 @@ class OrderHistory extends TranslatableActiveRecord
 	public function rules()
 	{
 		return [
+                    [['order_id', 'status'],   'required'],
                     [['order_id', 'status', 'notify_customer', 'comment'],   'safe'],
                ];
 	}
@@ -48,6 +49,16 @@ class OrderHistory extends TranslatableActiveRecord
                   ];
         return parent::getTranslatedAttributeLabels($labels);
 	}
+    
+    /**
+     * inheritdoc
+     */
+    public function attributeHints()
+    {
+        return [
+                    'notify_customer'   => UsniAdaptor::t('orderhint', 'Customer would be notified if status is completed.'),
+               ];
+    }
     
     /**
      * @inheritdoc

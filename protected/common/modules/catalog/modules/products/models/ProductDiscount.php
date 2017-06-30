@@ -5,14 +5,14 @@
  */
 namespace products\models;
 
-use usni\library\components\UiSecuredActiveRecord;
+use usni\library\db\ActiveRecord;
 use usni\UsniAdaptor;
 use products\models\Product;
 
 /**
  * This is the model class for table "product_discount".
  */
-class ProductDiscount extends UiSecuredActiveRecord
+class ProductDiscount extends ActiveRecord
 {
     /**
      * @inheritdoc

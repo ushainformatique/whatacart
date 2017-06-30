@@ -28,11 +28,4 @@ return [
                         ]
                     ]                   
               ],
-            'customer'  => [
-                    'components'   => [
-                        'viewHelper' => [
-                            'class' => 'customer\components\front\ViewHelper'
-                        ]
-                    ]
-                   ],
        ];

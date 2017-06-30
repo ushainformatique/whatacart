@@ -5,58 +5,37 @@
  */
 namespace frontend\controllers;
 
-use frontend\utils\FrontUtil;
-use usni\UsniAdaptor;
-use usni\library\views\UiView;
+use usni\library\filters\MaintenanceFilter;
 /**
- * BaseController class file
+ * BaseController class file. Every site controller should extend from it.
  *
  * @package frontend\controllers
  */
-class BaseController extends UiWebController
+class BaseController extends \usni\library\web\Controller
 {
     /**
-     * @inheritdoc
+     * Get actions.
+     * @return array
      */
-    public function init()
+    public function actions()
     {
-        parent::init();
-        if(UsniAdaptor::app()->isInstalled())
-        {
-            $this->layout = FrontUtil::getDefaultViewLayout();
-        }
-        else
-        {
-            $this->layout = "@webroot/themes/classic/views/layouts/newmain";
-        }
+        return array(
+            'captcha' => [
+                'class' => 'yii\captcha\CaptchaAction',
+                'fixedVerifyCode' => YII_ENV_TEST ? 'testme' : null,
+            ],
+        );
     }
     
     /**
-     * Renders inner content.
-     * @param array $inputViews
-     * @return string
+     * @inheritdoc
      */
-    public function renderInnerContent($inputViews)
+    public function behaviors()
     {
-        $content = null;
-        if(is_object($inputViews) && $inputViews instanceof UiView)
-        {
-            $content .= $inputViews->render();
-        }
-        if(is_array($inputViews))
-        {
-            foreach ($inputViews as $inputView)
-            {
-                if(is_string($inputView))
-                {
-                    $content .= $inputView;
-                }
-                elseif($inputView instanceof UiView)
-                {
-                    $content .= $inputView->render();
-                }
-            }
-        }
-        return $content;
+        return [
+            'maintenance' => [
+                'class' => MaintenanceFilter::className()
+            ],
+        ];
     }
 }
