@@ -5,13 +5,13 @@
  */
 namespace common\modules\stores\models;
     
-use usni\library\components\UiSecuredActiveRecord;
+use usni\library\db\ActiveRecord;
 
 /**
  * StoreTranslated class file
  * @package common\modules\dataCategories\models
  */
-class StoreTranslated extends UiSecuredActiveRecord
+class StoreTranslated extends ActiveRecord
 {
     /**
      * @inheritdoc

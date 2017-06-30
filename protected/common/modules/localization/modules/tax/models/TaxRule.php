@@ -5,7 +5,7 @@
  */
 namespace taxes\models;
 
-use usni\library\components\TranslatableActiveRecord;
+use usni\library\db\TranslatableActiveRecord;
 use usni\UsniAdaptor;
 use taxes\models\TaxRuleDetails;
 use usni\library\modules\users\models\User;
@@ -29,16 +29,16 @@ class TaxRule extends TranslatableActiveRecord
     public $productTaxClass = array();
     
     /**
-     * Tax rate associated with the tax rule.
-     * @var string
-     */
-    public $taxRates = array();
-    
-    /**
      * Customer groups associated with the tax rule.
      * @var array
      */
     public $customerGroups = array();
+    
+    /**
+     * Tax zones associated with the tax rule.
+     * @var array
+     */
+    public $taxZones = array();
     
 	/**
      * @inheritdoc
@@ -46,11 +46,11 @@ class TaxRule extends TranslatableActiveRecord
 	public function rules()
 	{
 		return [
-                    [['name', 'based_on'], 'required', 'except' => 'bulkedit'],
+                    [['name', 'type', 'value', 'productTaxClass', 'customerGroups', 'taxZones', 'based_on'], 'required', 'except' => 'bulkedit'],
                     ['name',  'unique', 'targetClass' => TaxRuleTranslated::className(), 'targetAttribute' => ['name', 'language'], 'on' => 'create'],
                     ['name', 'unique', 'targetClass' => TaxRuleTranslated::className(), 'targetAttribute' => ['name', 'language'], 'filter' => ['!=', 'owner_id', $this->id], 'on' => 'update'],
-                    [['productTaxClass', 'taxRates', 'customerGroups'], 'required'],
                     ['name', 'string', 'max' => 64],
+                    ['value', 'number']
                ];
 	}
 
@@ -60,8 +60,9 @@ class TaxRule extends TranslatableActiveRecord
     public function scenarios()
     {
         $scenario             = parent::scenarios();
-        $scenario['create']   = $scenario['update'] = ['name', 'based_on', 'tax_zone_id', 'productTaxClass', 'taxRates', 'customerGroups'];
-        $scenario['bulkedit'] = ['based_on', 'tax_zone_id'];
+        $commonAttributes     = ['name', 'based_on', 'productTaxClass', 'customerGroups', 'taxZones', 'type', 'value'];
+        $scenario['create']   = $scenario['update'] = $commonAttributes;
+        $scenario['bulkedit'] = ['based_on'];
         return $scenario;
     }
     
@@ -75,7 +76,9 @@ class TaxRule extends TranslatableActiveRecord
                         'productTaxClass'      => UsniAdaptor::t('tax', 'Product Tax Classes'),
                         'based_on'             => UsniAdaptor::t('tax', 'Based On'),
                         'customerGroups'       => UsniAdaptor::t('customer', 'Customer Groups'),
-                        'taxRate'              => UsniAdaptor::t('tax', 'Tax Rate')
+                        'type'				   => UsniAdaptor::t('application', 'Type'),
+                        'value'                => UsniAdaptor::t('application', 'Value'),
+                        'taxZones'             => UsniAdaptor::t('tax', 'Tax Zones')
                   ];
         return parent::getTranslatedAttributeLabels($labels);
 	}
@@ -110,13 +113,13 @@ class TaxRule extends TranslatableActiveRecord
             }
             //Saving tax rule details.
             $productTaxClasses  = $this->productTaxClass;
-            $taxRateIds         = $this->taxRates;
             $customerGroups     = $this->customerGroups;
+            $taxZones           = $this->taxZones;
             $taxRuleDetailsData = [];
             $isInstalled        = UsniAdaptor::app()->isInstalled();
             if($isInstalled)
             {
-                $user   = UsniAdaptor::app()->user->getUserModel();
+                $user   = UsniAdaptor::app()->user->getIdentity();
             }
             else
             {
@@ -126,19 +129,17 @@ class TaxRule extends TranslatableActiveRecord
 
             foreach ($productTaxClasses as $productTaxClass)
             {
-                foreach ($taxRateIds as $taxRateId)
+                foreach ($customerGroups as $customerGroup)
                 {
-                    $taxRate    = TaxRate::find()->where('id = :id', [':id' => $taxRateId])->asArray()->one();
-                    foreach ($customerGroups as $customerGroup)
+                    foreach ($taxZones as $taxZone)
                     {
-
-                        $taxRuleDetailsData[]   = [$this->id, $productTaxClass, $customerGroup, $taxRateId, $taxRate['tax_zone_id'], 
-                                                   $user['id'], date('Y-m-d H:i:s'), $user['id'], date('Y-m-d H:i:s')];
+                        $taxRuleDetailsData[]   = [$this->id, $productTaxClass, $customerGroup, $taxZone,
+                                                   $user['id'], $user['id'], date('Y-m-d H:i:s'), date('Y-m-d H:i:s')];
                     }
                 }
             }
-            $columns    = ['tax_rule_id', 'product_tax_class_id', 'customer_group_id', 'tax_rate_id', 'tax_zone_id', 'created_by', 'created_datetime', 
-                           'modified_by', 'modified_datetime'];
+            $columns    = ['tax_rule_id', 'product_tax_class_id', 'customer_group_id', 'tax_zone_id', 'created_by', 'modified_by', 
+                           'created_datetime', 'modified_datetime'];
             $table      = UsniAdaptor::tablePrefix() . 'tax_rule_details';
             try
             {
@@ -160,37 +161,13 @@ class TaxRule extends TranslatableActiveRecord
         $taxruleDetails = TaxRuleDetails::find()->where('tax_rule_id = :tri', [':tri' => $this->id])->asArray()->all();
         foreach ($taxruleDetails as $taxruleDetail)
         {
-            $this->productTaxClass[]  = $taxruleDetail['product_tax_class_id'];
-            $this->customerGroups[]   = $taxruleDetail['customer_group_id'];
-            $this->taxRates[]         = $taxruleDetail['tax_rate_id'];
+            $productTaxClass[]  = $taxruleDetail['product_tax_class_id'];
+            $customerGroups[]   = $taxruleDetail['customer_group_id'];
+            $taxZones[]         = $taxruleDetail['tax_zone_id'];
         }
-    }
-    
-    /**
-     * Get product tax class for tax rule.
-     * return string
-     */
-    public function renderProductTaxClass()
-    {
-        $productTaxClassTable       = UsniAdaptor::tablePrefix() . 'product_tax_class';
-        $trProductTaxClassTable     = UsniAdaptor::tablePrefix() . 'product_tax_class_translated';
-        $taxRuleDetailsTable        = UsniAdaptor::tablePrefix() . 'tax_rule_details';
-        $language       = UsniAdaptor::app()->languageManager->getContentLanguage();
-        $sql            = "SELECT DISTINCT tptt.name
-                               FROM $productTaxClassTable tpt,  $trProductTaxClassTable tptt, $taxRuleDetailsTable ttrd
-                               WHERE ttrd.tax_rule_id = :trid AND ttrd.product_tax_class_id = tpt.id AND tpt.id = tptt.owner_id AND tptt.language = :lang";
-        $connection    = UsniAdaptor::app()->getDb();
-        $records       = $connection->createCommand($sql, [':trid' => $this->id, ':lang' => $language])->queryAll();
-        if(!empty($records))
-        {
-            $productTaxClassNames  = [];
-            foreach ($records as $record)
-            {
-                $productTaxClassNames[] = $record['name'];
-            }
-            return implode(', ', $productTaxClassNames);
-        }
-        return UsniAdaptor::t('application', '(not set)');
+        $this->productTaxClass  = array_values(array_unique($productTaxClass));
+        $this->customerGroups   = array_values(array_unique($customerGroups));
+        $this->taxZones         = array_values(array_unique($taxZones));
     }
     
     /**
@@ -200,61 +177,6 @@ class TaxRule extends TranslatableActiveRecord
     public function getTaxRuleDetails()
     {
        return $this->hasMany(TaxRuleDetails::className(), ['tax_rule_id' => 'id']);
-    }
-    
-    /**
-     * Gets customer group.
-     * @param $data TaxRule
-     * @return string
-     */
-    public function getCustomerGroup($data)
-    {
-       $groupTable            = UsniAdaptor::tablePrefix() . 'group';
-       $trGroupTable          = UsniAdaptor::tablePrefix() . 'group_translated';
-       $taxRuleDetailsTable   = UsniAdaptor::tablePrefix() . 'tax_rule_details';
-       $language       = UsniAdaptor::app()->languageManager->getContentLanguage();
-       $sql            = "SELECT DISTINCT tgt.name
-                               FROM $groupTable tg,  $trGroupTable tgt, $taxRuleDetailsTable ttrd
-                               WHERE ttrd.tax_rule_id = :trid AND ttrd.customer_group_id = tg.id AND tg.id = tgt.owner_id AND tgt.language = :lang";
-        $connection    = UsniAdaptor::app()->getDb();
-        $records       = $connection->createCommand($sql, [':trid' => $data->id, ':lang' => $language])->queryAll();
-        if(!empty($records))
-        {
-            $customerGroupNames  = [];
-            foreach ($records as $record)
-            {
-                $customerGroupNames[] = $record['name'];
-            }
-            return implode(', ', $customerGroupNames);
-        }
-        return UsniAdaptor::t('application', '(not set)');
-    }
-    
-    /**
-     * Render tax rates.
-     * @return string
-     */
-    public function renderTaxRates()
-    {
-       $taxRateTable            = UsniAdaptor::tablePrefix() . 'tax_rate';
-       $trTaxRateTable          = UsniAdaptor::tablePrefix() . 'tax_rate_translated';
-       $taxRuleDetailsTable     = UsniAdaptor::tablePrefix() . 'tax_rule_details';
-       $language       = UsniAdaptor::app()->languageManager->getContentLanguage();
-       $sql            = "SELECT DISTINCT ttrt.name
-                               FROM $taxRateTable ttr,  $trTaxRateTable ttrt, $taxRuleDetailsTable ttrd
-                               WHERE ttrd.tax_rule_id = :trid AND ttrd.tax_rate_id = ttr.id AND ttr.id = ttrt.owner_id AND ttrt.language = :lang";
-        $connection    = UsniAdaptor::app()->getDb();
-        $records       = $connection->createCommand($sql, [':trid' => $this->id, ':lang' => $language])->queryAll();
-        if(!empty($records))
-        {
-            $taxRateNames  = [];
-            foreach ($records as $record)
-            {
-                $taxRateNames[] = $record['name'];
-            }
-            return implode(', ', $taxRateNames);
-        }
-        return UsniAdaptor::t('application', '(not set)');
     }
     
     /**

@@ -6,10 +6,10 @@
 namespace common\modules\dataCategories\models;
 
 use usni\UsniAdaptor;
-use usni\library\components\TranslatableActiveRecord;
-use usni\library\components\UiBaseActiveRecord;
-use common\modules\dataCategories\utils\DataCategoryUtil;
-
+use usni\library\db\TranslatableActiveRecord;
+use usni\library\db\ActiveRecord;
+use common\modules\stores\models\Store;
+use yii\db\Exception;
 /**
  * DataCategory class file.
  * 
@@ -29,7 +29,7 @@ class DataCategory extends TranslatableActiveRecord
                     ['name',             'unique', 'targetClass' => DataCategoryTranslated::className(), 'targetAttribute' => ['name', 'language'], 'on' => 'create'],
                     ['name', 'unique', 'targetClass' => DataCategoryTranslated::className(), 'targetAttribute' => ['name', 'language'], 'filter' => ['!=', 'owner_id', $this->id], 'on' => 'update'],
                     ['name',             'string', 'max' => 128],
-                    ['status',           'default', 'value' => UiBaseActiveRecord::STATUS_ACTIVE],
+                    ['status',           'default', 'value' => ActiveRecord::STATUS_ACTIVE],
                     ['status',         'number'],
                     [['name', 'description', 'status'], 'safe'],
                 ];
@@ -86,5 +86,40 @@ class DataCategory extends TranslatableActiveRecord
             'description'   => UsniAdaptor::t('applicationhint', 'Description for the site'),
             'status'        => UsniAdaptor::t('datacategoryhint', 'Status for datacategory')
         );
+    }
+    
+    /**
+     * inheritdoc
+     */
+    public function beforeDelete()
+    {
+        $isAllowedToDelete = $this->checkIfAllowedToDelete();
+        if(!$isAllowedToDelete)
+        {
+            throw new Exception('this is root category or stores are associated to data category');
+        }
+        return parent::beforeDelete();
+    }
+    
+    /**
+     * Check if stores associated
+     * @param Model $model
+     * @return boolean
+     */
+    public function checkIfAllowedToDelete()
+    {
+        if($this->id == DataCategory::ROOT_CATEGORY_ID)
+        {
+            \Yii::warning('Root category can not be deleted from the system');
+            return false;
+        }
+        $count = Store::find()->where('data_category_id = :dci', [':dci' => $this->id])->count();
+        \Yii::info('Count of stores is ' . $count);
+        if($count > 0)
+        {
+            \Yii::warning('Delete failed as stores are associated to data category');
+            return false;
+        }
+        return true;
     }
 }

@@ -5,34 +5,16 @@
  */
 namespace frontend\assets;
 
-use usni\library\web\UiAssetBundle;
-use usni\UsniAdaptor;
-use usni\library\utils\ConfigurationUtil;
+use yii\web\AssetBundle;
 /**
- * Application asset
+ * Application asset for the front end
  *
  * @package frontend\assets
  */
-class AppAsset extends UiAssetBundle
+class AppAsset extends AssetBundle
 {    
-    /**
-     * @inheritdoc
-     */
-    public function init()
-    {
-        $theme   = null;
-        $store   = UsniAdaptor::app()->storeManager->getCurrentStore();
-        if($store->theme != null)
-        {   
-            $theme  = $store->theme;
-        }
-        else
-        {
-            $theme  = ConfigurationUtil::getValue('application', 'frontTheme');
-        }
-        $this->basePath  = "@approot/themes/$theme/assets";
-        $this->baseUrl   = "@appurl/themes/$theme/assets";
-    }
+    public $basePath    = '@webroot';
+    public $baseUrl     = '@web';
     
     public $css = [
         'css/stylesheet.css',
@@ -44,6 +26,8 @@ class AppAsset extends UiAssetBundle
     ];
     
     public $depends = [
-        'usni\library\assets\UiFrontAssetBundle',
+        'yii\web\YiiAsset',
+        'yii\bootstrap\BootstrapPluginAsset',
+        'usni\fontawesome\FontAwesomeAsset'
     ];
 }

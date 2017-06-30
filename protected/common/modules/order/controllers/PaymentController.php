@@ -5,27 +5,64 @@
  */
 namespace common\modules\order\controllers;
 
-use usni\library\components\UiAdminController;
 use usni\UsniAdaptor;
 use common\modules\order\models\Order;
-use common\modules\order\models\AdminSelectPaymentMethodForm;
-use common\modules\order\views\AdminSelectPaymentMethodView;
+use common\modules\order\business\Manager as OrderBusinessManager;
+use common\modules\order\dto\PaymentFormDTO;
+use common\modules\order\business\PaymentManager;
+use common\modules\order\dto\PaymentGridViewDTO;
+use common\modules\order\models\OrderPaymentTransactionMapSearch;
+use yii\filters\AccessControl;
 use common\modules\order\models\OrderPaymentTransactionMap;
-use common\modules\order\views\OrderPaymentsGridView;
-use common\modules\order\utils\OrderUtil;
+use usni\library\web\actions\DeleteAction;
+use usni\library\web\actions\BulkDeleteAction;
 /**
  * PaymentController class file
  * 
  * @package common\modules\order\controllers
  */
-class PaymentController extends UiAdminController
+class PaymentController extends \usni\library\web\Controller
 {
     /**
-     * @inheritdoc
+     * inheritdoc
      */
-    protected function resolveModelClassName()
+    public function behaviors()
     {
-        return OrderPaymentTransactionMap::className();
+        return [
+            'access' => [
+                'class' => AccessControl::className(),
+                'rules' => [
+                    [
+                        'allow' => true,
+                        'actions' => ['add', 'index'],
+                        'roles' => ['order.manage'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['delete', 'bulk-delete'],
+                        'roles' => ['order.delete'],
+                    ]
+                ],
+            ],
+        ];
+    }
+    
+    /**
+     * inheritdoc
+     */
+    public function actions()
+    {
+        return [
+            'delete'   => ['class' => DeleteAction::className(),
+                            'modelClass' => OrderPaymentTransactionMap::className(),
+                            'redirectUrl'=> '/order/payment/index',
+                            'permission' => 'order.deleteother'
+                          ],
+            'bulk-delete' => ['class' => BulkDeleteAction::className(),
+                              'modelClass' => OrderPaymentTransactionMap::className(),
+                              'managerConfig' => ['class' => PaymentManager::className()]
+                        ]
+        ];
     }
     
     /**
@@ -38,33 +75,22 @@ class PaymentController extends UiAdminController
         $order = Order::findOne($orderId);
         if($order == null)
         {
-            $this->redirect(UsniAdaptor::createUrl('order/default/manage'));
+            $this->redirect(UsniAdaptor::createUrl('order/default/index'));
         }
-        if(OrderUtil::checkIfOrderAllowedToPerformAction($orderId) == false)
+        $isValidOrderId = OrderBusinessManager::getInstance()->isValidOrderId($orderId);
+        if(!$isValidOrderId)
         {
             throw new \yii\web\NotFoundHttpException();
         }
-        $paymentMethod = $order->orderPaymentDetails->payment_method;
-        $model         = new AdminSelectPaymentMethodForm(['scenario' => 'create']);
-        $postData      = UsniAdaptor::app()->request->post();
-        if($model->load($postData))
+        $paymentFormDTO = new PaymentFormDTO();
+        $paymentFormDTO->setOrder($order);
+        $paymentFormDTO->setPostData(UsniAdaptor::app()->request->post());
+        PaymentManager::getInstance()->processSelectPayment($paymentFormDTO);
+        if($paymentFormDTO->getIsTransactionSuccess())
         {
-            return $this->redirect(UsniAdaptor::createUrl('payment/' . $model->payment_type . '/transaction/add', ['orderId' => $orderId]));
+            return $this->redirect(UsniAdaptor::createUrl('payment/' . $paymentFormDTO->getModel()->payment_type . '/transaction/add', ['orderId' => $orderId]));
         }
-        $model->payment_type = $paymentMethod;
-        $breadcrumbs    = [
-                                [
-                                    'label' => UsniAdaptor::t('order', 'Manage Orders'),
-                                    'url'   => UsniAdaptor::createUrl('order/default/manage')
-                                ],
-                                [
-                                    'label' => UsniAdaptor::t('payment', 'Select Payment Method')
-                                ]
-                            ];
-        $this->getView()->params['breadcrumbs']  = $breadcrumbs;
-        $paymentView    = new AdminSelectPaymentMethodView($model);
-        $content        = $this->renderColumnContent($paymentView->render());
-        return $this->render($this->getDefaultLayout(), array('content' => $content));
+        return $this->render('/payment/selectpaymentedit', ['formDTO' => $paymentFormDTO]);
     }
     
     /**
@@ -72,59 +98,22 @@ class PaymentController extends UiAdminController
      * @param int $orderId
      * @return string
      */
-    public function actionManage($orderId = null)
+    public function actionIndex($orderId = null)
     {
-        $breadcrumbs = [
-                            [
-                                'label' => UsniAdaptor::t('order', 'Manage Orders'),
-                                'url'   => UsniAdaptor::createUrl('order/default/manage')
-                            ],
-                            [
-                                'label' => UsniAdaptor::t('payment', 'Manage Payments')
-                            ]
-                        ];
-        if($orderId == null)
+        $searchModelInstance = new OrderPaymentTransactionMapSearch();
+        if($orderId != null)
         {
-            return parent::actionManage(['breadcrumbs' => $breadcrumbs]);
-        }
-        else
-        {
-            if(OrderUtil::checkIfOrderAllowedToPerformAction($orderId) == false)
+            $isValidOrderId = OrderBusinessManager::getInstance()->isValidOrderId($orderId);
+            if(!$isValidOrderId)
             {
                 throw new \yii\web\NotFoundHttpException();
             }
-            $_GET['OrderPaymentTransactionMapSearch']['order_id'] = $orderId;
-            return parent::actionManage(['breadcrumbs' => $breadcrumbs]);
+            $searchModelInstance = new OrderPaymentTransactionMapSearch(['order_id' => $orderId]);
         }
-    }
-    
-    /**
-     * @inheritdoc
-     */
-    protected function resolveGridViewClassName($model)
-    {
-        return OrderPaymentsGridView::className();
-    }
-    
-    /**
-     * @inheritdoc
-     */
-    public function pageTitles()
-    {
-        return [
-                    'add'         => UsniAdaptor::t('order','Select Payment Method'),
-                    'manage'      => UsniAdaptor::t('payment', 'Manage Payments')
-               ];
-    }
-    
-    /**
-     * @inheritdoc
-     */
-    protected function getActionToPermissionsMap()
-    {
-        $permissionsMap                 = parent::getActionToPermissionsMap();
-        $permissionsMap['add']          = 'order.manage';
-        $permissionsMap['manage']       = 'order.manage';
-        return $permissionsMap;
+        $gridViewDTO    = new PaymentGridViewDTO();
+        $gridViewDTO->setQueryParams(UsniAdaptor::app()->request->queryParams);
+        $gridViewDTO->setSearchModel($searchModelInstance);
+        PaymentManager::getInstance()->processList($gridViewDTO);
+        return $this->render('/payment/index', ['gridViewDTO' => $gridViewDTO]);
     }
 }

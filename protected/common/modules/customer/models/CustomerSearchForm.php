@@ -6,10 +6,8 @@
 namespace customer\models;
 
 use yii\base\Model;
-use yii\data\ActiveDataProvider;
-use usni\library\modules\auth\managers\AuthManager;
 use usni\UsniAdaptor;
-use usni\library\components\Sort;
+use usni\library\dataproviders\ArrayRecordDataProvider;
 /**
  * CustomerSearchForm class file
  *
@@ -17,21 +15,42 @@ use usni\library\components\Sort;
  */
 class CustomerSearchForm extends Model
 {
-    //Customer fields
+    use \usni\library\traits\SearchTrait;
+    
+    /**
+     * @var string 
+     */
     public $username;
+    
+    /**
+     * @var string 
+     */
     public $timezone;
+    
+    /**
+     * @var integer 
+     */
     public $status;
-    //Person fields
+    
+    /**
+     * @var string 
+     */
     public $email;
+    
+    /**
+     * @var string 
+     */
     public $firstname;
+    
+    /**
+     * @var string 
+     */
     public $lastname;
-    //Address fields
+    
+    /**
+     * @var string 
+     */
     public $address1;
-    public $city;
-    public $country;
-    public $postal_code;
-    public $address2;
-    public $state;
 
     /**
      * Validation rules for the model.
@@ -56,52 +75,54 @@ class CustomerSearchForm extends Model
     /**
      * Search based on get params.
      *
-     * @return yii\data\ActiveDataProvider
+     * @return usni\library\dataproviders\ArrayRecordDataProvider
      */
     public function search()
     {
-        $query              = Customer::find();
-        $personTable        = UsniAdaptor::tablePrefix() . 'person';
-        $addressTable       = UsniAdaptor::tablePrefix() . 'address';
-        $query->select('tu.*')->from(Customer::tableName() . ' tu');
-        $query->innerJoin($personTable . ' person', 'tu.person_id = person.id');
+        $customerTable  = UsniAdaptor::tablePrefix() . 'customer';
+        $personTable    = UsniAdaptor::tablePrefix() . 'person';
+        $addressTable   = UsniAdaptor::tablePrefix() . 'address';
+        $query          = new \yii\db\Query();
+        $query->select("tc.*, person.email, person.firstname, person.lastname, address.address1")->from(["$customerTable tc"]);
+        $query->innerJoin($personTable . ' person', 'tc.person_id = person.id');
         $query->leftJoin($addressTable . ' address', 'address.relatedmodel_id = person.id AND address.relatedmodel = :rm', [':rm' => 'Person']);
-
-        $dataProvider = new ActiveDataProvider([
-            'query' => $query,
-        ]);
+        $attributes = ['username', 'timezone', 'status', 'email', 'firstname', 'lastname', 'address1'];
         
-        $sort = new Sort(['attributes' => ['username', 'email', 'status', 'person.email', 'person.firstname', 'person.lastname', 'timezone', 
-                                           'address.address1']]);
-        $dataProvider->setSort($sort);
-        // load the seach form data and validate
-        if (!$this->validate())
+        if($this->getLimit() != null)
+        {
+            $query->limit($this->getLimit());
+        }
+        
+        $dataProvider = new ArrayRecordDataProvider([
+                                                        'query'     => $query,
+                                                        'key'       => 'id',
+                                                        'sort'      => ['attributes' => $attributes]
+                                                   ]);
+
+        if (!$this->validate()) 
         {
             return $dataProvider;
         }
-        $user               = UsniAdaptor::app()->user->getUserModel();
-        $query->andFilterWhere(['like', 'tu.username', $this->username]);
-        $query->andFilterWhere(['tu.status' => $this->status]);
-        $query->andFilterWhere(['tu.timezone' => $this->timezone]);
+        $query->andFilterWhere(['like', 'tc.username', $this->username]);
+        $query->andFilterWhere(['tc.status' => $this->status]);
+        $query->andFilterWhere(['tc.timezone' => $this->timezone]);
         $query->andFilterWhere(['like', 'person.firstname', $this->firstname]);
         $query->andFilterWhere(['like', 'person.lastname', $this->lastname]);
         $query->andFilterWhere(['like', 'person.email', $this->email]);
-        //Address
         $query->andFilterWhere(['like', 'address.address1', $this->address1]);
-        if(!empty($this->groups))
+        if($this->canAccessOwnedRecordsOnly('customer'))
         {
-            $inputGroups    = $this->groups;
-            $criteria->join = 'INNER JOIN tbl_group_members tgm ON tgm.member_id = t.id';
-            $criteria->compare('group_id', $inputGroups);
-        }
-        if(!AuthManager::checkAccess($user, 'customer.updateother')
-            && !AuthManager::checkAccess($user, 'customer.viewother')
-               && !AuthManager::checkAccess($user, 'customer.deleteother')
-                && !AuthManager::checkAccess($user, 'customer.changeotherspassword'))
-        {
-            $query->andFilterWhere(['tu.created_by' => $user->id]);
+            $query->andFilterWhere(['tc.created_by' => $this->getUserId()]);
         }
         return $dataProvider;
     }
-
+    
+    /**
+     * Get the limit for the search
+     * @return null|int
+     */
+    protected function getLimit()
+    {
+        return null;
+    }
 }

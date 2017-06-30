@@ -5,15 +5,15 @@
  */
 namespace common\modules\extension;
 
-use usni\library\components\UiSecuredModule;
+use usni\library\components\SecuredModule;
 use usni\UsniAdaptor;
-use common\modules\extension\utils\ExtensionPermissionUtil;
+use common\modules\extension\models\Extension;
 /**
  * Provides functionality relates to installation of new extension or theme
  *
  * @package common\modules\extension
  */
-class Module extends UiSecuredModule
+class Module extends SecuredModule
 {
     /**
      * Overrides to register translations.
@@ -47,11 +47,25 @@ class Module extends UiSecuredModule
     }
     
     /**
+     * inheritdoc
+     */
+    public function getPermissionModels()
+    {
+        return [Extension::className()];
+    }
+    
+    /**
      * @inheritdoc
      */
-    public static function getPermissionUtil()
+    public function getPermissions()
     {
-        return ExtensionPermissionUtil::className();
+        $permissions = parent::getPermissions();
+        unset($permissions['Extension']['extension.create']);
+        unset($permissions['Extension']['extension.view']);
+        unset($permissions['Extension']['extension.viewother']);
+        unset($permissions['Extension']['extension.bulk-edit']);
+        unset($permissions['Extension']['extension.bulk-delete']);
+        $permissions['Extension']['extension.manageother'] = UsniAdaptor::t('extension', 'Manager Others Extension');
+        return $permissions;
     }
 }
-?>

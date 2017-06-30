@@ -10,6 +10,9 @@ use usni\UsniAdaptor;
 use common\modules\stores\models\Store;
 use common\models\BillingAddress;
 use common\models\ShippingAddress;
+use common\modules\stores\models\StoreLocal;
+use common\modules\stores\models\StoreSettings;
+use common\modules\stores\models\StoreImage;
 /**
  * StoreEditForm class file
  * 
@@ -18,38 +21,32 @@ use common\models\ShippingAddress;
 class StoreEditForm extends Model
 {
     /**
-     * Store model
-     * @var User 
+     * @var Store 
      */
     public $store;
     
     /**
-     * BillingAddress model
-     * @var billingAddress 
+     * @var BillingAddress 
      */
     public $billingAddress;
     
     /**
-     * ShippingAddress model
-     * @var shippingAddress 
+     * @var ShippingAddress 
      */
     public $shippingAddress;
     
     /**
-     * Local model
-     * @var local 
+     * @var StoreLocal 
      */
     public $storeLocal;
     
     /**
-     * StoreSettings model
-     * @var storeSettings 
+     * @var StoreSettings 
      */
     public $storeSettings;
     
     /**
-     * StoreImage model
-     * @var storeImage 
+     * @var StoreImage 
      */
     public $storeImage;
     

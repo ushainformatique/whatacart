@@ -7,6 +7,7 @@ namespace common\modules\shipping\models\flat;
 
 use yii\base\Model;
 use usni\UsniAdaptor;
+use common\modules\shipping\utils\flat\FlatShippingUtil;
 /**
  * FlatRateEditForm class file
  * @package common\modules\shipping\models\flat
@@ -72,7 +73,13 @@ class FlatRateEditForm extends Model
         return [
             [['price', 'method_name', 'type'], 'required'],
             [['price', 'method_name', 'type', 'calculateHandlingFee', 'handlingFee', 'applicableZones', 'specificZones'], 'safe'],
-            ['price', 'match', 'pattern'=>'/^[0-9]{1,12}(\.[0-9]{0,4})?$/']
+            ['price', 'match', 'pattern'=>'/^[0-9]{1,12}(\.[0-9]{0,4})?$/'],
+            ['specificZones', 'required', 
+                    'whenClient' => "function(attribute, value){
+                        return $('#flatrateeditform-applicablezones').val() != '1';
+                     }", 
+                    'when' => [$this, 'validateSpecificZones']
+                    ],
         ];
     }
     
@@ -117,5 +124,25 @@ class FlatRateEditForm extends Model
             'applicableZones' => UsniAdaptor::t('shippinghint', 'Zones to which the shipping would be applied. All zones or specific zones.'),
             'specificZones'   => UsniAdaptor::t('shippinghint', 'Specific zones to which the shipping is applied')
         ];
+    }
+    
+    /**
+     * Validate the specific zones.
+     * @param string $attribute Attribute having user attribute related to login.
+     * @param array  $params
+     * @return void
+     */
+    public function validateSpecificZones($attribute, $params)
+    {
+        if (!$this->hasErrors())
+        {
+            if($this->applicableZones != FlatShippingUtil::SHIP_TO_ALL_ZONES)
+            {
+                if($this->specificZones == null)
+                {
+                    $this->addError('specificZones', UsniAdaptor::t('tax', 'Specific zones is required.'));
+                }
+            }            
+        }
     }
 }

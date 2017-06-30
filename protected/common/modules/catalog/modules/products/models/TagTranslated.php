@@ -5,12 +5,12 @@
  */
 namespace products\models;
     
-use usni\library\components\UiSecuredActiveRecord;
+use usni\library\db\ActiveRecord;
 /**
  * TagTranslated class file
  * @package products\models
  */
-class TagTranslated extends UiSecuredActiveRecord
+class TagTranslated extends ActiveRecord
 {
     /**
      * @inheritdoc

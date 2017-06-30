@@ -61,7 +61,7 @@ class AdminCheckout extends Model
     
     /**
      * Order Customer Form
-     * @var Model 
+     * @var CustomerForm 
      */
     public $customerForm;
     

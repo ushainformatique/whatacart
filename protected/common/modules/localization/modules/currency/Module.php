@@ -5,13 +5,13 @@
  */
 namespace common\modules\localization\modules\currency;
 
-use usni\library\components\UiSecuredModule;
+use usni\library\components\SecuredModule;
 use usni\UsniAdaptor;
 /**
  * Provides functionality specific to the currency.
  * @package common\modules\localization\modules\currency
  */
-class Module extends UiSecuredModule
+class Module extends SecuredModule
 {
     /**
      * Overrides to register translations.

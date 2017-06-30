@@ -5,13 +5,13 @@
  */
 namespace common\modules\localization\modules\country;
 
-use usni\library\components\UiSecuredModule;
+use usni\library\components\SecuredModule;
 use usni\UsniAdaptor;
 /**
  * Provides functionality specific to the country.
  * @package common\modules\localization\modules\country
  */
-class Module extends UiSecuredModule
+class Module extends SecuredModule
 {
     /**
      * Overrides to register translations.

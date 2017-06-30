@@ -5,54 +5,66 @@
  */
 namespace common\modules\extension\controllers;
 
-use usni\library\components\UiAdminController;
-use usni\UsniAdaptor;
 use common\modules\extension\models\Extension;
-use common\modules\extension\models\ExtensionSearch;
-use common\modules\extension\views\ModuleGridView;
+use yii\filters\AccessControl;
+use usni\library\web\actions\IndexAction;
+use common\modules\extension\business\ModuleManager;
+use usni\UsniAdaptor;
 /**
- * ModuleController class file
+ * ModuleController class file.
+ * 
  * @package common\modules\extension\controllers
  */
-class ModuleController extends UiAdminController
-{   
+class ModuleController extends \usni\library\web\Controller
+{
     /**
-     * @inheritdoc
+     * inheritdoc
      */
-    protected function resolveModelClassName()
-    {
-        return Extension::className();
-    }
-    
-    /**
-     * @inheritdoc
-     */
-    protected function getFilterModel($model)
-    {
-        $filterModel = new ExtensionSearch();
-        $filterModel->load($_GET, 'ExtensionSearch');
-        $filterModel->category = 'module';
-        return $filterModel;
-    }
-    
-    /**
-     * @inheritdoc
-     */
-    protected function resolveGridViewClassName($model)
-    {
-        return ModuleGridView::className();
-    }
-    
-    /**
-     * @inheritdoc
-     */
-    public function getGridViewBreadcrumb($model)
+    public function behaviors()
     {
         return [
-            [
-                'label' => UsniAdaptor::t('application', 'Manage') . ' ' . UsniAdaptor::t('payment', 'Modules')
-            ]
+            'access' => [
+                'class' => AccessControl::className(),
+                'rules' => [
+                    [
+                        'allow' => true,
+                        'actions' => ['index'],
+                        'roles' => ['extension.manage'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['change-status'],
+                        'roles' => ['extension.update'],
+                    ],
+                ],
+            ],
         ];
     }
+    
+    /**
+     * inheritdoc
+     */
+    public function actions()
+    {
+        $managerConfig = ['class'     => ModuleManager::className()];
+        return [
+            'index'  => ['class' => IndexAction::className(),
+                         'modelClass' => Extension::className(),
+                         'managerConfig' => $managerConfig,
+                         'viewFile' =>'/moduleindex'
+                        ]
+        ];
+    }
+    
+    /**
+     * Change status for module.
+     * @param integer $id
+     * @param integer $status
+     * @return string
+     */
+    public function actionChangeStatus($id, $status)
+    {
+        ModuleManager::getInstance()->processChangeStatus($id, $status);
+        return $this->redirect(UsniAdaptor::createUrl('extension/module/index'));
+    }
 }
-?>

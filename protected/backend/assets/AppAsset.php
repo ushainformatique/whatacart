@@ -5,20 +5,24 @@
  */
 namespace backend\assets;
 
-use usni\library\web\UiAssetBundle;
+use yii\web\AssetBundle;
 /**
- * Application asset
+ * Application asset for the backend
+ * 
  * @package backend\assets
  */
-class AppAsset extends UiAssetBundle
+class AppAsset extends AssetBundle
 {
     public $basePath = '@webroot';
     public $baseUrl = '@web';
+    
     public $css = [
         'css/admin.css'
     ];
+    
     public $js = [];
+    
     public $depends = [
-        'usni\library\assets\UiAdminAssetBundle',
+        'usni\library\web\AdminAssetBundle'
     ];
 }

@@ -6,9 +6,8 @@
 namespace common\modules\localization\modules\lengthclass\models;
 
 use yii\base\Model;
-use usni\library\components\TranslatedActiveDataProvider;
-use usni\library\utils\AdminUtil;
 use usni\UsniAdaptor;
+use usni\library\dataproviders\ArrayRecordDataProvider;
 /**
  * LengthClassSearch class file
  * This is the search class for model LengthClass.
@@ -17,6 +16,8 @@ use usni\UsniAdaptor;
  */
 class LengthClassSearch extends LengthClass
 {
+    use \usni\library\traits\SearchTrait;
+    
     /**
      * @inheritdoc
      */
@@ -42,34 +43,37 @@ class LengthClassSearch extends LengthClass
     {
         return Model::scenarios();
     }
-
+    
     /**
      * Search based on get params.
      *
-     * @return yii\data\ActiveDataProvider
+     * @return ArrayRecordDataProvider
      */
     public function search()
     {
-        $query          = LengthClass::find();
-        $tableName      = UsniAdaptor::tablePrefix(). 'length_class';
-        $query->innerJoinWith('translations');
-        $dataProvider   = new TranslatedActiveDataProvider([
-            'query' => $query,
-        ]);
+        $query          = new \yii\db\Query();
+        $tableName      = UsniAdaptor::tablePrefix() . 'length_class';
+        $trTableName    = UsniAdaptor::tablePrefix() . 'length_class_translated';
+        $query->select('l.*, lt.name')
+              ->from(["$tableName l"])
+              ->innerJoin("$trTableName lt", 'l.id = lt.owner_id')
+              ->where('lt.language = :lang', [':lang' => $this->language]);
+        $dataProvider = new ArrayRecordDataProvider([
+                                                        'query'     => $query,
+                                                        'key'       => 'id',
+                                                        'sort'      => ['attributes' => ['name', 'value', 'unit']]
+                                                   ]);
 
-        // Validate data
-        if (!$this->validate())
+        if (!$this->validate()) 
         {
             return $dataProvider;
-        }
-        $query->andFilterWhere(['language' => UsniAdaptor::app()->languageManager->getContentLanguage()]);
+        }        
         $query->andFilterWhere(['like', 'name', $this->name]);
-        $query->andFilterWhere(['like', 'unit', $this->unit]);
         $query->andFilterWhere(['like', 'value', $this->value]);
-        $user     = UsniAdaptor::app()->user->getUserModel();
-        if(!AdminUtil::doesUserHaveOthersPermissionsOnModel(LengthClass::className(), $user))
+        $query->andFilterWhere(['like', 'unit', $this->unit]);
+        if($this->canAccessOwnedRecordsOnly('lengthclass'))
         {
-            $query->andFilterWhere([$tableName . '.created_by' => $user->id]);
+            $query->andFilterWhere(['l.created_by' => $this->getUserId()]);
         }
         return $dataProvider;
     }

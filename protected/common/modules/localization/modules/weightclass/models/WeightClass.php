@@ -5,10 +5,11 @@
  */
 namespace common\modules\localization\modules\weightclass\models;
 
-use usni\library\components\TranslatableActiveRecord;
+use usni\library\db\TranslatableActiveRecord;
 use usni\UsniAdaptor;
-use common\modules\localization\modules\weightclass\utils\WeightClassUtil;
 use common\modules\localization\modules\weightclass\models\WeightClassTranslated;
+use yii\db\Exception;
+use products\dao\ProductDAO;;
 /**
  * WeightClass active record.
  * 
@@ -80,9 +81,24 @@ class WeightClass extends TranslatableActiveRecord
      */
     public function beforeDelete()
     {
-        if(parent::beforeDelete())
+        $isAllowedToDelete = $this->checkIfAllowedToDelete();
+        if($isAllowedToDelete == false)
         {
-            return WeightClassUtil::checkIfAllowedToDelete($this);
+            throw new Exception('this model is associated to product');
+        }
+        return parent::beforeDelete();
+    }
+    
+    /**
+     * Check if allowed to delete
+     * @return boolean
+     */
+    public function checkIfAllowedToDelete()
+    {
+        $count = ProductDAO::getCountByAttribute('weight_class', $this->id);
+        if($this->value != 1.00 && $count == 0)
+        {
+            return true;
         }
         return false;
     }

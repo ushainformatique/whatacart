@@ -4,27 +4,12 @@
  * @license https://www.gnu.org/licenses/gpl-3.0.html
  */
 use usni\UsniAdaptor;
-use common\utils\ApplicationUtil;
 
 $storeName      = null;
 if(UsniAdaptor::app()->installed === true && YII_ENV != 'test')
 {
-    $currentStore   = UsniAdaptor::app()->storeManager->getCurrentStore();
-    if(!empty($currentStore))
-    {
-        if($currentStore->name == 'Default')
-        {
-            $storeName  = UsniAdaptor::t('stores', 'Default Store');
-        }
-        else
-        {
-            $storeName = $currentStore->name;
-        }
-    }
-    else
-    {
-        $storeName  = UsniAdaptor::t('stores', 'Default Store');
-    }
+    $currentStore   = UsniAdaptor::app()->storeManager->selectedStore;
+    $storeName      = $currentStore['name'];
 }
 else
 {
@@ -37,6 +22,6 @@ else
         
     </div>
     <div class="pull-right">
-        <?php echo UsniAdaptor::app()->powered() . " " . UsniAdaptor::t('application', 'Version') . ' ' . ApplicationUtil::getVersion(); ?>
+        <?php echo UsniAdaptor::app()->powered() . " " . UsniAdaptor::t('application', 'Release') . ' ' . UsniAdaptor::app()->version; ?>
     </div>
 </div><!-- footer -->

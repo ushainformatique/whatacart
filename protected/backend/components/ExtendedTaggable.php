@@ -52,6 +52,7 @@ class ExtendedTaggable extends \dosamigos\taggable\Taggable
 
             if ($tag->save())
             {
+                $tag->saveTranslatedModels();
                 $updatedTags[] = $tag;
                 $rows[] = [$this->owner->getPrimaryKey(), $tag->getPrimaryKey()];
             }

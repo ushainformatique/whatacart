@@ -6,22 +6,23 @@
 namespace newsletter\notifications;
 
 use newsletter\models\Newsletter;
-use usni\library\components\UiEmailNotification;
+use usni\library\notifications\EmailNotification;
 use usni\library\modules\notification\models\Notification;
 use usni\UsniAdaptor;
-use common\modules\stores\utils\StoreUtil;
 use usni\library\modules\notification\utils\NotificationUtil;
+use common\modules\stores\dao\StoreDAO;
 /**
  * CustomerNewsletterNotification class file.
+ * 
  * @package newsletter\notifications
  */
-class CustomerNewsletterNotification extends UiEmailNotification
+class CustomerNewsletterNotification extends EmailNotification
 {
     /**
      * Contain newsletter model.
      * @var Newsletter
      */
-    public $newsletter;
+    public $model;
     
     /**
      * Contain customer to address.
@@ -57,13 +58,14 @@ class CustomerNewsletterNotification extends UiEmailNotification
      * @inheritdoc
      */
     protected function getTemplateData()
-    {        
-        $store = StoreUtil::getStoreById($this->newsletter->store_id);
+    {
+        //@vikash TODO need to the add the language here when using it or pass newsletter attay having store name here.
+        $store = StoreDAO::getById($this->model->store_id, $this->language);
         return [
                     '{{appname}}'       => UsniAdaptor::app()->name,
                     '{{storename}}'     => $store['name'],
-                    '{{subject}}'       => $this->newsletter->subject,
-                    '{{message}}'       => $this->newsletter->content,
+                    '{{subject}}'       => $this->model->subject,
+                    '{{message}}'       => $this->model->content,
                     '{{unsubscribe}}'   => $this->getUnsubscribeUrl()
                ];
     }
@@ -82,13 +84,12 @@ class CustomerNewsletterNotification extends UiEmailNotification
      */
     protected function getUnsubscribeUrl()
     {
-        $url                = '/newsletter/site/unsubscribe-newsletter';
+        $url                = '/marketing/newsletter/site/unsubscribe-newsletter';
         $email              = $this->toAddress;
-        $baseUrl            = NotificationUtil::getApplicationBaseUrlUsedForNotification();
+        $baseUrl            = NotificationUtil::getApplicationBaseUrl();
         $unsubscribeUrl     = $baseUrl . $url . '?email=' . $email;
         $unsubscribeUrl     = str_replace('backend/', '', $unsubscribeUrl);
         $unsubscribeUrl     = "<a href='$unsubscribeUrl'>" . UsniAdaptor::t('newsletter', 'Unsubscribe') . "</a>";
         return $unsubscribeUrl;
     }
 }
-?>

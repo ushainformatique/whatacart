@@ -5,21 +5,21 @@
  */
 namespace customer\widgets;
 
-use usni\library\extensions\bootstrap\widgets\UiDataColumn;
+use yii\grid\DataColumn;
 use usni\UsniAdaptor;
-use usni\library\components\UiHtml;
+use usni\library\utils\Html;
 /**
  * CustomerNameDataColumn class file.
+ * 
  * @package customer\widgets
  */
-class CustomerNameDataColumn extends UiDataColumn
+class CustomerNameDataColumn extends DataColumn
 {
     /**
      * @inheritdoc
      */
     public function renderDataCellContent($model, $key, $index)
     {
-        return UiHtml::a($model->username, UsniAdaptor::createUrl("customer/default/view", ["id" => $model->id]), ['data-pjax' => 0]);
+        return Html::a($model['username'], UsniAdaptor::createUrl("customer/default/view", ["id" => $model['id']]), ['data-pjax' => 0]);
     }
-
 }

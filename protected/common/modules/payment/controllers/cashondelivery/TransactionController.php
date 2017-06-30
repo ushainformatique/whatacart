@@ -6,7 +6,7 @@
 namespace common\modules\payment\controllers\cashondelivery;
 
 use common\modules\payment\models\cashondelivery\CashOnDeliveryTransaction;
-use usni\UsniAdaptor;
+use common\modules\payment\dto\TransactionFormDTO;
 /**
  * TransactionController class file.
  * 
@@ -31,12 +31,14 @@ class TransactionController extends \common\modules\payment\controllers\BaseTran
     }
     
     /**
-     * @inheritdoc
+     * inheritdoc
+     * @param TransactionFormDTO $formDTO
      */
-    public function pageTitles()
+    public function populateDTOByType($formDTO)
     {
-        return [
-                    'add'   => UsniAdaptor::t('payment','Add Payment'),
-               ];
+        parent::populateDTOByType($formDTO);
+        $transactionId = $this->getUniqueTransactionId(CashOnDeliveryTransaction::tableName());
+        $formDTO->getModel()->transaction_id    = $transactionId;
+        $formDTO->getModel()->transaction_fee   = 0;
     }
 }

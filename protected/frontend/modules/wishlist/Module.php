@@ -5,13 +5,13 @@
  */
 namespace wishlist;
 
-use usni\library\components\UiSecuredModule;
 use usni\UsniAdaptor;
 /**
- * Provides functionality related to entities specific to the wishlist.
+ * Provides functionality related to wishlist.
+ * 
  * @package wishlist
  */
-class Module extends UiSecuredModule
+class Module extends \usni\library\components\Module
 {
     /**
      * Overrides to register translations.

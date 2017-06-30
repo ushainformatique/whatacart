@@ -6,10 +6,8 @@
 namespace common\modules\cms\controllers;
 
 use frontend\controllers\BaseController;
-use frontend\utils\FrontUtil;
-use frontend\components\Breadcrumb;
-use common\modules\cms\utils\PageUtil;
 use usni\UsniAdaptor;
+use common\modules\cms\dao\PageDAO;
 /**
  * SiteController class file
  *
@@ -18,12 +16,6 @@ use usni\UsniAdaptor;
 class SiteController extends BaseController
 {
     /**
-     * Page which is called
-     * @var array 
-     */
-    public $page;
-    
-    /**
      * Renders page
      * 
      * @param string $alias
@@ -31,21 +23,21 @@ class SiteController extends BaseController
      */
     public function actionPage($alias)
     {
-        $this->page     = PageUtil::getPageByAlias($alias);
-        $breadcrumbView = new Breadcrumb(['page' => $this->page['name']]);
-        $this->getView()->params['breadcrumbs'] = $breadcrumbView->getBreadcrumbLinks();
-        $className      = UsniAdaptor::app()->getModule('cms')->viewHelper->getInstance('pageView');
-        $view           = new $className(['page' => $this->page]);      
-        $content        = $this->renderInnerContent([$view]);
-        return $this->render(FrontUtil::getDefaultInnerLayout(), ['content' => $content]);
-    }
-    
-    /**
-     * @inheritdoc
-     */
-    public function pageTitles()
-    {
-        $this->page     = PageUtil::getPageByAlias(UsniAdaptor::app()->request->get('alias'));
-        return ['page' => $this->page['name']];
+        $page     = PageDAO::getByAlias($alias, UsniAdaptor::app()->languageManager->selectedLanguage);
+        if($page['metakeywords'] != null)
+        {
+            $this->getView()->registerMetaTag([
+                'name' => 'keywords',
+                'content' => $page['metakeywords']
+            ]);
+        }
+        if($page['metadescription'] != null)
+        {
+            $this->getView()->registerMetaTag([
+                'name' => 'description',
+                'content' => $page['metadescription']
+            ]);
+        }
+        return $this->render('/front/page', ['page' => $page]);
     }
 }

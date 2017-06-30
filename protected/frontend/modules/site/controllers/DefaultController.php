@@ -6,18 +6,19 @@
 namespace frontend\modules\site\controllers;
 
 use frontend\controllers\BaseController;
-use frontend\modules\site\views\HomePageView;
 use usni\UsniAdaptor;
-use frontend\utils\FrontUtil;
 use frontend\models\SearchForm;
-use frontend\views\common\SearchResultsView;
 use usni\library\utils\FlashUtil;
-use frontend\modules\site\models\ContactForm;
-use frontend\modules\site\views\ContactPageView;
-use frontend\components\Breadcrumb;
-use usni\library\utils\ErrorUtil;
-use frontend\modules\site\views\ErrorView;
-use frontend\modules\site\views\MaintenanceView;
+use frontend\dto\HomePageDTO;
+use frontend\business\HomeManager;
+use productCategories\dto\ProductCategoryListViewDTO;
+use productCategories\business\SiteManager;
+use productCategories\models\ProductCategory;
+use frontend\business\SearchManager;
+use usni\library\utils\ArrayUtil;
+use frontend\modules\site\business\Manager;
+use usni\library\dto\FormDTO;
+use yii\base\InvalidParamException;
 /**
  * DefaultController class file
  * 
@@ -25,7 +26,6 @@ use frontend\modules\site\views\MaintenanceView;
  */
 class DefaultController extends BaseController
 {
-    
     /**
      * @inheritdoc
      */
@@ -34,50 +34,54 @@ class DefaultController extends BaseController
         return [
             'captcha' => [
                 'class' => 'yii\captcha\CaptchaAction',
+                'fixedVerifyCode' => YII_ENV_TEST ? 'testme' : null,
             ],
         ];
     }
+    
     /**
      * Renders home page.
      * @return string the rendering result.
      */
     public function actionIndex()
     {
-        $view        = new HomePageView();
-        $content     = $this->renderInnerContent([$view]);
-        return $this->render(FrontUtil::getDefaultInnerLayout(), ['content' => $content]);
+        $manager     = new HomeManager();
+        $homePageDTO = new HomePageDTO();
+        $manager->setPageData($homePageDTO);
+        return $this->render('/home', ['homePageDTO' => $homePageDTO]);
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function pageTitles()
-    {
-        return ['index' => UsniAdaptor::t('application', 'Home')];
-    }
-    
     /**
      * Render Search.
      * @return string
      */
     public function actionSearch()
     {
+        $manager        = SiteManager::getInstance();
         $model          = new SearchForm();
+        $listViewDTO    = new ProductCategoryListViewDTO();
+        $listViewDTO->setSearchModel($model);
+        $dataCategoryId = UsniAdaptor::app()->storeManager->selectedStore['data_category_id'];
+        $listViewDTO->setDataCategoryId($dataCategoryId);
         $queryParams    = UsniAdaptor::app()->getRequest()->getQueryParams();
         if($queryParams != null)
         {
-            $model->attributes = $queryParams;
+            $model->load($queryParams);
             if($model->validate())
             {
-                $searchView     = new SearchResultsView(['model' => $model]);
-                $content        = $this->renderInnerContent([$searchView]);
-                return $this->render(FrontUtil::getDefaultInnerLayout(), ['content' => $content]);
+                $listViewDTO->setSortingOption(UsniAdaptor::app()->request->get('sort'));
+                $listViewDTO->setPageSize(UsniAdaptor::app()->request->get('showItemsPerPage'));        
             }
             else
             {
-                throw new \yii\base\InvalidParamException(UsniAdaptor::t('application', 'Invalid search param'));
+                throw new InvalidParamException(UsniAdaptor::t('application', 'Invalid search param'));
             }
         }
+        $dp             = SearchManager::getInstance()->getDataProvider($listViewDTO);
+        $listViewDTO->setDataprovider($dp);
+        $catOptions     = $manager->getMultiLevelSelectOptions(new ProductCategory(), false);
+        $listViewDTO->setCategoryList($catOptions);
+        return $this->render('//common/searchview', ['listViewDTO' => $listViewDTO]); 
     }
     
     /**
@@ -86,46 +90,27 @@ class DefaultController extends BaseController
      */
     public function actionContactUs()
     {
-        $model = new ContactForm();
-        if(isset($_POST['ContactForm']))
+        $postData   = ArrayUtil::getValue($_POST, 'ContactForm');
+        $manager    = new Manager();
+        $formDTO    = new FormDTO();
+        $formDTO->setPostData($postData);
+        $manager->processContactUs($formDTO);
+        if($formDTO->getIsTransactionSuccess() === true)
         {
-            $model->attributes = $_POST['ContactForm'];
-            if ($model->validate())
-            {
-                if($model->sendMail())
-                {
-                    FlashUtil::setMessage('contactMailSuccess', UsniAdaptor::t('applicationflash', 'Thank you for contacting us. We would revert back to you within 24 hours.'));
-                }
-                else
-                {
-                    FlashUtil::setMessage('contactMailFailure', UsniAdaptor::t('applicationflash', 'There is an error sending email'));
-                }
-                return $this->refresh();
-            }
+            $message = UsniAdaptor::t('applicationflash', 'Thank you for contacting us. We would revert back to you within 24 hours.');
+            FlashUtil::setMessage('success', $message);
+            $this->refresh();
         }
-        $breadcrumbView = new Breadcrumb(['page' => 'Contact Us']);
-        $this->getView()->params['breadcrumbs'] = $breadcrumbView->getBreadcrumbLinks();
-        $contactView = new ContactPageView(['model' => $model]);
-        $content     = $this->renderInnerContent([$contactView]);
-        return $this->render(FrontUtil::getDefaultInnerLayout(), ['content' => $content]);
+        elseif($formDTO->getIsTransactionSuccess() === false)
+        {
+            FlashUtil::setMessage('error', UsniAdaptor::t('applicationflash', 'There is an error sending email'));
+            return $this->refresh();
+        }
+        else
+        {
+            return $this->render('/contactus', ['formDTO' => $formDTO]); 
+        }
     }
-    
-    /**
-	 * This is the action to handle external exceptions.
-     * @return void
-	 */
-	public function actionError()
-	{
-        $errorHandler   = UsniAdaptor::app()->errorHandler;
-        $error          = $errorHandler->exception;
-        if($error != null)
-		{
-            $errorInfo   = ErrorUtil::getInfo($error, $errorHandler);
-            $errorView   = new ErrorView($error, $errorInfo);
-            $content     = $this->renderInnerContent([$errorView]);
-            return $this->render(FrontUtil::getDefaultInnerLayout(), ['content' => $content]);
-		}
-	}
     
     /**
      * Site maintenance.
@@ -133,8 +118,20 @@ class DefaultController extends BaseController
      */
     public function actionMaintenance()
     {
-        $view       = new MaintenanceView();
-        $content    = $this->renderInnerContent([$view]);
-        return $this->render(FrontUtil::getDefaultInnerLayout(), ['content' => $content]);
+        $customMessage = UsniAdaptor::app()->configManager->getValue('application', 'customMaintenanceModeMessage');
+        return $this->render('/maintenance', ['customMessage' => $customMessage]);
+    }
+    
+    /**
+     * Error action
+     * @return string
+     */
+    public function actionError()
+    {
+        $exception = \Yii::$app->errorHandler->exception;
+        if ($exception !== null) 
+        {
+            return $this->render('/error', ['exception' => $exception, 'handler' => \Yii::$app->errorHandler]);
+        }
     }
 }

@@ -5,13 +5,14 @@
  */
 namespace productCategories\models;
     
-use usni\library\components\UiSecuredActiveRecord;
+use usni\library\db\ActiveRecord;
 
 /**
- * ProductCategoryTranslated class file
+ * ProductCategoryTranslated class file.
+ * 
  * @package productCategories\models
  */
-class ProductCategoryTranslated extends UiSecuredActiveRecord
+class ProductCategoryTranslated extends ActiveRecord
 {
     /**
      * @inheritdoc
@@ -21,4 +22,3 @@ class ProductCategoryTranslated extends UiSecuredActiveRecord
         return $this->hasOne(ProductCategory::className(), ['id' => 'owner_id']);
     }
 }
-?>

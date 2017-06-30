@@ -5,8 +5,8 @@
  */
 namespace common\modules\extension\models;
 
-use usni\library\components\TranslatableActiveRecord;
-use usni\library\components\UiBaseActiveRecord;
+use usni\library\db\TranslatableActiveRecord;
+use usni\library\db\ActiveRecord;
 use usni\UsniAdaptor;
 /**
  * Extension class file. This acts as model class for the extension table.
@@ -23,7 +23,7 @@ class Extension extends TranslatableActiveRecord
 		return [
                     [['name', 'category', 'code'],       'required'],
                     [['status'],               'integer'],
-                    ['status',                 'default', 'value' => UiBaseActiveRecord::STATUS_ACTIVE],
+                    ['status',                 'default', 'value' => ActiveRecord::STATUS_ACTIVE],
                     [['name', 'author', 'version', 'product_version', 'status', 'data'],       'safe'],
                ];
 	}

@@ -5,7 +5,7 @@
  */
 namespace common\modules\localization\modules\city\models;
 
-use usni\library\components\TranslatableActiveRecord;
+use usni\library\db\TranslatableActiveRecord;
 use usni\UsniAdaptor;
 use common\modules\localization\modules\country\models\Country;
 /**
@@ -21,12 +21,11 @@ class City extends TranslatableActiveRecord
 	public function rules()
 	{
 		return [
-                    ['name',                    'required'],
+                    [['name', 'country_id'],    'required'],
                     ['name',                    'unique', 'targetClass' => CityTranslated::className(), 'targetAttribute' => ['name', 'language'], 'on' => 'create'],
                     ['name', 'unique', 'targetClass' => CityTranslated::className(), 'targetAttribute' => ['name', 'language'], 'filter' => ['!=', 'owner_id', $this->id], 'on' => 'update'],
-                    ['country_id',              'required'],
                     ['country_id',              'integer'],
-                    ['name',                    'string', 'max'=>64],
+                    ['name',                    'string', 'max' => 64]
                ];
 	}
 

@@ -5,10 +5,12 @@
  */
 namespace taxes\models;
 
-use usni\library\components\TranslatableActiveRecord;
+use usni\library\db\TranslatableActiveRecord;
 use usni\UsniAdaptor;
 use taxes\models\ProductTaxClassTranslated;
-use taxes\utils\TaxUtil;
+use products\dao\ProductDAO;
+use taxes\dao\TaxRuleDAO;
+use yii\db\Exception;
 /**
  * ProductTaxClass active record.
  * 
@@ -75,9 +77,25 @@ class ProductTaxClass extends TranslatableActiveRecord
      */
     public function beforeDelete()
     {
-        if(parent::beforeDelete())
+        $isAllowedToDelete = $this->checkIfAllowedToDelete();
+        if(!$isAllowedToDelete)
         {
-            return TaxUtil::checkIfProductTaxClassAllowedToDelete($this);
+            throw new Exception('this product tax class is associated with tax rule or product.');
+        }
+        return parent::beforeDelete();
+    }
+    
+    /**
+     * Check if product tax class is allowed to delete.
+     * @return boolean
+     */
+    public function checkIfAllowedToDelete()
+    {
+        $taxRules   = TaxRuleDAO::getTaxRuleByAttribute('product_tax_class_id', $this->id, $this->language);
+        $products   = ProductDAO::getProductsByAttribute('tax_class_id', $this->id, $this->language);
+        if(empty($taxRules) && empty($products))
+        {
+            return true;
         }
         return false;
     }

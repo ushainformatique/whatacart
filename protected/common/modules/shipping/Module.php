@@ -5,13 +5,14 @@
  */
 namespace common\modules\shipping;
 
-use usni\library\components\UiSecuredModule;
+use usni\library\components\SecuredModule;
 use usni\UsniAdaptor;
 /**
  * Provides functionality related to shipping.
+ * 
  * @package common\modules\shipping
  */
-class Module extends UiSecuredModule
+class Module extends SecuredModule
 {  
     public $controllerNamespace = 'common\modules\shipping\controllers';
     
@@ -35,5 +36,15 @@ class Module extends UiSecuredModule
             'basePath' => '@app/messages'
         ];
     }
+    
+    /**
+     * @inheritdoc
+     */
+    public function getPermissions()
+    {
+        $permissions['ShippingModule'] = [
+                                                'access.shipping'  => UsniAdaptor::t('application', 'Access Tab'),
+                                          ];
+        return $permissions;
+    }
 }
-?>

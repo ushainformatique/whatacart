@@ -5,7 +5,7 @@
  */
 namespace products\models;
 
-use usni\library\components\TranslatableActiveRecord;
+use usni\library\db\TranslatableActiveRecord;
 use usni\UsniAdaptor;
 /**
  * ProductAttributeGroup class file.

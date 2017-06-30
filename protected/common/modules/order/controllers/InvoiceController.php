@@ -5,22 +5,36 @@
  */
 namespace common\modules\order\controllers;
 
-use usni\library\components\UiAdminController;
 use common\modules\order\models\Invoice;
 use usni\UsniAdaptor;
-use common\modules\order\utils\OrderUtil;
+use yii\filters\AccessControl;
+use common\modules\order\business\InvoiceManager;
+use common\modules\order\dto\InvoiceDetailViewDTO;
+use yii\web\ForbiddenHttpException;
 /**
  * InvoiceController class file
+ * 
  * @package common\modules\order\controllers
  */
-class InvoiceController extends UiAdminController
+class InvoiceController extends \usni\library\web\Controller
 {
     /**
-     * @inheritdoc
+     * inheritdoc
      */
-    protected function resolveModelClassName()
+    public function behaviors()
     {
-        return Invoice::className();
+        return [
+            'access' => [
+                'class' => AccessControl::className(),
+                'rules' => [
+                    [
+                        'allow' => true,
+                        'actions' => ['view'],
+                        'roles' => ['order.manage'],
+                    ]
+                ],
+            ],
+        ];
     }
     
     /**
@@ -29,42 +43,20 @@ class InvoiceController extends UiAdminController
      */
     public function actionView($id)
     {
-        if(OrderUtil::checkIfOrderAllowedToPerformAction($id) == false)
+        $detailViewDTO      = new InvoiceDetailViewDTO();
+        $detailViewDTO->setId($id);
+        $detailViewDTO->setModelClass(Invoice::className());
+        $result     = InvoiceManager::getInstance()->processDetail($detailViewDTO);
+        if($result === false)
         {
-            throw new \yii\web\NotFoundHttpException();
+            throw new ForbiddenHttpException(\Yii::t('yii','You are not authorized to perform this action.'));
         }
-        $breadcrumbs    = [
-                                [
-                                    'label' => UsniAdaptor::t('payment', 'Invoice Details') 
-                                ]
-                            ];
-        $this->getView()->params['breadcrumbs']  = $breadcrumbs;
-        $viewHelper  = UsniAdaptor::app()->getModule('order')->viewHelper;
-        $invoiceView = $viewHelper->getInstance('invoiceView', ['invoiceId' => $id]);
         //Remove some assets
-        UsniAdaptor::app()->assetManager->bundles['usni\library\assets\UiAdminAssetBundle']['css'] = [];
-        UsniAdaptor::app()->assetManager->bundles['usni\library\assets\UiAdminAssetBundle']['js'] = [];
-        return $this->render($this->getDefaultLayout(), ['content' => $invoiceView->render()]);
-    }
-    
-    /**
-     * @inheritdoc
-     */
-    public function pageTitles()
-    {
-        return [
-                    'view'  => UsniAdaptor::t('application','View') . ' ' . Invoice::getLabel(1),
-               ];
-    }
-    
-    /**
-     * @inheritdoc
-     */
-    protected function getActionToPermissionsMap()
-    {
-        $permissionsMap                 = parent::getActionToPermissionsMap();
-        $permissionsMap['view']         = 'order.manage';
-        return $permissionsMap;
+        UsniAdaptor::app()->assetManager->bundles['usni\library\web\AdminAssetBundle']['css'] = [];
+        UsniAdaptor::app()->assetManager->bundles['usni\library\web\AdminAssetBundle']['js'] = [];
+        $this->getView()->sidenavView   = null;
+        $this->getView()->headerView    = null;
+        $this->getView()->footerView    = null;
+        echo $this->render('/invoice/view', ['detailViewDTO' => $detailViewDTO]);
     }
 }
-?>

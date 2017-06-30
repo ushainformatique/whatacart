@@ -6,9 +6,8 @@
 namespace taxes\models;
 
 use yii\base\Model;
-use usni\library\components\TranslatedActiveDataProvider;
-use usni\library\utils\AdminUtil;
 use usni\UsniAdaptor;
+use usni\library\dataproviders\ArrayRecordDataProvider;
 /**
  * ProductTaxClassSearch class file
  * This is the search class for model ProductTaxClass.
@@ -17,6 +16,8 @@ use usni\UsniAdaptor;
  */
 class ProductTaxClassSearch extends ProductTaxClass
 {
+    use \usni\library\traits\SearchTrait;
+    
 	/**
      * @inheritdoc
      */
@@ -46,28 +47,31 @@ class ProductTaxClassSearch extends ProductTaxClass
     /**
      * Search based on get params.
      *
-     * @return yii\data\ActiveDataProvider
+     * @return ArrayRecordDataProvider
      */
     public function search()
     {
-        $query          = ProductTaxClass::find();
+        $query          = new \yii\db\Query();
         $tableName      = UsniAdaptor::tablePrefix() . 'product_tax_class';
-        $query->innerJoinWith('translations');
-        $dataProvider   = new TranslatedActiveDataProvider([
-            'query' => $query,
-        ]);
+        $trTableName    = UsniAdaptor::tablePrefix() . 'product_tax_class_translated';
+        $query->select('p.*, pt.name')
+              ->from(["$tableName p"])
+              ->innerJoin("$trTableName pt", 'p.id = pt.owner_id')
+              ->where('pt.language = :lang', [':lang' => $this->language]);
+        $dataProvider = new ArrayRecordDataProvider([
+                                                        'query'     => $query,
+                                                        'key'       => 'id',
+                                                        'sort'      => ['attributes' => ['name']]
+                                                   ]);
 
-        // Validate data
-        if (!$this->validate())
+        if (!$this->validate()) 
         {
             return $dataProvider;
-        }
-        $query->andFilterWhere(['language' => UsniAdaptor::app()->languageManager->getContentLanguage()]);
+        }        
         $query->andFilterWhere(['like', 'name', $this->name]);
-        $user     = UsniAdaptor::app()->user->getUserModel();
-        if(!AdminUtil::doesUserHaveOthersPermissionsOnModel(ProductTaxClass::className(), $user))
+        if($this->canAccessOwnedRecordsOnly('producttaxclass'))
         {
-            $query->andFilterWhere([$tableName . '.created_by' => $user->id]);
+            $query->andFilterWhere(['p.created_by' => $this->getUserId()]);
         }
         return $dataProvider;
     }

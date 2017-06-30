@@ -1,15 +1,15 @@
 <?php
 use usni\UsniAdaptor;
-use usni\library\components\UiHtml;
+use usni\library\utils\Html;
 ?>
 <table style="display: none;">
     <tr class="productimage-value-row-dummy">
-        <?php echo UiHtml::hiddenInput('ProductImage[##dummyindex##][id]', '-1');?>
+        <?php echo Html::hiddenInput('ProductImage[##dummyindex##][id]', '-1');?>
         <td class="text-left">
             <input type="text" name="ProductImage[##dummyindex##][caption]" value="" placeholder="<?php echo UsniAdaptor::t('products', 'Caption');?>" class="form-control">
         </td>
         <td class="text-right">
-            <?php echo UiHtml::fileInput("ProductImage[##dummyindex##][uploadInstance]", null, ['placeholder' => UsniAdaptor::t('application', 'Image'), 'class' => 'form-control']);?>
+            <?php echo Html::fileInput("ProductImage[##dummyindex##][uploadInstance]", null, ['placeholder' => UsniAdaptor::t('application', 'Image'), 'class' => 'form-control']);?>
         </td>
         <td class="text-right">
             <button type="button" onclick="$(this).tooltip('destroy');

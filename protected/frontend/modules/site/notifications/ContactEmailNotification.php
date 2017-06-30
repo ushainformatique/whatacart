@@ -5,13 +5,14 @@
  */
 namespace frontend\modules\site\notifications;
 
-use usni\library\components\UiEmailNotification;
 use usni\library\modules\notification\models\Notification;
+use usni\library\notifications\EmailNotification;
 /**
  * ContactEmailNotification class file.
+ * 
  * @package frontend\modules\site\notifications
  */
-class ContactEmailNotification extends UiEmailNotification
+class ContactEmailNotification extends EmailNotification
 {
     public $formModel;
     
@@ -66,5 +67,13 @@ class ContactEmailNotification extends UiEmailNotification
     public function getLayoutData($data)
     {
         return array('{{####content####}}' => $data['templateContent']);
+    }
+    
+    /**
+     * @inheritdoc
+     */
+    public function setSubject()
+    {
+        $this->subject = $this->formModel->subject;
     }
 }

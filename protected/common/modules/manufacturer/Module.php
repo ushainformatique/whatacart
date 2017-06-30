@@ -5,14 +5,15 @@
  */
 namespace common\modules\manufacturer;
 
-use usni\library\components\UiSecuredModule;
+use usni\library\components\SecuredModule;
 use usni\UsniAdaptor;
-use common\modules\manufacturer\utils\ManufacturerPermissionUtil;
+use common\modules\manufacturer\models\Manufacturer;
 /**
  * Provides functionality related to manufacturer.
+ * 
  * @package common\modules\manufacturer
  */
-class Module extends UiSecuredModule
+class Module extends SecuredModule
 {  
     public $controllerNamespace = 'common\modules\manufacturer\controllers';
     
@@ -38,11 +39,11 @@ class Module extends UiSecuredModule
     }
     
     /**
-     * @inheritdoc
+     * Get permission models
+     * @return array
      */
-    public static function getPermissionUtil()
+    public function getPermissionModels()
     {
-        return ManufacturerPermissionUtil::className();
+        return [Manufacturer::className()];
     }
 }
-?>

@@ -5,17 +5,27 @@
  */
 namespace common\modules\stores\models;
 
-use usni\library\components\TranslatedActiveDataProvider;
+use usni\library\dataproviders\ArrayRecordDataProvider;
 use yii\base\Model;
-use usni\library\utils\AdminUtil;
 use usni\UsniAdaptor;
 /**
  * StoreSearch class file
  * This is the search class for model Store.
+ * 
  * @package common\modules\stores\models
  */
 class StoreSearch extends Store
 {
+    use \usni\library\traits\SearchTrait;
+    
+    /**
+     * inheritdoc
+     */
+    public static function tableName()
+    {
+        return Store::tableName();
+    }
+    
 	/**
      * @inheritdoc
      */
@@ -41,11 +51,16 @@ class StoreSearch extends Store
      */
     public function search()
     {
-        $query          = Store::find();
-        $tableName      = Store::tableName();
-        $query->innerJoinWith('translations');
-        $dataProvider   = new TranslatedActiveDataProvider([
+        $tableName      = UsniAdaptor::tablePrefix() . 'store';
+        $trTableName    = UsniAdaptor::tablePrefix() . 'store_translated';
+        $query          = new \yii\db\Query();
+        $query->select('st.*, stt.name')
+              ->from([$tableName . ' st', $trTableName . ' stt'])
+              ->where('st.id = stt.owner_id AND stt.language = :language', [':language' => $this->language]);
+        $dataProvider   = new ArrayRecordDataProvider([
             'query' => $query,
+            'key'   => 'id',
+            'sort'  => ['attributes' => ['name', 'status']]
         ]);
 
         // Validate data
@@ -53,13 +68,11 @@ class StoreSearch extends Store
         {
             return $dataProvider;
         }
-        $query->andFilterWhere(['language' => UsniAdaptor::app()->languageManager->getContentLanguage()]);
         $query->andFilterWhere(['like', 'name', $this->name]);
         $query->andFilterWhere(['like', 'status', $this->status]);
-        $user     = UsniAdaptor::app()->user->getUserModel();
-        if(!AdminUtil::doesUserHaveOthersPermissionsOnModel(Store::className(), $user))
+        if($this->canAccessOwnedRecordsOnly('store'))
         {
-            $query->andFilterWhere([$tableName . '.created_by' => $user->id]);
+            $query->andFilterWhere(['st.created_by' => $this->getUserId()]);
         }
         return $dataProvider;
     }

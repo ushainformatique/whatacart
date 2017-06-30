@@ -5,13 +5,13 @@
  */
 namespace cart;
 
-use usni\library\components\UiSecuredModule;
 use usni\UsniAdaptor;
 /**
- * Provides functionality related to entities specific to the catalog.
+ * Provides functionality related to cart.
+ * 
  * @package cart
  */
-class Module extends UiSecuredModule
+class Module extends \usni\library\components\Module
 {
     /**
      * Overrides to register translations.
@@ -39,4 +39,3 @@ class Module extends UiSecuredModule
         ];
     }
 }
-?>

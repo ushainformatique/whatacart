@@ -5,14 +5,13 @@
  */
 namespace common\modules\payment\models\cashondelivery;
 
-use usni\library\components\UiFormModel;
 use usni\UsniAdaptor;
 /**
  * CashOnDeliverySetting class file.
  *
  * @package common\modules\payment\models\cashondelivery
  */
-class CashOnDeliverySetting extends UiFormModel
+class CashOnDeliverySetting extends \yii\base\Model
 {
     /**
      * @var string 

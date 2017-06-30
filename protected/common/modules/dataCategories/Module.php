@@ -5,9 +5,9 @@
  */
 namespace common\modules\dataCategories;
 
-use usni\library\components\UiSecuredModule;
+use usni\library\components\SecuredModule;
 use usni\UsniAdaptor;
-use common\modules\dataCategories\utils\DataCategoryPermissionUtil;
+use common\modules\dataCategories\models\DataCategory;
 
 /**
  * Provides functionality related to data category.
@@ -16,7 +16,7 @@ use common\modules\dataCategories\utils\DataCategoryPermissionUtil;
  * We can also call it the root category for the content.
  * @package backend\modules\dataCategories
  */
-class Module extends UiSecuredModule
+class Module extends SecuredModule
 {
     /**
      * Overrides to register translations.
@@ -50,10 +50,10 @@ class Module extends UiSecuredModule
     }
     
     /**
-     * @inheritdoc
+     * inheritdoc
      */
-    public static function getPermissionUtil()
+    public function getPermissionModels()
     {
-        return DataCategoryPermissionUtil::className();
+        return [DataCategory::className()];
     }
 }

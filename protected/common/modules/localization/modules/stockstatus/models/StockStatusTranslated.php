@@ -5,13 +5,14 @@
  */
 namespace common\modules\localization\modules\stockstatus\models;
     
-use usni\library\components\UiSecuredActiveRecord;
+use usni\library\db\ActiveRecord;
 
 /**
- * StockStatusTranslated class file
+ * StockStatusTranslated class file.
+ * 
  * @package common\modules\localization\modules\stockstatus\models
  */
-class StockStatusTranslated extends UiSecuredActiveRecord
+class StockStatusTranslated extends ActiveRecord
 {
     /**
      * @inheritdoc
@@ -21,4 +22,3 @@ class StockStatusTranslated extends UiSecuredActiveRecord
         return $this->hasOne(StockStatus::className(), ['id' => 'owner_id']);
     }
 }
-?>

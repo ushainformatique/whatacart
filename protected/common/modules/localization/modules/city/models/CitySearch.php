@@ -5,17 +5,19 @@
  */
 namespace common\modules\localization\modules\city\models;
 
-use usni\library\components\TranslatedActiveDataProvider;
 use yii\base\Model;
-use usni\library\utils\AdminUtil;
 use usni\UsniAdaptor;
+use usni\library\dataproviders\ArrayRecordDataProvider;
 /**
- * CitySearch class file
+ * CitySearch class file.
+ * 
  * This is the search class for model City.
  * @package common\modules\localization\modules\city\models
  */
 class CitySearch extends City
 {
+    use \usni\library\traits\SearchTrait;
+    
     /**
      * @inheritdoc
      */
@@ -45,29 +47,34 @@ class CitySearch extends City
     /**
      * Search based on get params.
      *
-     * @return usni\library\components\TranslatedActiveDataProvider
+     * @return ArrayRecordDataProvider
      */
     public function search()
     {
-        $query          = City::find();
-        $tableName      = UsniAdaptor::tablePrefix() . 'city';
-        $query->innerJoinWith('translations');
-        $dataProvider   = new TranslatedActiveDataProvider([
-            'query' => $query,
-        ]);
+        $query                  = new \yii\db\Query();
+        $tableName              = UsniAdaptor::tablePrefix() . 'city';
+        $trTableName            = UsniAdaptor::tablePrefix() . 'city_translated';
+        $trCountryTranslated    = UsniAdaptor::tablePrefix() . 'country_translated';
+        $query->select('c.*, ct.name, cut.name AS country_name')
+              ->from(["$tableName c"])
+              ->innerJoin("$trTableName ct", 'c.id = ct.owner_id')
+              ->innerJoin("$trCountryTranslated cut", 'cut.owner_id = c.country_id')
+              ->where('ct.language = :lang AND cut.language = :culang', [':lang' => $this->language, ':culang' => $this->language]);
+        $dataProvider = new ArrayRecordDataProvider([
+                                                        'query'     => $query,
+                                                        'key'       => 'id',
+                                                        'sort'      => ['attributes' => ['name', 'country_id']]
+                                                   ]);
 
-        // Validate data
-        if (!$this->validate())
+        if (!$this->validate()) 
         {
             return $dataProvider;
-        }
-        $query->andFilterWhere(['language' => UsniAdaptor::app()->languageManager->getContentLanguage()]);
-        $query->andFilterWhere(['like', 'name', $this->name]);
-        $query->andFilterWhere(['like', 'country_id', $this->country_id]);
-        $user     = UsniAdaptor::app()->user->getUserModel();
-        if(!AdminUtil::doesUserHaveOthersPermissionsOnModel(City::className(), $user))
+        }        
+        $query->andFilterWhere(['like', 'ct.name', $this->name]);
+        $query->andFilterWhere(['c.country_id' => $this->country_id]);
+        if($this->canAccessOwnedRecordsOnly('city'))
         {
-            $query->andFilterWhere([$tableName . '.created_by' => $user->id]);
+            $query->andFilterWhere(['c.created_by' => $this->getUserId()]);
         }
         return $dataProvider;
     }

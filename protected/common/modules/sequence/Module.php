@@ -5,14 +5,13 @@
  */
 namespace common\modules\sequence;
 
-use usni\library\components\UiSecuredModule;
 use usni\UsniAdaptor;
-use common\modules\sequence\utils\SequencePermissionUtil;
 /**
- * Provides functionality related to manufacturer.
- * @package common\modules\manufacturer
+ * Provides functionality related to sequences in the system.
+ * 
+ * @package common\modules\sequence
  */
-class Module extends UiSecuredModule
+class Module extends \usni\library\components\Module
 {  
     public $controllerNamespace = 'common\modules\sequence\controllers';
     
@@ -36,13 +35,4 @@ class Module extends UiSecuredModule
             'basePath' => '@approot/messages'
         ];
     }
-    
-    /**
-     * @inheritdoc
-     */
-    public static function getPermissionUtil()
-    {
-        return SequencePermissionUtil::className();
-    }
 }
-?>

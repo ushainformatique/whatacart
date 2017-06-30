@@ -5,15 +5,17 @@
  */
 namespace common\modules\catalog;
 
-use usni\library\components\UiSecuredModule;
+use usni\library\components\SecuredModule;
 use usni\UsniAdaptor;
-use common\modules\catalog\utils\CatalogPermissionUtil;
+use productCategories\models\ProductCategory;
+use products\models\Product;
+use products\models\ProductReview;
 /**
  * Provides functionality related to entities specific to the catalog.
  *
  * @package common\modules\catalog
  */
-class Module extends UiSecuredModule
+class Module extends SecuredModule
 {
     /**
      * Overrides to register translations.
@@ -37,11 +39,33 @@ class Module extends UiSecuredModule
     }
     
     /**
+     * inheritdoc
+     */
+    public function getPermissionModels()
+    {
+        return [
+                    ProductCategory::className(),
+                    Product::className(),
+                    ProductReview::className()
+               ];
+    }
+    
+    /**
      * @inheritdoc
      */
-    public static function getPermissionUtil()
+    public function getPermissions()
     {
-        return CatalogPermissionUtil::className();
+        $permissions = parent::getPermissions();
+        $permissions['ProductReview']['productreview.approve'] = UsniAdaptor::t('products', 'Approve');
+        $permissions['ProductReview']['productreview.spam'] = UsniAdaptor::t('products', 'Spam');
+        return $permissions;
+    }
+    
+    /**
+     * @inheritdoc
+     */
+    public function getModelToExcludedPermissions()
+    {
+         return [ProductReview::className() => ['create', 'update', 'view', 'bulk-edit', 'bulk-delete', 'updateother', 'viewother', 'deleteother']];
     }
 }
-?>

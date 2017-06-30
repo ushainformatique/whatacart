@@ -5,10 +5,9 @@
  */
 namespace common\modules\manufacturer\models;
 
-use yii\data\ActiveDataProvider;
 use yii\base\Model;
 use usni\UsniAdaptor;
-use usni\library\utils\AdminUtil;
+use usni\library\dataproviders\ArrayRecordDataProvider;
 /**
  * ManufacturerSearch class file
  * This is the search class for model Manufacturer.
@@ -17,6 +16,8 @@ use usni\library\utils\AdminUtil;
  */
 class ManufacturerSearch extends Manufacturer 
 {
+    use \usni\library\traits\SearchTrait;
+    
     /**
      * @inheritdoc
      */
@@ -31,7 +32,7 @@ class ManufacturerSearch extends Manufacturer
 	public function rules()
 	{
 		return [
-                    [['id', 'name', 'status'],       'safe'],
+                    [['name', 'status'],  'safe'],
                ];
 	}
     
@@ -46,27 +47,28 @@ class ManufacturerSearch extends Manufacturer
     /**
      * Search based on get params.
      *
-     * @return ActiveDataProvider
+     * @return ArrayDataProvider
      */
     public function search()
     {
-        $tableName      = Manufacturer::tableName();
-        $query          = Manufacturer::find();
-        $dataProvider   = new ActiveDataProvider([
-            'query' => $query,
-        ]);
+        $tableName  = UsniAdaptor::tablePrefix() . 'manufacturer';
+        $query      = new \yii\db\Query();
+        $query->select("m.*")->from(["$tableName m"]);
+        $dataProvider = new ArrayRecordDataProvider([
+                                                        'query'     => $query,
+                                                        'key'       => 'id',
+                                                        'sort'      => ['attributes' => ['name', 'status']]
+                                                   ]);
 
-        // Validate data
-        if (!$this->validate())
+        if (!$this->validate()) 
         {
             return $dataProvider;
-        }
+        }        
         $query->andFilterWhere(['like', 'name', $this->name]);
-        $query->andFilterWhere(['like', 'status', $this->status]);
-        $user     = UsniAdaptor::app()->user->getUserModel();
-        if(!AdminUtil::doesUserHaveOthersPermissionsOnModel(Manufacturer::className(), $user))
+        $query->andFilterWhere(['status' => $this->status]);
+        if($this->canAccessOwnedRecordsOnly('manufacturer'))
         {
-            $query->andFilterWhere([$tableName . '.created_by' => $user->id]);
+            $query->andFilterWhere(['m.created_by' => $this->getUserId()]);
         }
         return $dataProvider;
     }

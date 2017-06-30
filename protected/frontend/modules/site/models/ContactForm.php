@@ -5,17 +5,26 @@
  */
 namespace frontend\modules\site\models;
 
-use usni\library\components\UiFormModel;
 use usni\UsniAdaptor;
 use frontend\modules\site\notifications\ContactEmailNotification;
-use usni\library\modules\notification\utils\NotificationUtil;
-use usni\library\modules\notification\models\Notification;
+use usni\library\notifications\BaseNotificationService;
 /**
  * ContactForm class file.
+ * 
  * @package frontend\modules\site\models
  */
-class ContactForm extends UiFormModel
+class ContactForm extends \yii\base\Model
 {
+    /**
+     * inheritdoc
+     */
+    public function behaviors()
+    {
+        return [
+                    BaseNotificationService::className()  
+               ];
+    }
+    
     /**
      * Name during contact us.
      * @var string
@@ -90,34 +99,11 @@ class ContactForm extends UiFormModel
      */
     public function sendMail()
     {
-        $mailer             = UsniAdaptor::app()->mailer;
-        $emailNotification  = $this->getEmailNotification();
-        $mailer->emailNotification = $emailNotification;
-        $message            = $mailer->compose();
-        list($toName, $toAddress) = NotificationUtil::getSystemFromAddressData();
-        $fromName           = $this->name;
-        $fromAddress        = $this->email;
-        $isSent             = $message->setFrom([$fromAddress => $fromName])
-                            ->setTo($toAddress)
-                            ->setSubject($this->subject)
-                            ->send();
-        $data               = serialize(array(
-                                'fromName'    => $fromName,
-                                'fromAddress' => $fromAddress,
-                                'toAddress'   => $toAddress,
-                                'subject'     => $this->subject,
-                                'body'        => $message->toString()));
-        $status             = $isSent === true ? Notification::STATUS_SENT : Notification::STATUS_PENDING;
-        //Save notification
-        return NotificationUtil::saveEmailNotification($emailNotification, $status, $data);
-    }
-    
-    /**
-     * Get email notification
-     * @return NewUserEmailNotification
-     */
-    protected function getEmailNotification()
-    {
-        return new ContactEmailNotification(['formModel' => $this]);
+        $fromAddress                = $this->fromAddress;
+        $this->emailNotification    = new ContactEmailNotification(['formModel' => $this]);
+        $this->fromName             = $this->name;
+        $this->fromAddress          = $this->email;
+        $this->to                   = $fromAddress;
+        return $this->processSend();
     }
 }

@@ -5,13 +5,14 @@
  */
 namespace products\models;
 
-use usni\library\components\UiSecuredActiveRecord;
+use usni\library\db\ActiveRecord;
 use products\models\ProductAttribute;
 /**
  * ProductAttributeMapping active record.
+ * 
  * @package products\models
  */
-class ProductAttributeMapping extends UiSecuredActiveRecord
+class ProductAttributeMapping extends ActiveRecord
 {
     /**
      * @inheritdoc
@@ -73,4 +74,3 @@ class ProductAttributeMapping extends UiSecuredActiveRecord
         return ProductAttributeMapping::find()->where('product_id = :pid AND attribute_id = :aid', [':pid' => $productId, ':aid' => $attributeId])->one();
     }
 }
-?>

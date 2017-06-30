@@ -6,7 +6,6 @@
 namespace common\modules\shipping\utils\flat;
 
 use usni\UsniAdaptor;
-use common\modules\stores\utils\StoreUtil;
 /**
  * FlatShippingUtil class file.
  * 
@@ -64,32 +63,5 @@ class FlatShippingUtil
             self::SHIP_TO_ALL_ZONES       => UsniAdaptor::t('shipping', 'All Zones'),
             self::SHIP_TO_SPECIFIC_ZONES  => UsniAdaptor::t('shipping','Specific Zones')
         );
-    }
-    
-    /**
-     * Get calculate price for the shipping
-     * @param Cart $cart
-     * @return int
-     */
-    public static function getCalculatedPrice($cart)
-    {
-        $data       = StoreUtil::getStoreConfgurationAttributesByCodeForStore('flat', 'shipping');
-        if(!empty($data))
-        {
-            if($data['type'] == 'none')
-            {
-                return 0;
-            }
-            elseif($data['type'] == 'perOrder')
-            {
-                $price = $data['price'];
-            }
-            elseif($data['type'] == 'perItem')
-            {
-                $price = $data['price'] * $cart->getCount();
-            }
-            $price += $data['handlingFee'];
-            return $price;
-        }
     }
 }

@@ -5,99 +5,56 @@
  */
 namespace common\modules\marketing\controllers;
 
-use usni\library\components\UiAdminController;
 use usni\UsniAdaptor;
-use newsletter\utils\NewsletterUtil;
-use common\modules\stores\utils\StoreUtil;
-use common\modules\marketing\models\SendMailForm;
-use common\modules\marketing\views\SendMailEditView;
-use common\modules\marketing\utils\MarketingUtil;
 use usni\library\utils\FlashUtil;
+use common\modules\marketing\business\Manager;
+use common\modules\marketing\dto\FormDTO;
+use usni\library\utils\ArrayUtil;
+use yii\filters\AccessControl;
 /**
  * SendMailController class file
  * 
  * @package common\modules\marketing\controllers
  */
-class SendMailController extends UiAdminController
+class SendMailController extends \usni\library\web\Controller
 {
     /**
-     * @inheritdoc
+     * inheritdoc
      */
-    protected function resolveModelClassName()
+    public function behaviors()
     {
-        return null;
+        return [
+            'access' => [
+                'class' => AccessControl::className(),
+                'rules' => [
+                    [
+                        'allow' => true,
+                        'actions' => ['create'],
+                        'roles' => ['marketing.mail'],
+                    ]
+                ],
+            ],
+        ];
     }
     
     /**
-     * @inheritdoc
+     * Create action.
+     * @return string
      */
     public function actionCreate()
     {
-        $model  = new SendMailForm(['scenario' => 'send']);
-        if(isset($_POST['SendMailForm']))
+        $formDTO    = new FormDTO();
+        $formDTO->setPostData(ArrayUtil::getValue($_POST, 'SendMailForm'));
+        $manager    = new Manager();
+        $manager->processCreate($formDTO);
+        if($formDTO->getIsTransactionSuccess() === true)
         {
-            $model->attributes = $_POST['SendMailForm'];
-            if($model->validate())
-            {
-                $this->processSendMail($model);
-                FlashUtil::setMessage('sendMail', UsniAdaptor::t('marketing', 'Mail has been sent successfully.'));
-                $model = new SendMailForm(['scenario' => 'send']);
-            }
+            FlashUtil::setMessage('success', UsniAdaptor::t('marketing', 'Mail has been sent successfully.'));
+            return $this->refresh();
         }
-        $breadcrumbs      = [
-                                [
-                                    'label' => UsniAdaptor::t('marketing', 'Send Mail')
-                                ]
-                            ];
-        $this->getView()->params['breadcrumbs']  = $breadcrumbs;
-        $sendMailView     = SendMailEditView::className();
-        $view             = new $sendMailView($model);
-        $content          = $this->renderColumnContent([$view]);
-        return $this->render($this->getDefaultLayout(), ['content' => $content]);
-    }
-    
-    /**
-     * Process send mail.
-     * @param Model $model
-     * @return boolean
-     */
-    protected function processSendMail($model)
-    {
-        $user       = UsniAdaptor::app()->user->getUserModel();
-        $storeOwner = StoreUtil::getStoreOwner($model->store_id);
-        //Notifications for all customers.
-        if($model->to == SendMailForm::ALL_CUSTOMERS)
+        else
         {
-            $toAddressArray = MarketingUtil::getNotificationEmails(SendMailForm::ALL_CUSTOMERS);
-            MarketingUtil::processSendMailNotifications($storeOwner, $toAddressArray, $model);
+            return $this->render('/sendmail', ['formDTO' => $formDTO]);
         }
-        //Notifications for Selected customer group.
-        if($model->to == SendMailForm::CUSTOMER_GROUP)
-        {
-            $toAddressArray = MarketingUtil::getNotificationEmails(SendMailForm::CUSTOMER_GROUP, $model->group_id);
-            MarketingUtil::processSendMailNotifications($storeOwner, $toAddressArray, $model);
-        }
-        //Notifications for selected customers.
-        if($model->to == SendMailForm::CUSTOMERS)
-        {
-            $toAddressArray       = MarketingUtil::getNotificationEmails(SendMailForm::CUSTOMERS, null, $model->customer_id);
-            MarketingUtil::processSendMailNotifications($storeOwner, $toAddressArray, $model);
-        }
-        //Notifications for selected products.
-        if($model->to == SendMailForm::PRODUCTS)
-        {
-            $toAddressArray       = MarketingUtil::getNotificationEmails(SendMailForm::PRODUCTS, null, null, $model->product_id);
-            MarketingUtil::processSendMailNotifications($storeOwner, $toAddressArray, $model);
-        }
-    }
-    
-    /**
-     * @inheritdoc
-     */
-    public function pageTitles()
-    {
-        return [
-                    'create'    => SendMailForm::getLabel(1)
-               ];
     }
 }

@@ -24,7 +24,7 @@ class ShippingFactory extends \yii\base\Component
      */
     public function getInstance()
     {
-        $className  = '\common\modules\shipping\managers\\' . $this->type . '\ShippingManager';
+        $className  = '\common\modules\shipping\business\\' . $this->type . '\ShippingProcessor';
         return new $className();
     }
 }

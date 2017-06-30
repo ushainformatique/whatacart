@@ -5,14 +5,15 @@
  */
 namespace common\modules\stores;
 
-use usni\library\components\UiSecuredModule;
+use usni\library\components\SecuredModule;
 use usni\UsniAdaptor;
-use common\modules\stores\utils\StoresPermissionUtil;
+use common\modules\stores\models\Store;
 /**
- * Provides functionality relates to stores
+ * Provides functionality relates to stores.
+ * 
  * @package common\modules\stores
  */
-class Module extends UiSecuredModule
+class Module extends SecuredModule
 {
     /**
      * Overrides to register translations.
@@ -41,11 +42,20 @@ class Module extends UiSecuredModule
     }
     
     /**
+     * inheritdoc
+     */
+    public function getPermissionModels()
+    {
+        return [Store::className()];
+    }
+    
+    /**
      * @inheritdoc
      */
-    public static function getPermissionUtil()
+    public function getPermissions()
     {
-        return StoresPermissionUtil::className();
+        $permissions = parent::getPermissions();
+        unset($permissions['Store']['store.bulk-delete']);
+        return $permissions;
     }
 }
-?>

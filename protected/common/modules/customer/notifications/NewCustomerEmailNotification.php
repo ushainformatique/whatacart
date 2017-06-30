@@ -8,6 +8,7 @@ namespace customer\notifications;
 use customer\models\Customer;
 /**
  * NewCustomerEmailNotification class file.
+ * 
  * @package customer\notifications
  */
 class NewCustomerEmailNotification extends \usni\library\modules\users\notifications\NewUserEmailNotification
@@ -36,5 +37,17 @@ class NewCustomerEmailNotification extends \usni\library\modules\users\notificat
     {
         return '/customer/site/validate-email-address';
     }
+    
+    /**
+     * @inheritdoc
+     */
+    protected function getConfirmEmailUrl()
+    {
+        $confirmEmailUrl = parent::getConfirmEmailUrl();
+        if(strpos($confirmEmailUrl, '/backend/index.php'))
+        {
+            $confirmEmailUrl = str_replace('/backend', '', $confirmEmailUrl);
+        }
+        return $confirmEmailUrl;
+    }
 }
-?>

@@ -5,18 +5,21 @@
  */
 namespace common\modules\payment\controllers;
 
-use usni\library\components\UiAdminController;
 use usni\UsniAdaptor;
-use common\modules\order\utils\OrderUtil;
 use usni\library\utils\FlashUtil;
-use common\modules\payment\utils\PaymentUtil;
+use common\modules\order\dao\OrderDAO;
+use common\modules\order\business\PaymentManager;
+use common\modules\order\business\Manager as OrderBusinessManager;
+use common\modules\payment\dto\TransactionFormDTO;
 /**
  * BaseTransactionController class file
  * 
  * @package common\modules\payment\controllers
  */
-abstract class BaseTransactionController extends UiAdminController
+abstract class BaseTransactionController extends \usni\library\web\Controller
 {
+    use \common\modules\order\traits\OrderTrait;
+    
     /**
      * @inheritdoc
      */
@@ -35,38 +38,37 @@ abstract class BaseTransactionController extends UiAdminController
         $modelClassName                     = $this->resolveModelClassName();
         $orderPaymentTransaction            = new $modelClassName(['scenario' => 'create']);
         $orderPaymentTransaction->order_id  = $orderId;
-        $order                              = OrderUtil::getOrder($orderId);
+        $order                              = OrderDAO::getById($orderId, 
+                                                                UsniAdaptor::app()->languageManager->selectedLanguage,
+                                                                UsniAdaptor::app()->storeManager->selectedStoreId);
         $postData           = UsniAdaptor::app()->request->post();
         if($orderPaymentTransaction->load($postData))
         {
-            $transaction = UsniAdaptor::app()->db->beginTransaction();
-            $isValid = PaymentUtil::validateAndSaveOrderPaymentTransaction($orderPaymentTransaction, $this->getType());
+            $transaction    = UsniAdaptor::app()->db->beginTransaction();
+            $isValid        = PaymentManager::getInstance()->validateAndSaveOrderPaymentTransaction($orderPaymentTransaction, $this->getType());
             if($isValid)
             {
                 $transaction->commit();
                 $orderPaymentTransaction->transaction_id    = null;
                 $orderPaymentTransaction->transaction_fee   = 0;
-                FlashUtil::setMessage('transactionSuccess', UsniAdaptor::t('order', 'The transaction is saved successfully'));
+                FlashUtil::setMessage('success', UsniAdaptor::t('order', 'The transaction is saved successfully'));
             }
         }
-        $orderPaymentTransaction->totalAmount       = $order['total_including_tax'] + $order['shipping_fee'];
-        $orderPaymentTransaction->alreadyPaidAmount = OrderUtil::getAlreadyPaidAmountForOrder($order['id']);
-        $orderPaymentTransaction->pendingAmount     = $orderPaymentTransaction->totalAmount - $orderPaymentTransaction->alreadyPaidAmount;
-        $breadcrumbs    = [
-                                [
-                                    'label' => UsniAdaptor::t('order', 'Manage Orders'),
-                                    'url'   => UsniAdaptor::createUrl('order/default/manage')
-                                ],
-                                [
-                                    'label' => UsniAdaptor::t('payment', 'Add Payment')
-                                ]
-                            ];
-        $this->getView()->params['breadcrumbs']  = $breadcrumbs;
+        $this->populatePaymentDataInOrderTransaction($orderPaymentTransaction, $order);
+        $formDTO = new TransactionFormDTO();
+        $formDTO->setModel($orderPaymentTransaction);
+        $formDTO->setOrder($order);
+        $this->populateDTOByType($formDTO);
+        return $this->render($this->resolvePaymentView(), ['formDTO' => $formDTO]);
+    }
+    
+    /**
+     * Populate form dto by type 
+     * @param TransactionFormDTO $formDTO
+     */
+    public function populateDTOByType($formDTO)
+    {
         
-        $addPaymentView = $this->resolvePaymentView();
-        $paymentView    = new $addPaymentView($orderPaymentTransaction);
-        $content        = $this->renderColumnContent($paymentView->render());
-        return $this->render($this->getDefaultLayout(), array('content' => $content));
     }
     
     /**
@@ -79,6 +81,39 @@ abstract class BaseTransactionController extends UiAdminController
      */
     protected function resolvePaymentView()
     {
-        return '\common\modules\payment\views\\' . $this->getType() . '\AddPaymentView';
+        return '/' . $this->getType(). '/addpayment';
+    }
+    
+    /**
+     * Get total amount
+     * @param array $order
+     * @return float
+     */
+    protected function getTotalAmount($order)
+    {
+        return $order['total_including_tax'] + $order['shipping_fee'];
+    }
+    
+    /**
+     * Get paid amount
+     * @param array $order
+     * @return float
+     */
+    protected function getPaidAmount($order)
+    {
+        return OrderBusinessManager::getInstance()->getAlreadyPaidAmountForOrder($order['id']);;
+    }
+    
+    /**
+     * Populate payment data transaction
+     * @param Model $orderPaymentTransaction
+     * @param array $order
+     * @return void
+     */
+    protected function populatePaymentDataInOrderTransaction($orderPaymentTransaction, $order)
+    {
+        $orderPaymentTransaction->totalAmount       = $this->getTotalAmount($order);
+        $orderPaymentTransaction->alreadyPaidAmount = $this->getPaidAmount($order);
+        $orderPaymentTransaction->pendingAmount     = $orderPaymentTransaction->totalAmount - $orderPaymentTransaction->alreadyPaidAmount;
     }
 }

@@ -6,89 +6,115 @@
 namespace common\modules\localization\modules\state\controllers;
 
 use common\modules\localization\modules\state\models\State;
-use common\modules\localization\controllers\LocalizationController;
-use common\modules\localization\modules\state\utils\StateUtil;
-use usni\UsniAdaptor;
-use usni\library\utils\ArrayUtil;
+use yii\filters\AccessControl;
+use usni\library\web\actions\CreateAction;
+use usni\library\web\actions\UpdateAction;
+use usni\library\web\actions\ViewAction;
+use usni\library\web\actions\IndexAction;
+use usni\library\web\actions\DeleteAction;
+use usni\library\web\actions\BulkDeleteAction;
+use usni\library\web\actions\BulkEditAction;
+use common\modules\localization\modules\state\dto\FormDTO;
+use common\modules\localization\modules\state\dto\GridViewDTO;
+use common\modules\localization\modules\state\business\Manager as StateBusinessManager;
 /**
  * DefaultController class file
  * 
  * @package common\modules\localization\modules\state\controllers
  */
-class DefaultController extends LocalizationController
+class DefaultController extends \usni\library\web\Controller
 {
-    use \usni\library\traits\EditViewTranslationTrait;
+    /**
+     * inheritdoc
+     */
+    public function behaviors()
+    {
+        return [
+            'access' => [
+                'class' => AccessControl::className(),
+                'rules' => [
+                    [
+                        'allow' => true,
+                        'actions' => ['index'],
+                        'roles' => ['state.manage'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['view'],
+                        'roles' => ['state.view'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['create'],
+                        'roles' => ['state.create'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['update', 'bulk-edit'],
+                        'roles' => ['state.update'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['delete', 'bulk-delete'],
+                        'roles' => ['state.delete'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['get-states-by-country'],
+                    ],
+                ],
+            ],
+        ];
+    }
     
     /**
-     * @inheritdoc
+     * inheritdoc
      */
-    protected function resolveModelClassName()
+    public function actions()
     {
-        return State::className();
-    }
-
-   /**
-     * @inheritdoc
-     */
-    protected function beforeModelSave($state)
-    {
-        if(isset($_POST['State']['country_id']) && is_array($_POST['State']['country_id']))
-        {
-            $state->country_id = $_POST['State']['country_id'][0];
-            $state->save();
-        }
-        return true;
+        return [
+            'create' => ['class' => CreateAction::className(),
+                         'modelClass' => State::className(),
+                         'updateUrl'  => 'update',
+                         'formDTOClass' => FormDTO::className(),
+                         'viewFile' => '/create'
+                        ],
+            'update' => ['class' => UpdateAction::className(),
+                         'modelClass' => State::className(),
+                         'formDTOClass' => FormDTO::className(),
+                         'viewFile' => '/update'
+                        ],
+            'index'  => ['class' => IndexAction::className(),
+                         'modelClass' => State::className(),
+                         'dtoClass' => GridViewDTO::className(),
+                         'viewFile' => '/index'
+                        ],
+            'view'   => ['class' => ViewAction::className(),
+                         'modelClass' => State::className(),
+                         'viewFile' => '/view'
+                        ],
+            'delete'   => ['class' => DeleteAction::className(),
+                           'modelClass' => State::className(),
+                           'redirectUrl'=> 'index',
+                           'permission' => 'state.deleteother'
+                        ],
+            'bulk-edit' => ['class' => BulkEditAction::className(),
+                            'modelClass' => State::className()
+                        ],
+            'bulk-delete' => ['class' => BulkDeleteAction::className(),
+                              'modelClass' => State::className()
+                        ],
+        ];
     }
     
     /**
-     * Get states by country
-     * @param type $countryId
+     * Get states by country.
+     * 
+     * @param integer $countryId
+     * @return string
      */
     public function actionGetStatesByCountry($countryId)
     {
-        $str = null;
-        $dropdownData = StateUtil::getStatesOptionByCountryId($countryId);
-        foreach($dropdownData as $id => $value)
-        {
-            $str .= "<option value='{$id}'>{$value}</option>";
-        }
-        return $str;
-    }
-    
-    /**
-     * @inheritdoc
-     */
-    public function pageTitles()
-    {
-        return [
-                    'create'         => UsniAdaptor::t('application','Create') . ' ' . State::getLabel(1),
-                    'update'         => UsniAdaptor::t('application','Update') . ' ' . State::getLabel(1),
-                    'view'           => UsniAdaptor::t('application','View') . ' ' . State::getLabel(1),
-                    'manage'         => UsniAdaptor::t('application','Manage') . ' ' . State::getLabel(2)
-               ];
-    }
-    
-    /**
-     * @inheritdoc
-     */
-    protected static function getNonPermissibleActions()
-    {
-        $actions = parent::getNonPermissibleActions();
-        return ArrayUtil::merge($actions, ['get-states-by-country']);
-    }
-    
-    /**
-     * @inheritdoc
-     */
-    protected function deleteModel($model)
-    {
-        $isAllowedToDelete = StateUtil::checkIfStateAllowedToDelete($model);
-        if(!$isAllowedToDelete)
-        {
-            $message = UsniAdaptor::t('localizationflash', 'Delete failed as this state is associated with Zone.');
-            UsniAdaptor::app()->getSession()->setFlash('deleteFailed', $message);
-            return false;
-        }
-        return parent::deleteModel($model);
+        return StateBusinessManager::getInstance()->processGetStateByCountry($countryId);
     }
 }

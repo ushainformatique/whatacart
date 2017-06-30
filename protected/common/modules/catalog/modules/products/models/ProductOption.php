@@ -5,7 +5,7 @@
  */
 namespace products\models;
 
-use usni\library\components\TranslatableActiveRecord;
+use usni\library\db\TranslatableActiveRecord;
 use usni\UsniAdaptor;
 use products\models\ProductOptionValue;
 
@@ -25,9 +25,8 @@ class ProductOption extends TranslatableActiveRecord
                     [['name', 'display_name'],                       'required'],
                     ['name',    'unique', 'targetClass' => ProductOptionTranslated::className(), 'targetAttribute' => ['name', 'language'], 'on' => 'create'],
                     ['name',    'unique', 'targetClass' => ProductOptionTranslated::className(), 'targetAttribute' => ['name', 'language'], 'filter' => ['!=', 'owner_id', $this->id], 'on' => 'update'],
-                    ['url',     'url'],
-                    [['name', 'display_name', 'type', 'url'], 'string', 'max' => 128],
-                    [['name', 'display_name', 'sort_order', 'type', 'url'],     'safe'],
+                    [['name', 'display_name', 'type'], 'string', 'max' => 128],
+                    [['name', 'display_name', 'type'],     'safe'],
                ];
 	}
     
@@ -37,7 +36,7 @@ class ProductOption extends TranslatableActiveRecord
     public function scenarios()
     {
         $scenario               = parent::scenarios();
-        $scenario['update']     = $scenario['create']     = ['name', 'display_name', 'sort_order', 'type', 'url'];
+        $scenario['update']     = $scenario['create']     = ['name', 'display_name', 'type'];
         return $scenario;
     }
     
@@ -56,10 +55,8 @@ class ProductOption extends TranslatableActiveRecord
 	{
 		$labels = [
                     'name'              => UsniAdaptor::t('products', 'Option Name'),
-                    'sort_order'        => UsniAdaptor::t('application', 'Sort Order'),
                     'display_name'      => UsniAdaptor::t('products', 'Display Name'),
                     'type'              => UsniAdaptor::t('application', 'Type'),
-                    'url'               => UsniAdaptor::t('application', 'Url')
                   ];
         return parent::getTranslatedAttributeLabels($labels);
 	}

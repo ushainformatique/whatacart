@@ -5,7 +5,7 @@
  */
 namespace products\models;
 
-use usni\library\components\TranslatableActiveRecord;
+use usni\library\db\TranslatableActiveRecord;
 use usni\UsniAdaptor;
 use products\models\ProductCategoryMapping;
 use backend\components\ExtendedTaggable;
@@ -20,8 +20,10 @@ use products\models\ProductDiscount;
 use products\models\ProductSpecial;
 use products\models\ProductTagMapping;
 use products\models\ProductImage;
-use usni\library\components\ImageManager;
 use common\modules\manufacturer\models\Manufacturer;
+use usni\library\utils\FileUploadUtil;
+use products\dao\ProductDAO;
+use productCategories\dao\ProductCategoryDAO;
 /**
  * Product Active Record
  *
@@ -29,6 +31,18 @@ use common\modules\manufacturer\models\Manufacturer;
  */
 class Product extends TranslatableActiveRecord
 {
+    use \products\traits\DownloadTrait;
+    
+    /**
+     * Type constants 
+     */
+    const TYPE_DEFAULT = 1;
+    const TYPE_DOWNLOADABLE = 2;
+    
+    //Stock options
+    const IN_STOCK          = 1;
+    const OUT_OF_STOCK      = 2;
+    
     /**
      * Default page size.
      * @var integer
@@ -42,7 +56,7 @@ class Product extends TranslatableActiveRecord
     public $uploadInstance;
 
     /**
-     * Upload File Instance.
+     * Saved image in database.
      * @var string
      */
     public $savedImage;
@@ -124,11 +138,36 @@ class Product extends TranslatableActiveRecord
     const NOTIFY_PRODUCTREVIEW    = 'productReview';
     
     /**
+     * Downloads applied on product.
+     * @var array 
+     */
+    public $downloads = [];
+    
+    /**
+     * Download options for product
+     * @var string 
+     */
+    public $download_option;
+
+
+    /**
+     * @inheritdoc
+     */
+    public function init()
+    {
+        parent::init();
+        if($this->scenario == 'create')
+        {
+            $this->type = self::TYPE_DEFAULT;
+        }
+    }
+    
+    /**
      * @inheritdoc
      */
     public function behaviors()
     {
-        $behaviors = ['class' => ExtendedTaggable::className()];
+        $behaviors = [['class' => ExtendedTaggable::className()]];
         return ArrayUtil::merge($behaviors, parent::behaviors());
     }
     
@@ -140,7 +179,7 @@ class Product extends TranslatableActiveRecord
     {
         $categoryArray  = [];
         parent::afterFind();
-        $categories = ProductUtil::getProductCategories($this->id);
+        $categories = ProductDAO::getCategories($this->id, $this->language);
         foreach ($categories as $category)
         {
             $categoryArray[$category['id']] = $category['name'];
@@ -157,7 +196,15 @@ class Product extends TranslatableActiveRecord
             }
             $this->tagNames = implode(', ' , $tagNames);
         }
-        $this->relatedProducts = ProductUtil::getRelatedProductIds($this->id);
+        $relatedProducts        = ProductDAO::getRelatedProducts($this->id, $this->language);
+        $relatedProductsIds     = [];
+        foreach($relatedProducts as $relatedProduct)
+        {
+            $relatedProductsIds[] = $relatedProduct['id'];
+        }
+        $this->relatedProducts  = $relatedProductsIds;
+        $this->downloads        = $this->getDownloadIds($this->id);
+        $this->download_option  = $this->getDownloadOption($this->id);
     }
 
     /**
@@ -174,44 +221,22 @@ class Product extends TranslatableActiveRecord
                             'model'             => $this, 
                             'attribute'         => 'image', 
                             'uploadInstance'    => null, 
-                            'savedFile'         => null
+                            'savedFile'         => null,
+                            'createThumbnail'   => true
                           ];
-                $fileManagerInstance = new ImageManager($config);
+                $fileManagerInstance = UsniAdaptor::app()->assetManager->getResourceManager('image', $config);
+                $fileManagerInstance->delete();
+                //Delete 50_50 image as well on index page
+                $config['thumbWidth']   = 50;
+                $config['thumbHeight']  = 50;
+                $fileManagerInstance = UsniAdaptor::app()->assetManager->getResourceManager('image', $config);
                 $fileManagerInstance->delete();
             }
-            //Delete productCategory
-            ProductCategoryMapping::deleteAll('product_id = :pid', [':pid' => $this->id]);
-            //Delete related product
-            ProductRelatedProductMapping::deleteAll('product_id = :pid', [':pid' => $this->id]);
-            //Delete tags
-            ProductTagMapping::deleteAll('product_id = :pid', [':pid' => $this->id]);
-            //Delete product attribute mapping
-            ProductAttributeMapping::deleteAll('product_id = :pid', [':pid' => $this->id]);
-            //Delete product attribute mapping
-            ProductOptionMapping::deleteAll('product_id = :pid', [':pid' => $this->id]);
-            //Delete product images
-            $prImages = $this->productImages;
-            if(!empty($prImages))
+            //Delete product images.
+            foreach($this->productImages as $productImage)
             {
-                foreach($prImages as $prImage)
-                {
-                    $prImage->delete();
-                }
+                $productImage->delete();
             }
-            //Delete product reviews
-            $prReviews = $this->productReviews;
-            if(!empty($prReviews))
-            {
-                foreach($prReviews as $prReview)
-                {
-                    $prReview->delete();
-                }
-            }
-            //Delete product discount
-            ProductDiscount::deleteAll('product_id = :pid', [':pid' => $this->id]);
-            
-            //Delete product special
-            ProductSpecial::deleteAll('product_id = :pid', [':pid' => $this->id]);
             return true;
         }
         return false;
@@ -231,9 +256,15 @@ class Product extends TranslatableActiveRecord
         else
         {
             return [
-                [['name', 'alias', 'sku', 'price', 'quantity', 'categories'], 'required', 'except'=>'search'],
+                [['name', 'alias', 'sku', 'price', 'quantity', 'categories', 'type'], 'required', 'except'=>'search'],
                 [['image'], 'required', 'on' => 'create'],
-                [['uploadInstance'], 'image', 'skipOnEmpty' => true, 'extensions' => 'jpg, png, gif, jpeg'],
+                ['downloads', 'required', 
+                    'whenClient' => "function(attribute, value){
+                        return $('#product-type').val() === '2';
+                     }", 
+                    'when' => [$this, 'validateDownloads'], 
+                    'message' => UsniAdaptor::t('products', 'Downloads are required')],
+                [['image', 'uploadInstance'], 'image', 'skipOnEmpty' => true, 'extensions' => 'jpg, png, gif, jpeg'],
                 ['name', 'unique', 'targetClass' => ProductTranslated::className(), 'targetAttribute' => ['name', 'language'], 'on' => 'create'],
                 ['alias', 'unique', 'targetClass' => ProductTranslated::className(), 'targetAttribute' => ['alias', 'language'], 'on' => 'create'],
                 ['name', 'unique', 'targetClass' => ProductTranslated::className(), 'targetAttribute' => ['name', 'language'], 'filter' => ['!=', 'owner_id', $this->id], 'on' => 'update'],
@@ -245,11 +276,15 @@ class Product extends TranslatableActiveRecord
                 ['alias',                                            'string', 'max' => 128],
                 ['model',                                            'string', 'max' => 64],
                 ['relatedProducts',                                  'safe'],
+                ['type',                                             'default', 'value' => self::TYPE_DEFAULT],
+                ['hits',                                             'number'],
+                [['length', 'width', 'height', 'weight'], 'number'],
                 [['location', 'length', 'width', 'height', 'date_available', 'weight', 'length_class', 'weight_class'],  'safe'],
                 [['name', 'description', 'metakeywords', 'metadescription', 'tagNames', 'minimum_quantity', 
                   'subtract_stock', 'requires_shipping', 'manufacturer', 'alias', 'categories', 
                   'image', 'is_featured', 'relatedProducts', 'model', 'sku', 'price', 'quantity', 'status', 'tax_class_id', 'stock_status', 
-                  'length_class', 'weight_class', 'buy_price', 'initial_quantity'], 'safe'],
+                  'length_class', 'weight_class', 'buy_price', 'initial_quantity', 'type', 'downloads', 'hits', 'upc',  'ean', 'jan', 'isbn', 
+                  'mpn', 'download_option'], 'safe'],
             ];
         }
     }
@@ -273,7 +308,8 @@ class Product extends TranslatableActiveRecord
                                                             'alias', 'categories', 'image', 'is_featured', 'relatedProducts',
                                                             'model', 'sku', 'price', 'quantity', 'status', 'tax_class_id', 'stock_status', 'location', 
                                                             'length', 'width', 'height', 'date_available', 'weight', 'length_class', 'weight_class',
-                                                            'buy_price', 'initial_quantity'];
+                                                            'buy_price', 'initial_quantity', 'downloads', 'type', 'hits', 'upc',  'ean', 'jan', 
+                                                            'isbn', 'mpn', 'download_option'];
             $scenarios['bulkedit']    = ['status'];
             $scenarios['search']      = ['name', 'category_id'];
             $scenarios['deleteimage'] = ['image'];
@@ -323,75 +359,6 @@ class Product extends TranslatableActiveRecord
     }
 
     /**
-     * Renders categories for the product.
-     * @return string
-     */
-    public function renderCategories()
-    {
-        $categories = $this->categoriesList;
-        if(empty($categories))
-        {
-            $rows           = ProductUtil::getProductCategories($this->id);
-            $categoryArray  = [];
-            foreach ($rows as $row)
-            {
-                $categoryArray[] = $row['name'];
-            }
-            if (count($categoryArray) > 0)
-            {
-                return implode(',', $categoryArray);
-            }
-            else
-            {
-                return '';
-            }
-        }
-        else
-        {
-            return implode(',', array_values($categories));
-        }
-    }
-
-    /**
-     * Renders relatedProduct for the product.
-     * @return string
-     */
-    public function renderRelatedProducts()
-    {
-        $rows = self::getRelatedProduct($this->id);
-        $relatedProductsArray = array();
-        foreach ($rows as $row)
-        {
-            $relatedProduct = Product::findOne($row['related_product_id']);
-            if ($relatedProduct != null)
-            {
-                $relatedProductsArray[] = $relatedProduct->name;
-            }
-        }
-        if (count($relatedProductsArray) > 0)
-        {
-            return implode(', ', $relatedProductsArray);
-        }
-        else
-        {
-            return '';
-        }
-    }
-
-    /**
-     * Get categories for the product.
-     * @param integer $id ID of product Category.
-     * @return array
-     */
-    public static function getRelatedProduct($id)
-    {
-        $tableName = ProductRelatedProductMapping::tableName();
-        $relatedProduct = UsniAdaptor::db()->createCommand('select * FROM ' . $tableName . ' WHERE product_id = :productid')->bindValue(':productid', $id)
-                          ->queryAll();
-        return $relatedProduct;
-    }
-
-    /**
      * @inheritdoc
      */
     public function afterSave($insert, $changedAttributes)
@@ -403,11 +370,12 @@ class Product extends TranslatableActiveRecord
         }
         if ($this->scenario == 'create' || $this->scenario == 'update')
         {
-            ProductUtil::saveProductCategoryMapping($this);
-            ProductUtil::saveProductDiscounts($this);
-            ProductUtil::saveProductSpecials($this);
-            ProductUtil::saveRelatedProductsMapping($this);
-            ProductUtil::saveProductImages($this);
+            $this->saveProductCategoryMapping();
+            $this->saveProductDiscounts();
+            $this->saveProductSpecials();
+            $this->saveRelatedProductsMapping();
+            $this->saveProductImages();
+            $this->saveDownloadMapping();
         }
     }
     
@@ -492,5 +460,199 @@ class Product extends TranslatableActiveRecord
     public function getProductManufacturer()
     {
         return $this->hasOne(Manufacturer::className(), ['id' => 'manufacturer']);
+    }
+    
+    /**
+     * Validate downloads
+     * @param Product $model
+     * @param string $attribute
+     * @return boolean
+     */
+    public function validateDownloads($model, $attribute)
+    {
+        return $model->type == self::TYPE_DOWNLOADABLE;
+    }
+    
+    /**
+     * @inheritdoc
+     */
+    public function beforeSave($insert)
+    {
+        if(parent::beforeSave($insert))
+        {
+            if($this->type == self::TYPE_DOWNLOADABLE)
+            {
+                $this->requires_shipping = 0;
+            }
+            return true;
+        }
+        return false;
+    }
+    
+    /**
+     * Save product category mapping
+     * @return void
+     */
+    public function saveProductCategoryMapping()
+    {
+        $data = [];
+        $data['product_id']  = $this->id;
+        $data['category_id'] = $this->categories;
+        if(is_array($data['category_id']))
+        {
+            $productCategoryMappingData = [];
+            foreach ($data['category_id'] as $catId)
+            {
+                $productCategory                = ProductCategoryDAO::getById($catId, $this->language);
+                $productCategoryMappingData[]   = [$this->id, $catId, $productCategory['data_category_id'], $this->getUserId(), date('Y-m-d H:i:s'), $this->getUserId(), date('Y-m-d H:i:s')];
+            }
+            $columns    = ['product_id', 'category_id', 'data_category_id', 'created_by', 'created_datetime', 'modified_by', 'modified_datetime'];
+            $table      = UsniAdaptor::tablePrefix() . 'product_category_mapping';
+            try
+            {
+                UsniAdaptor::app()->db->createCommand()->batchInsert($table, $columns, $productCategoryMappingData)->execute();
+            }
+            catch (\yii\db\Exception $e)
+            {
+                throw $e;
+            }
+        }
+        else
+        {
+            $productCategoryMapping = new ProductCategoryMapping(['scenario' => 'create']);
+            $productCategoryMapping->product_id         = $this->id;
+            $productCategoryMapping->category_id        = $this->categories;
+            $productCategory                            = ProductCategoryDAO::getById($this->categories, $this->language);
+            $productCategoryMapping->data_category_id   = $productCategory['data_category_id'];
+            $productCategoryMapping->save();
+        }
+    }
+    
+    /**
+     * Save product discounts
+     * @return void
+     */
+    public function saveProductDiscounts()
+    {
+        ProductDiscount::deleteAll('product_id = :pid', [':pid' => $this->id]);
+        $discounts  = $this->discounts;
+        if(!empty($discounts))
+        {
+            foreach($discounts as $discount)
+            {
+                $prDiscount = new ProductDiscount(['scenario' => 'create']);
+                $prDiscount->setAttributes($discount);
+                $prDiscount->product_id = $this->id;
+                $prDiscount->save();
+            }
+        }
+    }
+    
+    /**
+     * Save product specials
+     * @return void
+     */
+    public function saveProductSpecials()
+    {
+        ProductSpecial::deleteAll('product_id = :pid', [':pid' => $this->id]);
+        $specials  = $this->specials;
+        if(!empty($specials))
+        {
+            foreach($specials as $special)
+            {
+                $prSpecial = new ProductSpecial(['scenario' => 'create']);
+                $prSpecial->setAttributes($special);
+                $prSpecial->product_id = $this->id;
+                $prSpecial->save();
+            }
+        }
+    }
+    
+    /**
+     * Saves related products mapping
+     */
+    public function saveRelatedProductsMapping()
+    {
+        ProductRelatedProductMapping::deleteAll('product_id = :pid', [':pid' => $this->id]);
+        if(!empty($this->relatedProducts) && is_array($this->relatedProducts))
+        {
+            $relatedProductMappingData =  [];
+            foreach ($this->relatedProducts as $relatedProductId)
+            {
+                $relatedProductMappingData[] = [$this->id, $relatedProductId, $this->getUserId(), date('Y-m-d H:i:s'), $this->getUserId(), date('Y-m-d H:i:s')];
+            }
+            $table      = UsniAdaptor::tablePrefix() . 'product_related_product_mapping';
+            $columns    = ['product_id', 'related_product_id', 'created_by', 'created_datetime', 'modified_by', 'modified_datetime'];
+            try
+            {
+                UsniAdaptor::app()->db->createCommand()->batchInsert($table, $columns, $relatedProductMappingData)->execute();
+            }
+            catch (\yii\db\Exception $e)
+            {
+                throw $e;
+            }
+        }
+    }
+    
+    /**
+     * Save product images.
+     * @return void
+     */
+    public function saveProductImages()
+    {
+        $images             = $this->images;
+        if(!empty($images))
+        {
+            foreach($images as $index => $productImage)
+            {
+                $savedFile  = null;
+                if($productImage->isNewRecord)
+                {
+                    $productImage->product_id = $this->id;
+                }
+                else
+                {
+                    $productImage->scenario = 'update';
+                    $savedFile = $productImage->image;
+                }
+                if($productImage->save())
+                {
+                    $config = [
+                        'model'             => $productImage, 
+                        'attribute'         => 'image', 
+                        'uploadInstance'    => $productImage->uploadInstance,
+                        'savedFile'         => $savedFile,
+                        'createThumbnail'   => true
+                      ];
+                    FileUploadUtil::save('image', $config);
+                }
+            }
+        }   
+    }
+    
+    /**
+     * Saves related downloads mapping
+     */
+    public function saveDownloadMapping()
+    {
+        ProductDownloadMapping::deleteAll('product_id = :pid', [':pid' => $this->id]);
+        if(!empty($this->downloads) && is_array($this->downloads))
+        {
+            $relatedDownloadMappingData =  [];
+            foreach ($this->downloads as $downloadId)
+            {
+                $relatedDownloadMappingData[] = [$this->id, $downloadId, $this->download_option, $this->getUserId(), date('Y-m-d H:i:s'), $this->getUserId(), date('Y-m-d H:i:s')];
+            }
+            $table      = UsniAdaptor::tablePrefix() . 'product_download_mapping';
+            $columns    = ['product_id', 'download_id', 'download_option', 'created_by', 'created_datetime', 'modified_by', 'modified_datetime'];
+            try
+            {
+                UsniAdaptor::app()->db->createCommand()->batchInsert($table, $columns, $relatedDownloadMappingData)->execute();
+            }
+            catch (\yii\db\Exception $e)
+            {
+                throw $e;
+            }
+        }
     }
 }

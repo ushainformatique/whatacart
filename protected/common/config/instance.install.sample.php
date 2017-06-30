@@ -5,23 +5,10 @@
  */
 $installed          = false;
 $siteName           = 'My Application';
-$adminTheme         = 'bootstrap';
-$frontTheme         = 'classic';
 $dsn                = 'mysql:host=localhost;port=3306;dbname=demo;';
-$unitTestDsn        = 'mysql:host=localhost;port=3306;dbname=demo-test;';
-$functionalTestDsn  = 'mysql:host=localhost;port=3306;dbname=demo-functional-test;';
 $username           = 'demo';
 $password           = 'demo';
 $debug              = false;
-$environment        = 'prod';
+$environment        = 'production';
 $vendorPath         = '.';
 $backendVendorPath  = '..';
-//App details
-$frontAppId         = 'front-app';
-$frontAppName       = 'Front Application';
-$frontDisplayName   = 'Front Application';
-$backendAppId         = 'backend-app';
-$backendAppName       = 'Backend Application';
-$backendDisplayName   = 'Backend Application';
-$poweredByUrl         = '#';
-$poweredByName        = 'Company Name';

@@ -6,68 +6,138 @@
 namespace products\controllers;
 
 use products\models\ProductAttribute;
-use common\modules\catalog\controllers\BaseController;
 use usni\UsniAdaptor;
-use products\models\ProductAttributeMapping;
-use products\views\AssignProductAttributeEditView;
-use products\models\Product;
-use usni\library\utils\PermissionUtil;
+use usni\library\web\actions\CreateAction;
+use usni\library\web\actions\UpdateAction;
+use products\dto\ProductAttributeFormDTO;
+use products\business\ProductAttributeManager;
+use yii\filters\AccessControl;
+use usni\library\web\actions\IndexAction;
+use usni\library\web\actions\DeleteAction;
+use usni\library\web\actions\BulkDeleteAction;
+use usni\library\web\actions\ViewAction;
+use products\business\Manager as ProductBusinessManager;
+use yii\base\InvalidParamException;
 use yii\web\ForbiddenHttpException;
-use products\utils\ProductUtil;
+use products\dto\AssignAttributeDTO;
+use products\models\ProductAttributeMapping;
+use products\dao\ProductDAO;
 /**
  * AttributeController class file.
+ * 
  * @package products\controllers
  */
-class AttributeController extends BaseController
+class AttributeController extends \usni\library\web\Controller
 {
-    use \usni\library\traits\EditViewTranslationTrait;
+    /**
+     * inheritdoc
+     */
+    public function behaviors()
+    {
+        return [
+            'access' => [
+                'class' => AccessControl::className(),
+                'rules' => [
+                    [
+                        'allow' => true,
+                        'actions' => ['index'],
+                        'roles' => ['product.manage'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['view'],
+                        'roles' => ['product.view'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['create'],
+                        'roles' => ['product.create'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['update', 'assign', 'save-assignment', 'modify'],
+                        'roles' => ['product.update'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['delete', 'bulk-delete', 'remove'],
+                        'roles' => ['product.delete'],
+                    ]
+                ],
+            ],
+        ];
+    }
     
     /**
-     * @inheritdoc
+     * inheritdoc
      */
-    protected function resolveModelClassName()
+    public function actions()
     {
-        return ProductAttribute::className();
+        $managerConfig = ['class'    => ProductAttributeManager::className()];
+        return [
+            'create' => ['class' => CreateAction::className(),
+                         'modelClass' => ProductAttribute::className(),
+                         'updateUrl'  => 'update',
+                         'managerConfig' => $managerConfig,
+                         'viewFile' => '/productattribute/create',
+                         'formDTOClass' => ProductAttributeFormDTO::className()
+                        ],
+            'update' => ['class' => UpdateAction::className(),
+                         'modelClass' => ProductAttribute::className(),
+                         'managerConfig' => $managerConfig,
+                         'viewFile' => '/productattribute/update',
+                         'formDTOClass' => ProductAttributeFormDTO::className()
+                        ],
+            'index'  => ['class' => IndexAction::className(),
+                         'modelClass' => ProductAttribute::className(),
+                         'viewFile' => '/productattribute/index',
+                        ],
+            'view'   => ['class' => ViewAction::className(),
+                         'modelClass' => ProductAttribute::className(),
+                         'managerConfig' => $managerConfig,
+                         'viewFile' => '/productattribute/view'
+                        ],
+            'delete'   => ['class' => DeleteAction::className(),
+                         'modelClass' => ProductAttribute::className(),
+                         'redirectUrl'=> 'index',
+                         'permission' => 'product.deleteother'
+                        ],
+            'bulk-delete' => ['class' => BulkDeleteAction::className(),
+                              'modelClass' => ProductAttribute::className(),
+                              'managerConfig' => $managerConfig,
+                        ],
+        ];
     }
     
     /**
      * Assign attributes to product
-     * @param int $product_id
+     * @param int $productId
      * @return string
      */
-    public function actionProductAttributes($product_id)
+    public function actionAssign($productId)
     {
-        if(ProductUtil::checkIfProductAllowedToPerformAction($product_id) == false)
+        $manager        = new ProductAttributeManager();
+        $isValidProduct = ProductBusinessManager::getInstance()->isValidProductId($productId);
+        if(!$isValidProduct)
         {
-            throw new \yii\web\NotFoundHttpException();
+            throw new InvalidParamException("Invalid product id $productId");
         }
-        $product    = Product::findOne($product_id);
-        $user       = UsniAdaptor::app()->user->getUserModel();
-        if(PermissionUtil::doesUserHavePermissionToPerformAction($product, $user, 'product.updateother') == true)
+        $product        = ProductDAO::getById($productId, UsniAdaptor::app()->languageManager->selectedLanguage);
+        $isPermissible  = true;
+        if($product['created_by'] != UsniAdaptor::app()->user->getId())
         {
-            $breadcrumbs   = [
-                                    [
-                                        'label' => UsniAdaptor::t('application', 'Manage') . ' ' . Product::getLabel(2),
-                                        'url'   => UsniAdaptor::createUrl('/catalog/products/default/manage')
-                                    ],
-                                    [
-                                        'label' => $product->name,
-                                        'url'   => UsniAdaptor::createUrl('/catalog/products/default/view', ['id' => $product_id])
-                                    ],
-                                    [
-                                        'label' => UsniAdaptor::t('application', 'Manage') . ' ' . ProductAttribute::getLabel(2)
-                                    ]
-                             ];
-            $this->getView()->params['breadcrumbs']  = $breadcrumbs;
-            $model              = new ProductAttributeMapping();
-            $model->product_id  = $product_id;
-            $assignView         = new AssignProductAttributeEditView(['model' => $model]);
-            $content            = $this->renderColumnContent([$assignView]);
-            return $this->render($this->getDefaultLayout(), array('content' => $content));
+            $isPermissible      = UsniAdaptor::app()->user->can('product.updateother');
+        }
+        if(!$isPermissible)
+        {
+            throw new ForbiddenHttpException(\Yii::t('yii','You are not authorized to perform this action.'));
         }
         else
         {
-            throw new ForbiddenHttpException(\Yii::t('yii','You are not authorized to perform this action.'));
+            $attributeDTO  = new AssignAttributeDTO();
+            $attributeDTO->setProduct($product);
+            $manager->processAssignAttributes($productId, $attributeDTO);
+            return $this->render('/assignAttributeEdit', ['formDTO' => $attributeDTO]);
         }
     }
     
@@ -75,97 +145,70 @@ class AttributeController extends BaseController
      * Assign product attribute.
      * @return void
      */
-    public function actionAssign()
+    public function actionSaveAssignment()
     {
-        $productId                      = $_POST['ProductAttributeMapping']['product_id'];
-        $attributeId                    = $_POST['ProductAttributeMapping']['attribute_id'];
-        $productAttributeMapping        = ProductAttributeMapping::find()->where('attribute_id = :aid AND product_id = :pid', 
-                                                                                            [
-                                                                                                ':aid' => $attributeId,
-                                                                                                ':pid' => $productId
-                                                                                            ])->one();
-        if($productAttributeMapping == null)
-        {
-            $productAttributeMapping = new ProductAttributeMapping();
-        }
-        $productAttributeMapping->attributes   = $_POST['ProductAttributeMapping'];   
-        $productAttributeMapping->save();
+        $manager    = new ProductAttributeManager();
+        $manager->processSaveAttributeAssignment(UsniAdaptor::app()->request->post('ProductAttributeMapping'));
         echo '';
     }
     
     /**
      * Modify attribute value
-     * @param int $product_id
-     * @param int $attribute_id
+     * @param int $productId
+     * @param int $attributeId
      * @return string
      */
-    public function actionModify($product_id, $attribute_id)
+    public function actionModify($productId, $attributeId)
     {
-        if(ProductUtil::checkIfProductAllowedToPerformAction($product_id) == false)
+        $manager        = new ProductAttributeManager();
+        $isValidProduct = ProductBusinessManager::getInstance()->isValidProductId($productId);
+        if(!$isValidProduct)
         {
-            throw new \yii\web\NotFoundHttpException();
+            throw new InvalidParamException("Invalid product id $productId");
         }
-        $product       = Product::findOne($product_id);
-        $breadcrumbs   = [
-                                [
-                                    'label' => UsniAdaptor::t('application', 'Manage') . ' ' . Product::getLabel(2),
-                                    'url'   => UsniAdaptor::createUrl('/catalog/products/default/manage')
-                                ],
-                                [
-                                    'label' => $product->name,
-                                    'url'   => UsniAdaptor::createUrl('/catalog/products/default/view', ['id' => $product_id])
-                                ],
-                                [
-                                    'label' => UsniAdaptor::t('application', 'Manage') . ' ' . ProductAttribute::getLabel(2)
-                                ]
-                         ];
-        $this->getView()->params['breadcrumbs']  = $breadcrumbs;
-        $productAttributeMapping    = ProductAttributeMapping::getMapping($product_id, $attribute_id);
-        $assignView             = new AssignProductAttributeEditView(['model' => $productAttributeMapping]);
-        $content                = $this->renderColumnContent([$assignView]);
-        return $this->render($this->getDefaultLayout(), array('content' => $content));
+        $isPermissible  = true;
+        $product        = ProductDAO::getById($productId, UsniAdaptor::app()->languageManager->selectedLanguage);
+        if($product['created_by'] != UsniAdaptor::app()->user->getId())
+        {
+            $isPermissible      = UsniAdaptor::app()->user->can('product.updateother');
+        }
+        if(!$isPermissible)
+        {
+            throw new ForbiddenHttpException(\Yii::t('yii','You are not authorized to perform this action.'));
+        }
+        else
+        {
+            $attributeDTO  = new AssignAttributeDTO();
+            $attributeDTO->setProduct($product);
+            $manager->processEditAssignAttributes($productId, $attributeId, $attributeDTO);
+            return $this->render('/assignAttributeEdit', ['formDTO' => $attributeDTO]);
+        }
     }
     
     /**
      * Remove attribute value
-     * @param int $product_id
-     * @param int $attribute_id
+     * @param int $productId
+     * @param int $attributeId
      * @return string
      */
-    public function actionRemove($product_id, $attribute_id)
+    public function actionRemove($productId, $attributeId)
     {
-        if(ProductUtil::checkIfProductAllowedToPerformAction($product_id) == false)
+        $product        = ProductDAO::getById($productId, UsniAdaptor::app()->languageManager->selectedLanguage);
+        $isPermissible  = true;
+        if($product['created_by'] != UsniAdaptor::app()->user->getId())
         {
-            throw new \yii\web\NotFoundHttpException();
+            $isPermissible      = UsniAdaptor::app()->user->can('product.deleteother');
         }
-        $productAttributeMapping    = ProductAttributeMapping::getMapping($product_id, $attribute_id);
-        $redirectUrl                = ['/catalog/products/attribute/product-attributes', 'product_id' => $product_id];
-        $productAttributeMapping->delete();
-        return $this->redirect($redirectUrl);
-    }
-    
-    /**
-     * @inheritdoc
-     */
-    public function pageTitles()
-    {
-        return [
-                    'create'                => UsniAdaptor::t('application','Create') . ' ' . ProductAttribute::getLabel(1),
-                    'update'                => UsniAdaptor::t('application','Update') . ' ' . ProductAttribute::getLabel(1),
-                    'view'                  => UsniAdaptor::t('application','View') . ' ' . ProductAttribute::getLabel(1),
-                    'manage'                => UsniAdaptor::t('application','Manage') . ' ' . ProductAttribute::getLabel(2),
-                    'product-attributes'    => UsniAdaptor::t('application','Manage') . ' ' . ProductAttribute::getLabel(2)
-               ];
-    }
-    
-    /**
-     * @inheritdoc
-     */
-    protected function getActionToPermissionsMap()
-    {
-        $permissionsMap                         = parent::getActionToPermissionsMap();
-        $permissionsMap['product-attributes']   = 'product.update';
-        $permissionsMap['assign']               = 'product.update';
-        return $permissionsMap;
+        if(!$isPermissible)
+        {
+            throw new ForbiddenHttpException(\Yii::t('yii','You are not authorized to perform this action.'));
+        }
+        else
+        {
+            $productAttributeMapping    = ProductAttributeMapping::getMapping($productId, $attributeId);
+            $redirectUrl                = ['/catalog/products/attribute/assign', 'productId' => $productId];
+            $productAttributeMapping->delete();
+            return $this->redirect($redirectUrl);
+        }
     }
 }

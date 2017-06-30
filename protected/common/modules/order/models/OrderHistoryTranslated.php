@@ -5,12 +5,12 @@
  */
 namespace common\modules\order\models;
     
-use usni\library\components\UiSecuredActiveRecord;
+use usni\library\db\ActiveRecord;
 /**
  * OrderHistoryTranslated class file
  * @package common\modules\order\models
  */
-class OrderHistoryTranslated extends UiSecuredActiveRecord
+class OrderHistoryTranslated extends ActiveRecord
 {
     /**
      * @inheritdoc

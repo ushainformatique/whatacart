@@ -5,14 +5,14 @@
  */
 namespace common\modules\localization\modules\stockstatus;
 
-use usni\library\components\UiSecuredModule;
+use usni\library\components\SecuredModule;
 use usni\UsniAdaptor;
 /**
  * Provides functionality specific to the stockstatus.
  * 
  * @package common\modules\localization\modules\stockstatus
  */
-class Module extends UiSecuredModule
+class Module extends SecuredModule
 {
     /**
      * Overrides to register translations.

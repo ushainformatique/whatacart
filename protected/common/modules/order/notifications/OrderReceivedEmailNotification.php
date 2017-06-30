@@ -6,24 +6,24 @@
 namespace common\modules\order\notifications;
 
 use common\modules\order\models\Order;
-use usni\library\components\UiEmailNotification;
+use usni\library\notifications\EmailNotification;
 use common\modules\order\models\OrderAddressDetails;
 use usni\library\modules\users\models\Address;
 use usni\library\modules\notification\models\Notification;
 use usni\library\utils\DateTimeUtil;
-use common\modules\order\utils\OrderUtil;
-use common\modules\order\views\front\OrderEmailProductSubView;
+use common\modules\order\widgets\front\OrderEmailProductSubView;
 use usni\UsniAdaptor;
-use common\modules\localization\modules\orderstatus\utils\OrderStatusUtil;
-use common\modules\shipping\utils\ShippingUtil;
-use common\modules\payment\utils\PaymentUtil;
+use common\modules\shipping\dao\ShippingDAO;
+use common\modules\order\dao\OrderDAO;
 /**
  * OrderReceivedEmailNotification class file.
  *
  * @package common\modules\order\notifications
  */
-class OrderReceivedEmailNotification extends UiEmailNotification
+class OrderReceivedEmailNotification extends EmailNotification
 {
+    use \common\modules\localization\modules\orderstatus\traits\OrderStatusTrait;
+    use \common\modules\payment\traits\PaymentTrait;
     /**
      * Order id
      * @var int
@@ -73,10 +73,10 @@ class OrderReceivedEmailNotification extends UiEmailNotification
                     '{{orderProducts}}'         => $this->getOrderProducts(), 
                     '{{orderId}}'               => $this->order['unique_id'], 
                     '{{dateAdded}}'             => DateTimeUtil::getFormattedDateTime($this->order['created_datetime']),
-                    '{{paymentMethod}}'         => PaymentUtil::getPaymentMethodName($this->order['payment_method']), 
+                    '{{paymentMethod}}'         => $this->getPaymentMethodName($this->order['payment_method']), 
                     '{{email}}'                 => $this->order['email'], 
                     '{{telephone}}'             => $this->order['mobilephone'], 
-                    '{{orderStatus}}'           => OrderStatusUtil::getLabel($this->order['status']), 
+                    '{{orderStatus}}'           => $this->getOrderStatusLabel($this->order['status']), 
                     '{{paymentAddress}}'        => $this->getBillingAddress(), 
                     '{{shippingAddressTitle}}'  => $shippingAddressTitle, 
                     '{{shippingAddress}}'       => $shippingContent, 
@@ -100,8 +100,12 @@ class OrderReceivedEmailNotification extends UiEmailNotification
      */
     protected function getOrderProducts()
     {
-        $subView    = new OrderEmailProductSubView(['order' => $this->order]);
-        return $subView->render();
+        $orderProducts  = OrderDAO::getOrderProducts($this->order['id'], UsniAdaptor::app()->languageManager->selectedLanguage, true);
+        return OrderEmailProductSubView::widget([
+                                            'language' => UsniAdaptor::app()->languageManager->selectedLanguage,
+                                            'order'    => $this->order,
+                                            'orderProducts' => $orderProducts
+                                        ]);
     }
     
     /**
@@ -110,7 +114,7 @@ class OrderReceivedEmailNotification extends UiEmailNotification
      */
     protected function getBillingAddress()
     {
-        $billingAddress = OrderUtil::getOrderAddress($this->order['id'], Address::TYPE_BILLING_ADDRESS);
+        $billingAddress = OrderDAO::getOrderAddress($this->order['id'], Address::TYPE_BILLING_ADDRESS);
         return $this->getConcatenatedAddress($billingAddress);
     }
     
@@ -120,7 +124,7 @@ class OrderReceivedEmailNotification extends UiEmailNotification
      */
     protected function getShippingAddress()
     {
-        $billingAddress = OrderUtil::getOrderAddress($this->order['id'], Address::TYPE_SHIPPING_ADDRESS);
+        $billingAddress = OrderDAO::getOrderAddress($this->order['id'], Address::TYPE_SHIPPING_ADDRESS);
         return $this->getConcatenatedAddress($billingAddress);
     }
     
@@ -146,7 +150,7 @@ class OrderReceivedEmailNotification extends UiEmailNotification
         $shippingContent        = null;
         if($this->order['shipping_fee'] > 0)
         {
-            $shippingMethodName = ShippingUtil::getShippingMethodName($this->order['shipping']);
+            $shippingMethodName = ShippingDAO::getShippingMethodName($this->order['shipping'], $this->language);
             $shippingAddress = $this->getShippingAddress($this->order);
             $shippingContent = '<td style="font-size: 12px;	border-right: 1px solid #DDDDDD; border-bottom: 1px solid #DDDDDD; text-align: left; padding: 7px;">' . $shippingAddress . '</td>';
             $shippingAddressTitle = '<td style="font-size: 12px; border-right: 1px solid #DDDDDD; border-bottom: 1px solid #DDDDDD; background-color: #EFEFEF; font-weight: bold; text-align: left; padding: 7px; color: #222222;">' . UsniAdaptor::t('order', 'Shipping Address') . '</td>';
@@ -155,4 +159,3 @@ class OrderReceivedEmailNotification extends UiEmailNotification
         return [$shippingAddressTitle, $shippingMethod, $shippingContent];
     }
 }
-?>

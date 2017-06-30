@@ -1,6 +1,5 @@
 <?php
 use usni\UsniAdaptor;
-use products\utils\ProductUtil;
 ?>
 <table class="table table-striped table-bordered">
     <thead>
@@ -22,9 +21,9 @@ use products\utils\ProductUtil;
                 <td><?php echo $orderProduct['sku']; ?></td>
                 <td><?php echo $orderProduct['name']; ?></td>
                 <td><?php echo $orderProduct['quantity']; ?></td>
-                <td><?php echo ProductUtil::getPriceWithSymbol($orderProduct['price'], $currencyCode); ?></td>
-                <td><?php echo ProductUtil::getPriceWithSymbol($orderProduct['tax'], $currencyCode); ?></td>
-                <td><?php echo ProductUtil::getPriceWithSymbol($orderProduct['total'], $currencyCode); ?></td>
+                <td><?php echo $this->getPriceWithSymbol($orderProduct['price'], $currencySymbol); ?></td>
+                <td><?php echo $this->getPriceWithSymbol($orderProduct['tax'], $currencySymbol); ?></td>
+                <td><?php echo $this->getPriceWithSymbol($orderProduct['total'], $currencySymbol); ?></td>
             </tr>
             <?php
         }

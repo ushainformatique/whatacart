@@ -5,13 +5,13 @@
  */
 namespace common\modules\localization\modules\city;
 
-use usni\library\components\UiSecuredModule;
+use usni\library\components\SecuredModule;
 use usni\UsniAdaptor;
 /**
  * Provides functionality specific to the city.
  * @package localization\modules\language
  */
-class Module extends UiSecuredModule
+class Module extends SecuredModule
 {
     /**
      * Overrides to register translations.

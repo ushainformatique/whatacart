@@ -1,10 +1,11 @@
 <?php
 use usni\UsniAdaptor;
+use usni\library\utils\Html;
 ?>
 <table style="display: none;">
     <tr class="discount-value-row-dummy">
         <td class="text-left">
-            <?php echo $dropdown; ?>
+            <?php echo Html::dropDownList('ProductDiscount[##rowCount##][group_id_dummy]', null, $groups, ['class' => 'form-control dummy-discount']); ?>
         </td>
         <td class="text-right">
             <input type="text" name="ProductDiscount[##rowCount##][quantity]" value="" placeholder="<?php echo UsniAdaptor::t('products', 'Quantity');?>" class="form-control">

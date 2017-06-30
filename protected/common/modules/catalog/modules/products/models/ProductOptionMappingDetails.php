@@ -5,13 +5,13 @@
  */
 namespace products\models;
 
-use usni\library\components\UiSecuredActiveRecord;
+use usni\library\db\ActiveRecord;
 use usni\UsniAdaptor;
 /**
  * ProductOptionMapping active record.
  * @package products\models
  */
-class ProductOptionMappingDetails extends UiSecuredActiveRecord
+class ProductOptionMappingDetails extends ActiveRecord
 {
     /**
      * @inheritdoc

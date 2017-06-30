@@ -5,12 +5,13 @@
  */
 namespace taxes\models;
     
-use usni\library\components\UiSecuredActiveRecord;
+use usni\library\db\ActiveRecord;
 /**
- * ZoneTranslated class file
+ * ZoneTranslated class file.
+ * 
  * @package taxes\models;
  */
-class ZoneTranslated extends UiSecuredActiveRecord
+class ZoneTranslated extends ActiveRecord
 {
     /**
      * @inheritdoc
@@ -20,4 +21,3 @@ class ZoneTranslated extends UiSecuredActiveRecord
         return $this->hasOne(Zone::className(), ['id' => 'owner_id']);
     }
 }
-?>

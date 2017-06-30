@@ -5,13 +5,13 @@
  */
 namespace products\models;
 
-use usni\library\components\UiSecuredActiveRecord;;
+use usni\library\db\ActiveRecord;;
 /**
  * ProductCategoryMapping active record.
  *
  * @package products\models
  */
-class ProductCategoryMapping extends UiSecuredActiveRecord
+class ProductCategoryMapping extends ActiveRecord
 {
     /**
      * @inheritdoc
@@ -58,5 +58,12 @@ class ProductCategoryMapping extends UiSecuredActiveRecord
     {
         return array();
     }
+    
+    /**
+     * inheritdoc
+     */
+    public function shouldAddCreatedAndModifiedFields()
+    {
+        return false;
+    }
 }
-?>

@@ -8,9 +8,10 @@ namespace customer\models;
 use usni\UsniAdaptor;
 /**
  * Contains metadata related to customer.
+ * 
  * @package customer\models
  */
-class CustomerMetadata extends \usni\library\components\UiSecuredActiveRecord
+class CustomerMetadata extends \usni\library\db\ActiveRecord
 {
     /**
      * @inheritdoc
@@ -20,4 +21,3 @@ class CustomerMetadata extends \usni\library\components\UiSecuredActiveRecord
         return UsniAdaptor::t('customer', 'Customer Metadata');
     }
 }
-?>

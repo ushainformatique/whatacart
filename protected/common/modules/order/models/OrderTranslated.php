@@ -5,12 +5,13 @@
  */
 namespace common\modules\order\models;
     
-use usni\library\components\UiSecuredActiveRecord;
+use usni\library\db\ActiveRecord;
 /**
  * OrderTranslated class file
+ * 
  * @package common\modules\order\models
  */
-class OrderTranslated extends UiSecuredActiveRecord
+class OrderTranslated extends ActiveRecord
 {
     /**
      * @inheritdoc
@@ -20,4 +21,3 @@ class OrderTranslated extends UiSecuredActiveRecord
         return $this->hasOne(Order::className(), ['id' => 'owner_id']);
     }
 }
-?>

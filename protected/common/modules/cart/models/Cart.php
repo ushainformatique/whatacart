@@ -5,17 +5,10 @@
  */
 namespace cart\models;
 
-use usni\library\utils\ArrayUtil;
 use usni\UsniAdaptor;
-use products\utils\ProductUtil;
-use products\models\ProductOptionValue;
-use cart\utils\CartUtil;
-use common\modules\order\utils\OrderUtil;
-use products\models\ProductOption;
-use products\models\ProductOptionTranslated;
-use products\models\ProductOptionValueTranslated;
 use products\models\Product;
-use common\modules\stores\utils\StoreUtil;
+use cart\models\ItemCollection;
+use products\behaviors\PriceBehavior;
 /**
  * Class storing the data in the cart
  * 
@@ -24,193 +17,31 @@ use common\modules\stores\utils\StoreUtil;
 class Cart extends \yii\base\Model
 {
     /**
+     * inheritdoc
+     */
+    public function behaviors()
+    {
+        return [
+            PriceBehavior::className(),
+        ];
+    }
+    
+    /**
      * Cart item list
-     * @var integer 
+     * @var ItemCollection 
      */
-    public $itemsList = [];
+    public $itemsList;
     
     /**
-     * Get total quantiy for product in the cart
-     * @param Product $product
-     * @return int
+     * inheritdoc
      */
-    public function getTotalQuantityForProduct($product)
+    public function __construct($config = [])
     {
-        $totalQty = 0;
-        foreach($this->itemsList as $itemCode => $data)
+        parent::__construct($config);
+        if(empty($this->itemsList))
         {
-            if($data['product_id'] == $product['id'])
-            {
-                $totalQty += $data['qty'];
-            }
+            $this->itemsList = new ItemCollection();
         }
-        return $totalQty;
-    }
-    
-    /**
-     * Update price for the product when adding a new item impacts the product final price
-     * based on discounts
-     * @param Product $product
-     * @param float $price
-     */
-    public function updatePriceForProduct($product, $price)
-    {
-        foreach($this->itemsList as $itemCode => $data)
-        {
-            if($data['product_id'] == $product['id'])
-            {
-                $priceExcludingTax                          = $price + $data['options_price'];
-                $tax                                        = ProductUtil::getTaxAppliedOnProduct($product, static::getCustomer(), $priceExcludingTax);
-                $this->itemsList[$itemCode]['price']        = $priceExcludingTax;
-                $this->itemsList[$itemCode]['total_price']  = $priceExcludingTax + $tax;
-            }
-        }
-    }
-    
-    /**
-     * Adds item to the cart.
-     * @param Product $product
-     * @param int $qty
-     * @param float $optionsPrice
-     * @param Array $options
-     */
-    public function addItem($product, $qty, $optionsPrice, $options = [])
-    {
-        //Get the total quantity for product in the cart already available
-        $totalQtyAvailable = $this->getTotalQuantityForProduct($product);
-        /*
-         * Here we need to check if product is already there in the cart even with different options i.e. different item code
-         * we need to get the quantity of the product in the cart + input quantity and check if total quantity is >=
-         * the minimum quantity for the dicsount, than final price would be the discounted price.
-         * 
-         * The quantity to get the final price should use the totalQuantity in cart and not the input quanity
-         */
-        $totalQtyAvailable  += $qty;
-        $priceExcludingTax  = ProductUtil::getFinalPrice($product, static::getCustomer(), $totalQtyAvailable);
-        
-        //Update other items in the cart related to the product with the latest price
-        $this->updatePriceForProduct($product, $priceExcludingTax);
-        
-        //Process the currently added item
-        $itemCode       = CartUtil::getItemCode($product['id'], $options);
-        $availableData  = ArrayUtil::getValue($this->itemsList, $itemCode, false);
-        if($availableData === false)
-        {
-            $this->itemsList[$itemCode]['qty'] = $qty;
-        }
-        else
-        {
-            $this->itemsList[$itemCode]['qty'] = $availableData['qty'] + $qty;
-        }
-        
-        $optionData         = [];
-        if(!empty($options))
-        {
-            $priceExcludingTax += $optionsPrice;
-            foreach($options as $optionId => $optionValue)
-            {
-                if(!is_array($optionValue))
-                {
-                    $optionRecord = $this->getOptionRecordByOptionValue($optionValue);
-                    //We need to do this so that by mistake if name is same but ids are different, wrong values are not displayed
-                    $optionData[$optionRecord['id']][$optionRecord['name']][] =  $optionRecord['value'];
-                }
-                else
-                {
-                    foreach($optionValue as $value)
-                    {
-                        $optionRecord = $this->getOptionRecordByOptionValue($value);
-                        $optionData[$optionRecord['id']][$optionRecord['name']][] =  $optionRecord['value'];
-                    }
-                }
-            }
-        }
-        //$optionData = [6 => ['Color' => ['Red']], 7 => ['Texture' => ['o1']], 8 => ['Shape' => ['Round', 'Cube']]];
-        $optionStr  = OrderUtil::getOptionStringByOptionData($optionData);
-        
-        $optionData = serialize($optionData);
-        $tax                                   = ProductUtil::getTaxAppliedOnProduct($product, static::getCustomer(), $priceExcludingTax);
-        $this->itemsList[$itemCode]['price']   = $priceExcludingTax;
-        $this->itemsList[$itemCode]['options_price']   = $optionsPrice;
-        $this->itemsList[$itemCode]['name']    = $product['name'];
-        $this->itemsList[$itemCode]['requires_shipping']    = $product['requires_shipping'];
-        $this->itemsList[$itemCode]['selectedOptions'] = $optionStr;
-        $this->itemsList[$itemCode]['optionsData'] = $optionData;
-        $this->itemsList[$itemCode]['options'] = serialize($options);
-        $this->itemsList[$itemCode]['product_id'] = $product['id'];
-        $this->itemsList[$itemCode]['model']   = $product['model'];
-        $this->itemsList[$itemCode]['tax']     = $tax;
-        $this->itemsList[$itemCode]['total_price'] = $priceExcludingTax + $tax;
-        $this->itemsList[$itemCode]['thumbnail'] = $product['image'];
-        $this->itemsList[$itemCode]['item_code'] = $itemCode;
-        $this->itemsList[$itemCode]['stock_status'] = $product['stock_status'];
-        $this->updateSession();
-    }
-    
-    /**
-     * Get option record by option value
-     * @param string $optionValue
-     * @return array
-     */
-    protected function getOptionRecordByOptionValue($optionValue)
-    {
-        $language        = UsniAdaptor::app()->languageManager->getContentLanguage();
-        $poTableName     = ProductOption::tableName();
-        $poTrTableName   = ProductOptionTranslated::tableName();
-        $povTableName    = ProductOptionValue::tableName();
-        $povTrTableName  = ProductOptionValueTranslated::tableName();
-        return ProductOptionValue::find()
-                            ->select([$poTableName . '.id', $poTrTableName . '.name', $povTrTableName . '.value'])
-                            ->innerJoin($poTableName, $poTableName . '.id = ' . $povTableName . '.option_id')
-                            ->innerJoin($poTrTableName, $poTrTableName . '.owner_id = ' . $poTableName . '.id')
-                            ->innerJoin($povTrTableName, $povTrTableName . '.owner_id = ' . $povTableName . '.id')
-                            ->where($povTableName . '.id = :id AND ' . $poTrTableName . '.language = :lan1 AND ' . $povTrTableName . '.language = :lan2', 
-                                    [':id' => $optionValue, ':lan1' => $language, ':lan2' => $language])
-                            ->asArray()->one();
-    }
-
-
-    /**
-     * Remove item.
-     * @param int $itemCode
-     */
-    public function removeItem($itemCode)
-    {
-        $availableData = ArrayUtil::getValue($this->itemsList, $itemCode, false);
-        if($availableData !== false)
-        {
-            unset($this->itemsList[$itemCode]);
-            $productId = $availableData['product_id'];
-            $product   = Product::find()->where('id = :id', [':id' => $productId])->asArray()->one();
-            //Get the total quantity for product in the cart already available
-            $totalQtyAvailable = $this->getTotalQuantityForProduct($product);
-            /*
-             * Here we need to check if product is already there in the cart even with different options i.e. different item code
-             * we need to get the quantity of the product in the cart and check if total quantity is >=
-             * the minimum quantity for the discount, than final price would be the discounted price.
-             * 
-             * The quantity to get the final price should use the totalQuantity in cart
-             */
-            $priceExcludingTax  = ProductUtil::getFinalPrice($product, static::getCustomer(), $totalQtyAvailable);
-
-            //Update other items in the cart related to the product with the latest price
-            $this->updatePriceForProduct($product, $priceExcludingTax);
-        }
-        $this->updateSession();
-    }
-    
-    /**
-     * Get count of items in the cart
-     * @return integer
-     */
-    public function getCount()
-    {
-        $totalCnt = 0;
-        foreach($this->itemsList as $product => $data)
-        {
-            $totalCnt += $data['qty'];
-        }
-        return $totalCnt;
     }
     
     /**
@@ -235,9 +66,9 @@ class Cart extends \yii\base\Model
      */
     public function isShippingRequired()
     {
-        foreach($this->itemsList as $product => $data)
+        foreach($this->itemsList as $product => $item)
         {
-            if((bool)$data['requires_shipping'])
+            if((bool)$item->requireShipping)
             {
                 return true;
             }
@@ -251,13 +82,10 @@ class Cart extends \yii\base\Model
      */
     public function getAmount()
     {
-        $currencyCode           = $this->getSelectedCurrency();
-        $defaultCurrencyCode    = UsniAdaptor::app()->currencyManager->getDefault();
         $totalPrice = 0.0;
-        foreach($this->itemsList as $product => $data)
+        foreach($this->itemsList as $product => $item)
         {
-            $priceByCurrency        = ProductUtil::getPriceByCurrency($data['total_price'], $defaultCurrencyCode, $currencyCode);
-            $totalPrice += $data['qty'] * $priceByCurrency;
+            $totalPrice += $item->qty * $item->totalPrice;
         }
         return number_format($totalPrice, 2, ".", "");
     }
@@ -268,13 +96,10 @@ class Cart extends \yii\base\Model
      */
     public function getTax()
     {
-        $currencyCode           = $this->getSelectedCurrency();
-        $defaultCurrencyCode    = UsniAdaptor::app()->currencyManager->getDefault();
         $totalTax               = 0.0;
-        foreach($this->itemsList as $product => $data)
+        foreach($this->itemsList as $itemCode => $item)
         {
-            $priceByCurrency = ProductUtil::getPriceByCurrency($data['tax'], $defaultCurrencyCode, $currencyCode);
-            $totalTax += $data['qty'] * $priceByCurrency;
+            $totalTax += $item->qty * $item->tax;
         }
         return number_format($totalTax, 2, ".", "");
     }
@@ -286,7 +111,7 @@ class Cart extends \yii\base\Model
     public function getFormattedAmount()
     {
         $totalPrice = $this->getAmount();
-        return ProductUtil::getPriceWithSymbol($totalPrice);
+        return $this->getPriceWithSymbol($totalPrice);
     }
     
     /**
@@ -295,25 +120,7 @@ class Cart extends \yii\base\Model
      */
     public function getCustomer()
     {
-        return UsniAdaptor::app()->user->getUserModel();
-    }
-    
-    /**
-     * Get item count in cart
-     * @param string $itemCode
-     * @return int
-     */
-    public function getItemCountInCart($itemCode)
-    {
-        $availableData  = ArrayUtil::getValue($this->itemsList, $itemCode, false);
-        if($availableData === false)
-        {
-            return 0;
-        }
-        else
-        {
-            return $availableData['qty'];
-        }
+        return UsniAdaptor::app()->user->getIdentity();
     }
     
     /**
@@ -322,13 +129,10 @@ class Cart extends \yii\base\Model
      */
     public function getTotalUnitPrice()
     {
-        $currencyCode           = $this->getSelectedCurrency();
-        $defaultCurrencyCode    = UsniAdaptor::app()->currencyManager->getDefault();
         $totalPrice = 0.0;
-        foreach($this->itemsList as $product => $data)
+        foreach($this->itemsList as $itemCode => $item)
         {
-            $priceByCurrency        = ProductUtil::getPriceByCurrency($data['price'], $defaultCurrencyCode, $currencyCode);
-            $totalPrice += $data['qty'] * $priceByCurrency;
+            $totalPrice += $item->qty * $item->price;
         }
         return number_format($totalPrice, 2, ".", "");
     }
@@ -339,10 +143,10 @@ class Cart extends \yii\base\Model
      */
     public function shouldProceedForCheckout()
     {
-        $outOfStockCheckoutSettings  = StoreUtil::getSettingValue('allow_out_of_stock_checkout');
+        $outOfStockCheckoutSettings  = UsniAdaptor::app()->storeManager->getSettingValue('allow_out_of_stock_checkout');
         foreach ($this->itemsList as $item)
         {
-            if(!$outOfStockCheckoutSettings && $item['stock_status'] == ProductUtil::OUT_OF_STOCK)
+            if(!$outOfStockCheckoutSettings && $item->stockStatus == Product::OUT_OF_STOCK)
             {
                 return false;
             }
@@ -351,11 +155,147 @@ class Cart extends \yii\base\Model
     }
     
     /**
-     * Get selected currency
+     * Get cart total quantity.
+     * @return intreger.
+     */
+    public function getTotalQuantity()
+    {
+        $totalQty = 0;
+        foreach ($this->itemsList as $itemCode => $item)
+        {
+            $totalQty += $item->qty;
+        }
+        return $totalQty;
+    }
+    
+    /**
+     * Get products.
+     * @return array
+     */
+    public function getProducts()
+    {
+        $products   = [];
+        if(!empty($this->itemsList))
+        {
+            foreach($this->itemsList as $productId => $cartData)
+            {
+                $products[] = $cartData;
+            }
+        }
+        return $products;
+    }
+    
+    /**
+     * Get option code by options for product
+     * @param int $productId
+     * @param array $options
      * @return string
      */
-    public function getSelectedCurrency()
+    public function getItemCode($productId, $options = [])
     {
-        return UsniAdaptor::app()->currencyManager->getDisplayCurrency();
+        $itemCode = $productId;
+        if(!empty($options))
+        {
+            $optionCode = base64_encode(serialize($options));
+            $itemCode .= '_' . $optionCode;
+        }
+        return $itemCode;
+    }
+    
+    /**
+     * Get product id by item code
+     * @param string $itemCode
+     * @return integer
+     */
+    public function getProductIdByItemCode($itemCode)
+    {
+        list($productId, $inputOptions) = $this->getProductAndOptionsByItemCode($itemCode);
+        return $productId;
+    }
+    
+    /**
+     * Get options by item code
+     * @param string $itemCode
+     * @return integer
+     */
+    public function getOptionsByItemCode($itemCode)
+    {
+        list($productId, $inputOptions) = $this->getProductAndOptionsByItemCode($itemCode);
+        return $inputOptions;
+    }
+    
+    /**
+     * Get product id and options by item code
+     * @param string $itemCode
+     * @return string
+     */
+    public function getProductAndOptionsByItemCode($itemCode)
+    {
+        if(strpos($itemCode, '_') !== false)
+        {
+            $data       = explode('_', $itemCode);
+            $productId  = $data[0];
+            $options    = unserialize(base64_decode($data[1]));
+        }
+        else
+        {
+            $productId = $itemCode;
+            $options   = [];
+        }
+        return [$productId, $options];
+    }
+    
+    /**
+     * Get option string by option data
+     * @param array $optionData
+     * @return string representation of option data
+     */
+    public function getOptionStringByOptionData($optionData)
+    {
+        $optionStr  = null;
+        if(!empty($optionData))
+        {
+            $keys = array_keys($optionData);
+            foreach($keys as $key)
+            {
+                $value = $optionData[$key];
+                $optionName = key($value);
+                $optionStr .= $optionName . ": " . implode(',', $value[$optionName]) . "<br/>";
+            }
+        }
+        return $optionStr;
+    }
+    
+    /**
+     * Returns the quantity for the itemcode in the collection.
+     * @param string $itemCode
+     * @return integer quantity for the item.
+     */
+    public function getItemQuantity($itemCode)
+    {
+        $item = $this->itemsList->get($itemCode);
+        if($item == null)
+        {
+            return 0;
+        }
+        return $item->qty;
+    }
+    
+    /**
+     * Get total quantity for product in the cart
+     * @param int $productId
+     * @return int
+     */
+    public function getTotalQuantityForProduct($productId)
+    {
+        $totalQty = 0;
+        foreach($this->itemsList as $itemCode => $item)
+        {
+            if($item->productId == $productId)
+            {
+                $totalQty += $item->qty;
+            }
+        }
+        return $totalQty;
     }
 }

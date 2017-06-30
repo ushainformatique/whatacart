@@ -5,12 +5,12 @@
  */
 namespace common\modules\localization\modules\currency\models;
     
-use usni\library\components\UiSecuredActiveRecord;
+use usni\library\db\ActiveRecord;
 /**
  * CurrencyTranslated class file
  * @package common\modules\localization\modules\currency\models
  */
-class CurrencyTranslated extends UiSecuredActiveRecord
+class CurrencyTranslated extends ActiveRecord
 {
     /**
      * @inheritdoc

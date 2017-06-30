@@ -5,7 +5,7 @@
  */
 namespace products\models;
 
-use usni\library\components\TranslatableActiveRecord;
+use usni\library\db\TranslatableActiveRecord;
 use usni\UsniAdaptor;
 /**
  * ProductAttribute class file.
@@ -87,23 +87,26 @@ class ProductAttribute extends TranslatableActiveRecord
     {
         if (!$this->hasErrors())
         {
-            $language       = UsniAdaptor::app()->languageManager->getContentLanguage();
+            $language       = $this->language;
             $tableName      = UsniAdaptor::tablePrefix(). 'product_attribute';
             $trTableName    = UsniAdaptor::tablePrefix(). 'product_attribute_translated';
             if($this->attribute_group == null)
             {
-                $sql            = "SELECT * FROM $tableName pa, $trTableName pat WHERE pat.name = :name AND pat.owner_id = pa.id AND pat.language = :lan";
+                $sql            = "SELECT pa.* FROM $tableName pa, $trTableName pat WHERE pat.name = :name AND pat.owner_id = pa.id AND pat.language = :lan";
                 $record         = UsniAdaptor::app()->db->createCommand($sql, [':name' => $this->name, ':lan' => $language])->queryOne();
-                if ($record !== false)
-                {
-                    $this->addError($attribute, UsniAdaptor::t('products', 'The combination "' . $this->name . '"-"' . $language . '" of Name and Language has already been taken.'));
-                }
             }
             else
             {
-                $sql            = "SELECT * FROM $tableName pa, $trTableName pat WHERE pa.attribute_group = :ag AND pa.id = pat.owner_id AND pat.name = :name AND pat.language = :lan";
+                $sql            = "SELECT pa.* FROM $tableName pa, $trTableName pat WHERE pa.attribute_group = :ag AND pa.id = pat.owner_id AND pat.name = :name AND pat.language = :lan";
                 $record         = UsniAdaptor::app()->db->createCommand($sql, [':name' => $this->name, ':lan' => $language, ':ag' => $this->attribute_group])->queryOne();
-                if ($record !== false)
+            }
+            if ($record !== false && ($this->scenario == 'create' || ($this->scenario == 'update' && $record['id'] != $this->id)))
+            {
+                if($this->attribute_group == null)
+                {
+                    $this->addError($attribute, UsniAdaptor::t('products', 'The combination "' . $this->name . '"-"' . $language . '" of Name and Language has already been taken.'));
+                }
+                else
                 {
                     $this->addError($attribute, UsniAdaptor::t('products', 'The combination "' . $this->name . '"-"' . $language . '" of Name and Language has already been taken with the associated group.'));
                 }

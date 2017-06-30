@@ -6,11 +6,13 @@
 namespace common\modules\stores\models;
 
 use usni\UsniAdaptor;
+use yii\validators\FileValidator;
 /**
  * StoreImage active record.
+ * 
  * @package common\modules\stores\models
  */
-class StoreImage extends \usni\library\components\UiFormModel
+class StoreImage extends \yii\base\Model
 {
     /**
      * Upload logo Instance.
@@ -64,8 +66,9 @@ class StoreImage extends \usni\library\components\UiFormModel
                       'related_product_image_width', 
                       'related_product_image_height', 'compare_image_width', 'compare_image_height', 'wishlist_image_width', 'wishlist_image_height', 
                       'cart_image_width', 'cart_image_height', 'store_image_width', 'store_image_height'],   'number', 'integerOnly' => true],
-                    [['iconUploadInstance'], 'image', 'skipOnEmpty' => true, 'extensions' => 'ico', 'checkExtensionByMimeType' => false],
-                    [['logoUploadInstance'], 'image', 'skipOnEmpty' => true, 'extensions' => 'jpg, png, gif'],
+                    [['icon', 'iconUploadInstance'], 'image', 'skipOnEmpty' => true, 'extensions' => 'ico', 'checkExtensionByMimeType' => false],
+                    [['icon', 'iconUploadInstance'], FileValidator::className(), 'minSize' => 1150, 'maxSize' => 155648],
+                    [['store_logo', 'logoUploadInstance'], 'image', 'skipOnEmpty' => true, 'extensions' => 'jpg, png, gif, jpeg'],
                     [['store_logo', 'icon', 'category_image_width', 'category_image_height', 'product_list_image_width', 
                       'product_list_image_height', 'related_product_image_width', 
                       'related_product_image_height', 'compare_image_width', 'compare_image_height', 'wishlist_image_width', 'wishlist_image_height', 

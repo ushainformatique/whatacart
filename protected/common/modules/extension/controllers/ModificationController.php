@@ -5,54 +5,66 @@
  */
 namespace common\modules\extension\controllers;
 
-use usni\library\components\UiAdminController;
-use usni\UsniAdaptor;
 use common\modules\extension\models\Extension;
-use common\modules\extension\models\ExtensionSearch;
-use common\modules\extension\views\ModuleGridView;
+use yii\filters\AccessControl;
+use usni\library\web\actions\IndexAction;
+use common\modules\extension\business\ModificationManager;
+use usni\UsniAdaptor;
 /**
- * ModificationController class file
+ * ModificationController class file.
+ * 
  * @package common\modules\extension\controllers
  */
-class ModificationController extends UiAdminController
-{   
+class ModificationController extends \usni\library\web\Controller
+{
     /**
-     * @inheritdoc
+     * inheritdoc
      */
-    protected function resolveModelClassName()
-    {
-        return Extension::className();
-    }
-    
-    /**
-     * @inheritdoc
-     */
-    protected function getFilterModel($model)
-    {
-        $filterModel = new ExtensionSearch();
-        $filterModel->load($_GET, 'ExtensionSearch');
-        $filterModel->category = 'modification';
-        return $filterModel;
-    }
-    
-    /**
-     * @inheritdoc
-     */
-    protected function resolveGridViewClassName($model)
-    {
-        return ModuleGridView::className();
-    }
-    
-    /**
-     * @inheritdoc
-     */
-    public function getGridViewBreadcrumb($model)
+    public function behaviors()
     {
         return [
-            [
-                'label' => UsniAdaptor::t('application', 'Manage') . ' ' . UsniAdaptor::t('payment', 'Modifications')
-            ]
+            'access' => [
+                'class' => AccessControl::className(),
+                'rules' => [
+                    [
+                        'allow' => true,
+                        'actions' => ['index'],
+                        'roles' => ['extension.manage'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['change-status'],
+                        'roles' => ['extension.update'],
+                    ],
+                ],
+            ],
         ];
     }
+    
+    /**
+     * inheritdoc
+     */
+    public function actions()
+    {
+        $managerConfig = ['class'     => ModificationManager::className()];
+        return [
+            'index'  => ['class' => IndexAction::className(),
+                         'modelClass' => Extension::className(),
+                         'managerConfig' => $managerConfig,
+                         'viewFile' =>'/modificationindex'
+                        ]
+        ];
+    }
+    
+    /**
+     * Change status for modification.
+     * @param integer $id
+     * @param integer $status
+     * @return string
+     */
+    public function actionChangeStatus($id, $status)
+    {
+        ModificationManager::getInstance()->processChangeStatus($id, $status);
+        return $this->redirect(UsniAdaptor::createUrl('extension/modification/index'));
+    }
 }
-?>

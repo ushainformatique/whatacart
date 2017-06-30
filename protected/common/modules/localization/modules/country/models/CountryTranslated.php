@@ -5,13 +5,14 @@
  */
 namespace common\modules\localization\modules\country\models;
     
-use usni\library\components\UiSecuredActiveRecord;
+use usni\library\db\ActiveRecord;
 
 /**
- * CountryTranslated class file
+ * CountryTranslated class file.
+ * 
  * @package common\modules\localization\modules\country\models
  */
-class CountryTranslated extends UiSecuredActiveRecord
+class CountryTranslated extends ActiveRecord
 {
     /**
      * @inheritdoc
@@ -21,4 +22,3 @@ class CountryTranslated extends UiSecuredActiveRecord
         return $this->hasOne(Country::className(), ['id' => 'owner_id']);
     }
 }
-?>

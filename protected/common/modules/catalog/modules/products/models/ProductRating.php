@@ -13,7 +13,7 @@ use products\models\Product;
  * 
  * @package products\models
  */
-class ProductRating extends \usni\library\components\UiSecuredActiveRecord
+class ProductRating extends \usni\library\db\ActiveRecord
 {
     /**
      * @inheritdoc

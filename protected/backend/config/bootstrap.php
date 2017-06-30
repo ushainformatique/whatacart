@@ -1,2 +1,4 @@
 <?php
-Yii::setAlias('themes', APPLICATION_PATH . '/backend/themes');
+/*
+ * Define aliases and constants on boostrtap of application
+ */

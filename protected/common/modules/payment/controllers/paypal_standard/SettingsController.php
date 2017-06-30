@@ -5,63 +5,54 @@
  */
 namespace common\modules\payment\controllers\paypal_standard;
 
-use usni\library\components\UiAdminController;
-use common\modules\payment\views\paypal_standard\PaypalSettingEditView;
 use usni\library\utils\FlashUtil;
 use usni\UsniAdaptor;
-use common\modules\payment\models\paypal_standard\PaypalSettingForm;
-use yii\base\Model;
-use common\modules\stores\utils\StoreUtil;
+use common\modules\payment\dto\PaypalStandardFormDTO;
+use common\modules\payment\business\paypal_standard\Manager;
+use yii\filters\AccessControl;
 /**
  * SettingsController class file
  *
  * @package common\modules\payment\controllers\paypal_standard
  */
-class SettingsController extends UiAdminController
+class SettingsController extends \usni\library\web\Controller
 {
     /**
-     * @inheritdoc
+     * inheritdoc
      */
-    public function actionIndex()
+    public function behaviors()
     {
-        $model = new PaypalSettingForm();
-        if(isset($_POST['PaypalSetting']))
-        {
-            $model->paypalSetting->attributes       = $_POST['PaypalSetting'];
-            $model->paypalOrderStatus->attributes   = $_POST['PaypalOrderStatus'];
-            if(Model::validateMultiple([$model->paypalSetting, $model->paypalOrderStatus]))
-            {
-                StoreUtil::processInsertOrUpdateConfiguration($model->paypalSetting, 'paypal_standard', 'payment');
-                StoreUtil::processInsertOrUpdateConfiguration($model->paypalOrderStatus, 'paypal_standard_orderstatus_map', 'payment');
-            }
-            FlashUtil::setMessage('paypalSettingsSaved', UsniAdaptor::t('paypal', 'Paypal settings are saved successfully'));
-        }
-        else
-        {
-            $model->paypalSetting->attributes       = StoreUtil::getStoreConfgurationAttributesByCodeForStore('paypal_standard', 'payment');
-            $model->paypalOrderStatus->attributes   = StoreUtil::getStoreConfgurationAttributesByCodeForStore('paypal_standard_orderstatus_map', 'payment');
-        }
-        $breadcrumbs      = [
-                                [
-                                    'label' => UsniAdaptor::t('payment', 'Manage Payments'),
-                                    'url'   => UsniAdaptor::createUrl('payment/default/manage')
-                                ],
-                                [
-                                    'label' => UsniAdaptor::t('payment', 'Paypal Settings')
-                                ]
-                            ];
-        $this->getView()->params['breadcrumbs']  = $breadcrumbs;
-        $view               = new PaypalSettingEditView($model);
-        $content            = $this->renderColumnContent(array($view));
-        return $this->render($this->getDefaultLayout(), array('content' => $content));
+        return [
+            'access' => [
+                'class' => AccessControl::className(),
+                'rules' => [
+                    [
+                        'allow' => true,
+                        'actions' => ['index'],
+                        'roles' => ['extension.manage'],
+                    ],
+                ],
+            ],
+        ];
     }
     
     /**
      * @inheritdoc
      */
-    protected function resolveModelClassName()
+    public function actionIndex()
     {
-        return null;
+        $formDTO    = new PaypalStandardFormDTO();
+        $formDTO->setPostData(UsniAdaptor::app()->request->post());
+        $manager    = new Manager();
+        $manager->processSettings($formDTO);
+        if($formDTO->getIsTransactionSuccess() == true)
+        {
+            FlashUtil::setMessage('success', UsniAdaptor::t('paypal', 'Paypal settings are saved successfully'));
+            return $this->refresh();
+        }
+        else
+        {
+            return $this->render('/paypal_standard/settings', ['formDTO' => $formDTO]);
+        }
     }
 }
-?>

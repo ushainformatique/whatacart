@@ -5,10 +5,10 @@
  */
 namespace products\models;
 
-use usni\library\components\TranslatedActiveDataProvider;
+use usni\library\dataproviders\ArrayRecordDataProvider;
 use yii\base\Model;
-use usni\library\utils\AdminUtil;
 use usni\UsniAdaptor;
+use common\modules\stores\dao\StoreDAO;
 /**
  * Product search model.
  * 
@@ -16,6 +16,8 @@ use usni\UsniAdaptor;
  */
 class ProductSearch extends Product
 {
+    use \usni\library\traits\SearchTrait;
+    
     /**
      * @inheritdoc
      */
@@ -30,7 +32,7 @@ class ProductSearch extends Product
     public function rules()
     {
         return [
-                    [['name', 'model', 'quantity', 'price', 'status', 'categories'], 'safe'],
+                    [['name', 'model', 'quantity', 'price', 'status'], 'safe'],
                ];
     }
     
@@ -45,25 +47,30 @@ class ProductSearch extends Product
     /**
      * Search based on get params.
      *
-     * @return yii\data\ActiveDataProvider
+     * @return ArrayRecordDataProvider
      */
     public function search()
     {
-        $currentStore   = UsniAdaptor::app()->storeManager->getCurrentStore();
-        $language       = UsniAdaptor::app()->languageManager->getContentLanguage();
-        $query          = Product::find();
-        $tableName      = $this->tableName();
+        $storeId        = UsniAdaptor::app()->storeManager->selectedStoreId;
+        $dataCategoryId = StoreDAO::getDataCategoryId($storeId);
+        $tableName      = UsniAdaptor::tablePrefix() . 'product';
         $trTableName    = UsniAdaptor::tablePrefix() . 'product_translated';
         $categoryTable  = UsniAdaptor::tablePrefix() . 'product_category';
         $mappingTable   = UsniAdaptor::tablePrefix() . 'product_category_mapping';
-        
+        $query          = new \yii\db\Query();
         $query->select('tp.*, tpt.name')
-              ->from(["$categoryTable tpc,  $mappingTable tpcm, $tableName tp, $trTableName tpt"])
+              ->from("$categoryTable tpc,  $mappingTable tpcm, $tableName tp, $trTableName tpt")
               ->where('tpcm.data_category_id = :dci AND tpcm.category_id = tpc.id AND tpcm.product_id = tp.id AND tp.id = tpt.owner_id '
                         . 'AND tpt.language = :lang', 
-                     [':dci' => $currentStore->data_category_id, ':lang' => $language]);
-        $dataProvider   = new TranslatedActiveDataProvider([
+                     [':dci' => $dataCategoryId, ':lang' => $this->language]);
+        if($this->getLimit() != null)
+        {
+            $query->limit($this->getLimit());
+        }
+        $dataProvider   = new ArrayRecordDataProvider([
             'query' => $query,
+            'key'   => 'id',
+            'sort'  => ['attributes' => ['name', 'status', 'price', 'quantity', 'model']]
         ]);
 
         // Validate data
@@ -75,15 +82,21 @@ class ProductSearch extends Product
         $query->andFilterWhere(['like', 'model', $this->model]);
         $query->andFilterWhere(['like', 'tp.status', $this->status]);
         $query->andFilterWhere(['like', 'quantity', $this->quantity]);
-        $query->andFilterWhere(['category_id' => $this->categories]);
         $query->andFilterWhere(['like', 'price', $this->price]);
         $query->groupBy('tp.id');
-        $query->orderBy('tpt.name');
-        $user     = UsniAdaptor::app()->user->getUserModel();
-        if(!AdminUtil::doesUserHaveOthersPermissionsOnModel(Product::className(), $user))
+        if($this->canAccessOwnedRecordsOnly('product'))
         {
-            $query->andFilterWhere(['tp.created_by' => $user->id]);
+            $query->andFilterWhere(['tp.created_by' => $this->getUserId()]);
         }
         return $dataProvider;
+    }
+    
+    /**
+     * Get the limit for the search
+     * @return null|int
+     */
+    protected function getLimit()
+    {
+        return null;
     }
 }

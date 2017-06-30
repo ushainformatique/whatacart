@@ -1,39 +1,53 @@
 <?php
+/**
+ * @copyright Copyright (C) 2016 Usha Singhai Neo Informatique Pvt. Ltd
+ * @license https://www.gnu.org/licenses/gpl.html
+ */
 namespace common\modules\extension\controllers;
 
 use usni\UsniAdaptor;
 use usni\library\utils\FlashUtil;
-use usni\library\utils\ArrayUtil;
 use common\modules\extension\models\Extension;
+use yii\filters\AccessControl;
+use usni\library\web\actions\IndexAction;
+use common\modules\extension\business\ExtensionManager;
 /**
  * DefaultController class file
  *
  * @package common\modules\extension\controllers
  */
-class DefaultController extends \usni\library\components\UiAdminController
+class DefaultController extends \usni\library\web\Controller
 {
     /**
-     * @inheritdoc
+     * inheritdoc
      */
-    public function actionCreate()
+    public function behaviors()
     {
-        return $this->redirect(UsniAdaptor::createUrl('extension/default/manage'));
+        return [
+            'access' => [
+                'class' => AccessControl::className(),
+                'rules' => [
+                    [
+                        'allow' => true,
+                        'actions' => ['index', 'change-status', 'settings'],
+                        'roles' => ['extension.manage'],
+                    ],
+                ],
+            ],
+        ];
     }
     
     /**
-     * @inheritdoc
+     * inheritdoc
      */
-    public function actionView($id)
+    public function actions()
     {
-        return $this->redirect(UsniAdaptor::createUrl('extension/default/manage'));
-    }
-    
-    /**
-     * @inheritdoc
-     */
-    protected function resolveModelClassName()
-    {
-        return Extension::className();
+        return [
+            'index'  => ['class' => IndexAction::className(),
+                         'modelClass' => Extension::className(),
+                         'viewFile' =>'/extensionindex'
+                        ]
+        ];
     }
     
     /**
@@ -44,10 +58,8 @@ class DefaultController extends \usni\library\components\UiAdminController
      */
     public function actionChangeStatus($id, $status)
     {
-        $extensions = Extension::findOne($id);
-        $extensions->status = $status;
-        $extensions->save();
-        return $this->renderGridView();
+        ExtensionManager::getInstance()->processChangeStatus($id, $status);
+        return $this->redirect(UsniAdaptor::createUrl('extension/default/index'));
     }
     
     /**
@@ -57,28 +69,12 @@ class DefaultController extends \usni\library\components\UiAdminController
      */
     public function actionSettings($id)
     {
-        $extension = Extension::findOne($id);
-        $data      = unserialize($extension->data);
-        $settings  = ArrayUtil::getValue($data, 'settings');
-        if(!empty($settings))
+        $controllerPath = ExtensionManager::getInstance()->processSettings($id);
+        if(!empty($controllerPath))
         {
-            $controllerPath = ArrayUtil::getValue($settings, 'controllerPath');
-            if(!empty($settings))
-            {
-                return $this->redirect(UsniAdaptor::createUrl($controllerPath));
-            }
+            return $this->redirect(UsniAdaptor::createUrl($controllerPath));
         }
-        FlashUtil::setMessage('settingsRouteMissing', UsniAdaptor::t('extensionflash', 'Settings route is missing in the configuration'));
-        return $this->redirect(UsniAdaptor::createUrl('extension/default/manage'));
-    }
-    
-    /**
-     * @inheritdoc
-     */
-    public function pageTitles()
-    {
-        return [
-                    'manage'         => UsniAdaptor::t('application','Manage') . ' ' . Extension::getLabel(2)
-               ];
+        FlashUtil::setMessage('error', UsniAdaptor::t('extensionflash', 'Settings route is missing in the configuration'));
+        return $this->redirect(UsniAdaptor::createUrl('extension/default/index'));
     }
 }

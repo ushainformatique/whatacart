@@ -11,7 +11,7 @@ use usni\UsniAdaptor;
  *
  * @package common\modules\stores\models
  */
-class StoreSettings extends \usni\library\components\UiFormModel
+class StoreSettings extends \yii\base\Model
 {   
     public $invoice_prefix;
     public $catalog_items_per_page;
@@ -33,7 +33,8 @@ class StoreSettings extends \usni\library\components\UiFormModel
     public $order_prefix;
     public $display_weight;
     public $display_dimensions;
-    
+
+
     /**
      * @inheritdoc
      */
@@ -41,6 +42,7 @@ class StoreSettings extends \usni\library\components\UiFormModel
 	{
 		return [
                     [['invoice_prefix', 'catalog_items_per_page', 'list_description_limit', 'customer_prefix', 'order_prefix'],     'required'],
+                    [['catalog_items_per_page', 'list_description_limit'], 'number', 'integerOnly' => true],
                     [['invoice_prefix', 'catalog_items_per_page', 'list_description_limit', 'display_price_with_tax', 'tax_calculation_based_on', 
                       'guest_checkout', 'order_status', 'display_stock', 'customer_online', 'default_customer_group', 'allow_reviews', 
                       'allow_guest_reviews', 'show_out_of_stock_warning', 'allow_out_of_stock_checkout', 'allow_wishlist', 'allow_compare_products', 
@@ -67,27 +69,27 @@ class StoreSettings extends \usni\library\components\UiFormModel
 	public function attributeLabels()
 	{
 		return [
-                        'id'                        => UsniAdaptor::t('application','Id'),
-                        'invoice_prefix'            => UsniAdaptor::t('stores','Invoice Prefix'),
-                        'catalog_items_per_page'    => UsniAdaptor::t('stores', 'Number of items per page for catalog'),
-                        'list_description_limit'    => UsniAdaptor::t('stores', 'List Description  Limit'),
-                        'display_price_with_tax'    => UsniAdaptor::t('stores', 'Display Price With Tax'),
-                        'tax_calculation_based_on'  => UsniAdaptor::t('stores', 'Tax Calculation Based On'),
-                        'guest_checkout'            => UsniAdaptor::t('stores', 'Guest Checkout'),
-                        'order_status'              => UsniAdaptor::t('orderstatus', 'Order Status'),
-                        'display_stock'             => UsniAdaptor::t('stores', 'Display Stock'),
-                        'customer_online'           => UsniAdaptor::t('stores', 'Customer Online'),
-                        'default_customer_group'    => UsniAdaptor::t('stores', 'Default Customer Group'),
-                        'allow_reviews'             => UsniAdaptor::t('stores', 'Allow Reviews'),
-                        'allow_guest_reviews'       => UsniAdaptor::t('stores', 'Allow Guest Reviews'),
-                        'show_out_of_stock_warning' => UsniAdaptor::t('stores', 'Show out of stock warning'),
-                        'allow_out_of_stock_checkout' => UsniAdaptor::t('stores', 'Allow out of stock checkout'),
-                        'allow_wishlist'                        => UsniAdaptor::t('stores', 'Allow Wishlist'),
-                        'allow_compare_products'                => UsniAdaptor::t('stores', 'Allow Compare Products'),
-                        'customer_prefix'           => UsniAdaptor::t('stores', 'Customer Prefix'),
-                        'order_prefix'              => UsniAdaptor::t('stores', 'Order Prefix'),
-                        'display_weight'            => UsniAdaptor::t('stores', 'Display Weight'),
-                        'display_dimensions'        => UsniAdaptor::t('stores', 'Display Dimensions'),
+                        'id'                            => UsniAdaptor::t('application','Id'),
+                        'invoice_prefix'                => UsniAdaptor::t('stores','Invoice Prefix'),
+                        'catalog_items_per_page'        => UsniAdaptor::t('stores', 'Number of items per page for catalog'),
+                        'list_description_limit'        => UsniAdaptor::t('stores', 'List Description  Limit'),
+                        'display_price_with_tax'        => UsniAdaptor::t('stores', 'Display Price With Tax'),
+                        'tax_calculation_based_on'      => UsniAdaptor::t('stores', 'Tax Calculation Based On'),
+                        'guest_checkout'                => UsniAdaptor::t('stores', 'Guest Checkout'),
+                        'order_status'                  => UsniAdaptor::t('orderstatus', 'Order Status'),
+                        'display_stock'                 => UsniAdaptor::t('stores', 'Display Stock'),
+                        'customer_online'               => UsniAdaptor::t('stores', 'Customer Online'),
+                        'default_customer_group'        => UsniAdaptor::t('stores', 'Default Customer Group'),
+                        'allow_reviews'                 => UsniAdaptor::t('stores', 'Allow Reviews'),
+                        'allow_guest_reviews'           => UsniAdaptor::t('stores', 'Allow Guest Reviews'),
+                        'show_out_of_stock_warning'     => UsniAdaptor::t('stores', 'Show out of stock warning'),
+                        'allow_out_of_stock_checkout'   => UsniAdaptor::t('stores', 'Allow out of stock checkout'),
+                        'allow_wishlist'                => UsniAdaptor::t('stores', 'Allow Wishlist'),
+                        'allow_compare_products'        => UsniAdaptor::t('stores', 'Allow Compare Products'),
+                        'customer_prefix'               => UsniAdaptor::t('stores', 'Customer Prefix'),
+                        'order_prefix'                  => UsniAdaptor::t('stores', 'Order Prefix'),
+                        'display_weight'                => UsniAdaptor::t('stores', 'Display Weight'),
+                        'display_dimensions'            => UsniAdaptor::t('stores', 'Display Dimensions'),
                   ];
 	}
     
@@ -122,6 +124,7 @@ class StoreSettings extends \usni\library\components\UiFormModel
                         'allow_compare_products'      => UsniAdaptor::t('storehint', 'Allow store to display compare products'),
                         'display_weight'              => UsniAdaptor::t('storehint', 'Display weight of product.'),
                         'display_dimensions'          => UsniAdaptor::t('storehint', 'Display dimensions of product.'),
+                        'discount_amount_per_point'   => UsniAdaptor::t('storehint', 'Discount amount customer will get per point.')
                   ];
         return $hints;
 	}

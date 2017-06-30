@@ -6,19 +6,66 @@
 namespace customer\notifications;
 
 use usni\UsniAdaptor;
+use customer\models\Customer;
+use usni\library\modules\notification\models\Notification;
+use usni\library\notifications\EmailNotification;
+use usni\library\modules\users\utils\UserUtil;
 /**
  * ForgotPasswordEmailNotification class file.
  *
  * @package customer\notifications
  */
-class ForgotPasswordEmailNotification extends \usni\library\modules\users\notifications\ForgotPasswordEmailNotification
+class ForgotPasswordEmailNotification extends EmailNotification
 {
+    /**
+     * @var array 
+     */
+    public $user;
+    
+    /**
+     * @inheritdoc
+     */
+    public function getKey()
+    {
+        return Customer::NOTIFY_FORGOTPASSWORD;
+    }
+    
     /**
      * @inheritdoc
      */
     public function getModuleName()
     {
         return 'customer';
+    }
+    
+    /**
+     * @inheritdoc
+     */
+    public function getDeliveryPriority()
+    {
+        return Notification::PRIORITY_HIGH;
+    }
+    
+    /**
+     * @inheritdoc
+     */
+    protected function getTemplateData()
+    {
+        $password = $this->resetPassword();
+        return array('{{fullName}}' => $this->user['firstname'] . ' ' . $this->user['lastname'],
+                     '{{username}}' => $this->user['username'],
+                     '{{password}}' => $password,
+                     '{{loginUrl}}' => $this->getLoginUrl(),
+                     '{{appname}}'  => UsniAdaptor::app()->name
+                    );
+    }
+    
+    /**
+     * @inheritdoc
+     */
+    protected function getLayoutData($data)
+    {
+        return ['{{####content####}}' => $data['templateContent']];
     }
 
     /**
@@ -30,12 +77,16 @@ class ForgotPasswordEmailNotification extends \usni\library\modules\users\notifi
     }
     
     /**
-     * Get table name
-     * @return string
+     * Reset password hash.
+     * @return mixed $password.
      */
-    protected function getTableName()
+    protected function resetPassword()
     {
-        return UsniAdaptor::tablePrefix() . 'customer';
+        $password       = UserUtil::generateRandomPassword() . UserUtil::generateSpecialChar();
+        $passwordHash   = UsniAdaptor::app()->security->generatePasswordHash($password);
+        $table          = UsniAdaptor::tablePrefix() . 'customer';
+        $data           = ['password_hash' => $passwordHash];
+        UsniAdaptor::app()->db->createCommand()->update($table, $data, 'id = :id', [':id' => $this->user['id']])->execute();
+        return $password;
     }
 }
-?>

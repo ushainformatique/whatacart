@@ -11,7 +11,7 @@ use usni\UsniAdaptor;
  *
  * @package common\modules\Order\models
  */
-class OrderPaymentDetails extends \usni\library\components\TranslatableActiveRecord 
+class OrderPaymentDetails extends \usni\library\db\TranslatableActiveRecord 
 {
 	/**
      * @inheritdoc

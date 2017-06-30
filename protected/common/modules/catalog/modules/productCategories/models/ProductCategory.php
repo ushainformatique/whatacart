@@ -5,11 +5,14 @@
  */
 namespace productCategories\models;
 
-use usni\library\components\TranslatableActiveRecord;
+use usni\library\db\TranslatableActiveRecord;
 use usni\UsniAdaptor;
 use usni\library\utils\StatusUtil;
 use common\modules\dataCategories\models\DataCategory;
-use usni\library\components\ImageManager;
+use products\dao\ProductDAO;
+use yii\db\Exception;
+use productCategories\dao\ProductCategoryDAO;
+use common\modules\dataCategories\business\Manager;
 /**
  * ProductCategory active record.
  *
@@ -17,7 +20,8 @@ use usni\library\components\ImageManager;
  */
 class ProductCategory extends TranslatableActiveRecord
 {
-    use \productCategories\traits\ProductCategoryTrait;
+    use \usni\library\traits\TreeModelTrait;
+    
     /**
      * Upload File Instance.
      * @var string
@@ -28,6 +32,11 @@ class ProductCategory extends TranslatableActiveRecord
      * @var string
      */
     public $savedImage;
+    
+    /**
+     * @var integer 
+     */
+    public $savedDataCategoryId;
 
     /**
      * @inheritdoc
@@ -45,10 +54,10 @@ class ProductCategory extends TranslatableActiveRecord
             return [
                 [['name', 'alias', 'data_category_id', 'code'], 'required'],
                 [['image'], 'required', 'on' => 'create'],
-                [['uploadInstance'], 'image', 'skipOnEmpty' => true, 'extensions' => 'jpg, png, gif'],
+                [['image', 'uploadInstance'], 'image', 'skipOnEmpty' => true, 'extensions' => 'jpg, png, gif'],
                 [['parent_id', 'level', 'status'],  'number', 'integerOnly' => true],
                 [['name'],                          'string', 'max' => 128],
-                ['alias',                           'string', 'max' => 32],
+                ['alias',                           'string', 'max' => 128],
                 ['parent_id',                       'default', 'value' => 0],
                 ['level',                           'default', 'value' => 0],
                 ['status',                          'default', 'value' => StatusUtil::STATUS_ACTIVE],
@@ -111,7 +120,9 @@ class ProductCategory extends TranslatableActiveRecord
     {
         if(parent::beforeSave($insert))
         {
-            $this->level = $this->getLevel($this->parent_id);
+            $this->level                = $this->getLevel($this->parent_id);
+            $category                   = ProductCategoryDAO::getById($this->id, $this->language);
+            $this->savedDataCategoryId  = $category['data_category_id'];
             return true;
         }
        return false;
@@ -122,6 +133,11 @@ class ProductCategory extends TranslatableActiveRecord
      */
     public function beforeDelete()
     {
+        $isAllowedToDelete = $this->checkIfAllowedToDelete();
+        if($isAllowedToDelete == false)
+        {
+            throw new Exception('products are associated to category.');
+        }
         if(parent::beforeDelete())
         {
             if($this->image != null)
@@ -131,9 +147,15 @@ class ProductCategory extends TranslatableActiveRecord
                             'model'             => $this, 
                             'attribute'         => 'image', 
                             'uploadInstance'    => null, 
-                            'savedFile'         => null
+                            'savedFile'         => null,
+                            'createThumbnail'   => true
                           ];
-                $fileManagerInstance = new ImageManager($config);
+                $fileManagerInstance = UsniAdaptor::app()->assetManager->getResourceManager('image', $config);
+                $fileManagerInstance->delete();
+                //Delete 50_50 image as well on index page
+                $config['thumbWidth']   = 50;
+                $config['thumbHeight']  = 50;
+                $fileManagerInstance = UsniAdaptor::app()->assetManager->getResourceManager('image', $config);
                 $fileManagerInstance->delete();
             }
             $prefix = UsniAdaptor::db()->tablePrefix;
@@ -152,6 +174,14 @@ class ProductCategory extends TranslatableActiveRecord
     {
         parent::afterSave($insert, $changedAttributes);
         $this->updateChildrensLevel();
+        $this->updatePath();
+        // Update mapping table with changed data category.
+        if($this->scenario === 'update' && $this->data_category_id !== $this->savedDataCategoryId)
+        {
+            $table      = UsniAdaptor::tablePrefix() . 'product_category_mapping';
+            $columns    = ['data_category_id' => $this->data_category_id];
+            UsniAdaptor::app()->db->createCommand()->update($table, $columns, 'category_id = :cid', [':cid' => $this->id])->execute();
+        }
     }
     
     /**
@@ -160,5 +190,89 @@ class ProductCategory extends TranslatableActiveRecord
     public static function getTranslatableAttributes()
     {
         return ['name', 'alias', 'description', 'metakeywords', 'metadescription'];
+    }
+    
+    /**
+     * Check if allowed to delete.
+     * @return boolean
+     */
+    public function checkIfAllowedToDelete()
+    {
+       $products = ProductDAO::getByProductCategoryId($this->id, $this->language);
+       if(empty($products))
+       {
+           return true;
+       }
+       return false;
+    }
+    
+    /**
+     * inheritdoc
+     * This method has been overridden to make sure that children of group would not be displayed in parent dropdown when that group would be updated.
+     */
+    public function getMultiLevelSelectOptions($textFieldName,
+                                               $accessOwnedModelsOnly = false,
+                                               $valueFieldName = 'id')
+    {
+        $childrens      = array_keys($this->getTreeRecordsInHierarchy());
+        $itemsArray     = [];
+        if($this->nodeList === null)
+        {
+            $this->nodeList  = $this->descendants(0, false);
+        }
+        $items   = static::flattenArray($this->nodeList);
+        foreach($items as $item)
+        {
+            $row = $item['row'];
+            if($this->$valueFieldName != $row[$valueFieldName])
+            {
+                if(($accessOwnedModelsOnly === true && $this->created_by == $row['created_by']) || ($accessOwnedModelsOnly === false))
+                {
+                    if(!in_array($row['id'], $childrens))
+                    {
+                        $itemsArray[$row[$valueFieldName]] = str_repeat('-', $row['level']) . $row[$textFieldName];
+                    }
+                }
+            }
+        }
+        return $itemsArray;
+    }
+    
+    /**
+     * Get descendants based on a parent.
+     * @param int $parentId
+     * @param int $onlyChildren If only childrens have to be fetched
+     * @return boolean
+     */
+    public function descendants($parentId = 0, $onlyChildren = false)
+    {
+        $recordsData    = [];
+        $records        = ProductCategoryDAO::getChildrens($parentId, $this->language, $this->data_category_id);
+        if(!$onlyChildren)
+        {
+            foreach($records as $record)
+            {
+                $hasChildren    = false;
+                $childrens      = $this->descendants($record['id'], $onlyChildren);
+                if(count($childrens) > 0)
+                {
+                    $hasChildren = true;
+                }
+                $recordsData[]  = ['row'         => $record,
+                                   'hasChildren' => $hasChildren, 
+                                   'children'    => $childrens];
+            }
+            return $recordsData;
+        }
+        else
+        {
+            foreach($records as $record)
+            {
+                $recordsData[]  = ['row'         => $record,
+                                   'hasChildren' => false, 
+                                   'children'    => []];
+            }
+            return $recordsData;
+        }
     }
 }

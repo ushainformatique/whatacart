@@ -6,77 +6,113 @@
 namespace common\modules\stores\controllers;
 
 use common\modules\stores\models\Store;
-use usni\library\components\UiAdminController;
 use common\modules\stores\models\StoreEditForm;
-use common\modules\stores\views\StoreEditView;
-use common\modules\stores\utils\StoreUtil;
 use usni\UsniAdaptor;
-use yii\helpers\Json;
-use usni\library\utils\AddressUtil;
-use usni\library\utils\FileUploadUtil;
+use yii\filters\AccessControl;
 use yii\web\ForbiddenHttpException;
-use common\modules\stores\models\StoreTranslated;
-use usni\library\utils\CacheUtil;
-use usni\library\utils\TranslationUtil;
-use usni\library\managers\UploadInstanceManager;
+use common\modules\stores\business\Manager;
+use common\modules\stores\dto\FormDTO;
+use usni\library\web\actions\IndexAction;
+use usni\library\web\actions\ViewAction;
+use usni\library\web\actions\DeleteAction;
+use usni\library\dto\GridViewDTO;
 /**
  * DefaultController class file
  * 
  * @package common\modules\stores\controllers
  */
-class DefaultController extends UiAdminController
+class DefaultController extends \usni\library\web\Controller
 {    
     /**
-     * @inheritdoc
+     * inheritdoc
      */
-    protected function resolveModelClassName()
+    public function behaviors()
     {
-        return Store::className();
+        return [
+            'access' => [
+                'class' => AccessControl::className(),
+                'rules' => [
+                    [
+                        'allow' => true,
+                        'actions' => ['index', 'change-status', 'set-default-store'],
+                        'roles' => ['store.manage'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['view'],
+                        'roles' => ['store.view'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['create'],
+                        'roles' => ['store.create'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['update'],
+                        'roles' => ['store.update'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['delete'],
+                        'roles' => ['store.delete'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['set-store'],
+                        'roles' => ['@'],
+                    ]
+                ],
+            ],
+        ];
     }
-
+    
+    /**
+     * inheritdoc
+     */
+    public function actions()
+    {
+        return [
+            'index'  => ['class' => IndexAction::className(),
+                         'modelClass' => Store::className(),
+                         'dtoClass' => GridViewDTO::className(),
+                         'viewFile' => '/index'
+                        ],
+            'view'   => ['class' => ViewAction::className(),
+                         'modelClass' => Store::className(),
+                         'viewFile' => '/view'
+                        ],
+            'delete'   => ['class' => DeleteAction::className(),
+                         'modelClass' => Store::className(),
+                         'redirectUrl'=> 'index',
+                         'permission' => 'store.deleteother'
+                        ]
+        ];
+    }
+    
     /**
      * @inheritdoc
      */
     public function actionCreate()
     {
-        $model                  = new StoreEditForm(['scenario' => 'create']);
-        return $this->processStoreSave($model);
-    }
-    
-    /**
-     * Process store save.
-     * @param Model $model
-     * @return string
-     */
-    public function processStoreSave($model)
-    {
-        $postData           = UsniAdaptor::app()->request->post();
-        if(isset($postData['Store']))
+        $formDTO    = new FormDTO();
+        $postData   = UsniAdaptor::app()->request->post();
+        $model      = new StoreEditForm(['scenario' => 'create']);
+        $manager    = new Manager();
+        $formDTO->setModel($model);
+        $formDTO->setPostData($postData);
+        $formDTO->setScenario('create');
+        $manager->processEdit($formDTO);
+        if($formDTO->getIsTransactionSuccess())
         {
-            $this->beforeAssigningPostData($model);
+            $message = UsniAdaptor::t('applicationflash', 'Record has been saved successfully.');
+            UsniAdaptor::app()->getSession()->setFlash('success', $message);
+            return $this->redirect(UsniAdaptor::createUrl('stores/default/update', ['id' => $formDTO->getModel()->store->id]));
         }
-        if ($model->store->load($postData) 
-                && $model->billingAddress->load($postData)
-                    && $model->storeLocal->load($postData) 
-                        && $model->storeSettings->load($postData)
-                            && $model->storeImage->load($postData)
-                                && $model->shippingAddress->load($postData)
-            )
+        else
         {
-            if($this->beforeModelSave($model))
-            {
-                if(StoreUtil::validateAndSaveStoreData($model))
-                {
-                    $this->afterModelSave($model);
-                    return $this->redirect(UsniAdaptor::createUrl('stores/default/manage'));
-                }
-            }
+            return $this->render('/create', ['formDTO' => $formDTO]);
         }
-        $this->setBreadCrumbs($model);
-        $storeView          = StoreEditView::className();
-        $view               = new $storeView($model);
-        $content            = $this->renderColumnContent([$view]);
-        return $this->render($this->getDefaultLayout(), ['content' => $content]);
     }
     
     /**
@@ -84,34 +120,66 @@ class DefaultController extends UiAdminController
      */
     public function actionUpdate($id)
     {
+        $isPermissible      = true;
+        $userId             = UsniAdaptor::app()->user->getId();
         $model              = new StoreEditForm();
         $model->scenario    = 'update';
         $store              = Store::findOne($id);
-        $model->store       = $store;
-        if($store->billingAddress != null)
+        if($userId != $store->created_by)
         {
-            $model->billingAddress  = $store->billingAddress;
+            $isPermissible      = UsniAdaptor::app()->user->can('store.updateother');
         }
-        if($store->shippingAddress != null)
+        if(!$isPermissible)
         {
-            $model->shippingAddress  = $store->shippingAddress;
+            throw new ForbiddenHttpException(\Yii::t('yii','You are not authorized to perform this action.'));
         }
-        if($store->storeLocal != null)
+        else
         {
-            $model->storeLocal  = $store->storeLocal;
+            $formDTO    = new FormDTO();
+            $postData   = UsniAdaptor::app()->request->post();
+            $model->store       = $store;
+            if($store->billingAddress != null)
+            {
+                $model->billingAddress  = $store->billingAddress;
+            }
+            if($store->shippingAddress != null)
+            {
+                $model->shippingAddress  = $store->shippingAddress;
+            }
+            if($store->storeLocal != null)
+            {
+                $model->storeLocal  = $store->storeLocal;
+            }
+            if($store->storeSettings != null)
+            {
+                $model->storeSettings  = $store->storeSettings;
+            }
+            if($store->storeImage != null)
+            {
+                $model->storeImage  = $store->storeImage;
+            }
+            $model->store->setScenario('update');
+            $model->storeImage->setScenario('update');
+            $model->storeSettings->setScenario('update');
+            $model->storeLocal->setScenario('update');
+            $model->billingAddress->setScenario('update');
+            $model->shippingAddress->setScenario('update');
+            $manager    = new Manager();    
+            $formDTO->setModel($model);
+            $formDTO->setPostData($postData);
+            $formDTO->setScenario('update');
+            $manager->processEdit($formDTO);
+            if($formDTO->getIsTransactionSuccess())
+            {
+                $message = UsniAdaptor::t('applicationflash', 'Record has been updated successfully.');
+                UsniAdaptor::app()->getSession()->setFlash('success', $message);
+                return $this->refresh();
+            }
+            else
+            {
+                return $this->render('/update', ['formDTO' => $formDTO]);
+            }
         }
-        if($store->storeSettings != null)
-        {
-            $model->storeSettings  = $store->storeSettings;
-        }
-        if($store->storeImage != null)
-        {
-            $model->storeImage  = $store->storeImage;
-        }
-        $model->store->setScenario('update');
-        $model->billingAddress->setScenario('update');
-        $model->shippingAddress->setScenario('update');
-        return $this->processStoreSave($model);
     }
     
     /**
@@ -124,7 +192,7 @@ class DefaultController extends UiAdminController
         $model          = Store::findOne($id);
         $model->status  = $status;
         $model->save();
-        echo $this->renderGridView();   
+        return $this->redirect(UsniAdaptor::createUrl('stores/default/index'));
     }
 
     /**
@@ -137,120 +205,7 @@ class DefaultController extends UiAdminController
         $model          = Store::findOne($id);
         $model->is_default = true;
         $model->save();
-        return $this->renderGridView();
-    }
-
-    /**
-     * Populate shipping address.
-     * @return string json result
-     */
-    public function actionPopulateShippingAddress()
-    {
-        $modelClass = 'StoreEditForm'; 
-        $data       = AddressUtil::getFormFieldsToPopulateShippingAddress($modelClass);
-        echo Json::encode($data);
-    }
-    
-    /**
-     * @inheritdoc
-     */
-    protected function beforeAssigningPostData($model)
-    {
-        $model->storeImage->logoSavedImage = $model->storeImage->store_logo;
-        $model->storeImage->iconSavedImage = $model->storeImage->icon;
-    }
-    
-    /**
-     * @inheritdoc
-     */
-    protected function beforeModelSave($model)
-    {
-        //For store logo
-        $config = [
-                        'model'             => $model->storeImage,
-                        'attribute'         => 'store_logo',
-                        'uploadInstanceAttribute' => 'logoUploadInstance',
-                        'type'              => 'image',
-                        'savedAttribute'    => 'logoSavedImage',
-                        'fileMissingError'  => UsniAdaptor::t('application', 'Please upload image'),
-                  ];
-        $logoUploadInstanceManager = new UploadInstanceManager($config);
-        $logoResult = $logoUploadInstanceManager->processUploadInstance();
-        if($logoResult === false)
-        {
-            return false;
-        }
-        //for store  icon
-        $config = [
-                       'model'             => $model->storeImage,
-                       'attribute'         => 'icon',
-                       'uploadInstanceAttribute' => 'iconUploadInstance',
-                       'type'              => 'image',
-                       'savedAttribute'    => 'iconSavedImage',
-                       'fileMissingError'  => UsniAdaptor::t('application', 'Please upload image'),
-                 ];
-       $iconUploadInstanceManager = new UploadInstanceManager($config);
-       $iconResult = $iconUploadInstanceManager->processUploadInstance();
-       if($iconResult === false)
-       {
-           return false;
-       }
-        return true;
-    }
-    
-    /**
-     * @inheritdoc
-     */
-    public function afterModelSave($model)
-    {
-        if($model->storeImage->store_logo != '')
-        {
-            $config = [
-                        'model'             => $model->storeImage, 
-                        'attribute'         => 'store_logo', 
-                        'uploadInstance'    => $model->storeImage->logoUploadInstance, 
-                        'savedFile'         => $model->storeImage->logoSavedImage
-                      ];
-            FileUploadUtil::save('image', $config);
-        }
-        if($model->storeImage->icon != '')
-        {
-            $config = [
-                        'model'             => $model->storeImage, 
-                        'attribute'         => 'icon', 
-                        'uploadInstance'    => $model->storeImage->iconUploadInstance, 
-                        'savedFile'         => $model->storeImage->iconSavedImage
-                      ];
-            FileUploadUtil::save('image', $config);
-        }
-        if($this->action->id == 'create')
-        {
-            TranslationUtil::saveTranslatedModels($model->store);
-        }
-        return true;
-    }
-    
-    /**
-     * @inheritdoc
-     * Default store can not delete
-     */
-    public function actionDelete($id)
-    {
-        $storeTable             = Store::tableName();
-        $storeTranslatedTable   = StoreTranslated::tableName();
-        $query  = (new \yii\db\Query());
-        $store  = $query->select("st.is_default, stt.name")
-                        ->from([$storeTable . 'st', $storeTranslatedTable . ' stt'])
-                        ->where('st.id = :id AND stt.owner_id = st.id AND stt.language = :lan', [':id' => $id, ':lan' => 'en-US'])->one();
-        
-        if($store['is_default'] || $store['name'] === 'Default')
-        {
-            throw new ForbiddenHttpException(UsniAdaptor::t('stores','You can not delete default store.'));
-        }
-        else
-        {
-            return parent::actionDelete($id);
-        }
+        return $this->redirect(UsniAdaptor::createUrl('stores/default/index'));
     }
     
     /**
@@ -261,45 +216,8 @@ class DefaultController extends UiAdminController
     {
         if($_GET['id'] != null)
         {
-            $storeManager = UsniAdaptor::app()->storeManager;
-            $key = 'currentStore-' . $storeManager->applicationStoreCookieName;
-            CacheUtil::delete($key);
-            $storeManager->setCookie($_GET['id']);
-            return $this->goHome();
+            UsniAdaptor::app()->cookieManager->setStoreCookie($_GET['id']);
+            $this->redirect(UsniAdaptor::app()->request->referrer);
         }
-    }
-    
-    /**
-     * @inheritdoc
-     */
-    public function pageTitles()
-    {
-        return [
-                    'create'         => UsniAdaptor::t('application','Create') . ' ' . Store::getLabel(1),
-                    'update'         => UsniAdaptor::t('application','Update') . ' ' . Store::getLabel(1),
-                    'view'           => UsniAdaptor::t('application','View') . ' ' . Store::getLabel(1),
-                    'manage'         => UsniAdaptor::t('application','Manage') . ' ' . Store::getLabel(2)
-               ];
-    }
-    
-    /**
-     * @inheritdoc
-     */
-    protected function getActionToPermissionsMap()
-    {
-        $permissionsMap                         = parent::getActionToPermissionsMap();
-        $permissionsMap['change-status']        = 'store.manage';
-        $permissionsMap['set-default-store']    = 'store.manage';
-        return $permissionsMap;
-    }
-    
-    /**
-     * @inheritdoc
-     */
-    protected static function getNonPermissibleActions()
-    {
-        $permissions = parent::getNonPermissibleActions();
-        $permissions[] = 'set-store';
-        return $permissions;
     }
 }

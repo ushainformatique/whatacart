@@ -6,7 +6,7 @@
 namespace common\modules\order\notifications;
 
 use common\modules\order\models\Order;
-use usni\library\components\UiEmailNotification;
+use usni\library\notifications\EmailNotification;
 use usni\library\modules\notification\models\Notification;
 use yii\helpers\Url;
 use usni\library\utils\DateTimeUtil;
@@ -17,7 +17,7 @@ use common\modules\localization\modules\orderstatus\utils\OrderStatusUtil;
  *
  * @package common\modules\order\notifications
  */
-class OrderUpdateEmailNotification extends UiEmailNotification
+class OrderUpdateEmailNotification extends EmailNotification
 {
     /**
      * Contain order model.

@@ -5,24 +5,22 @@
  */
 namespace products\controllers;
 
-use products\views\front\ProductView;
 use frontend\controllers\BaseController;
 use usni\UsniAdaptor;
-use products\models\ProductReview;
-use frontend\utils\FrontUtil;
-use products\utils\CompareProductsUtil;
 use yii\helpers\Json;
-use products\views\front\CompareProductsView;
-use usni\library\utils\FlashUtil;
-use products\utils\ProductUtil;
-use products\views\front\TagView;
-use frontend\components\Breadcrumb;
 use common\utils\ApplicationUtil;
 use frontend\models\SearchForm;
-use common\modules\stores\utils\StoreUtil;
 use products\models\ProductRating;
 use yii\filters\AccessControl;
-use usni\library\utils\TranslationUtil;
+use products\dto\ProductDTO;
+use products\widgets\TopNavCompareProducts;
+use usni\library\dto\GridViewDTO;
+use products\business\SiteManager;
+use products\web\ProductView;
+use products\dto\TagListViewDTO;
+use frontend\business\SearchManager;
+use products\dao\TagDAO;
+use yii\base\InvalidParamException;
 /**
  * SiteController class file.
  * 
@@ -30,8 +28,6 @@ use usni\library\utils\TranslationUtil;
  */
 class SiteController extends BaseController
 {
-    use \usni\library\traits\EditViewTranslationTrait;
-    
     /**
      * @inheritdoc
      */
@@ -71,19 +67,40 @@ class SiteController extends BaseController
      */
     public function actionDetail($id)
     {
-        if(ProductUtil::checkIfProductAllowedToPerformAction($id) == false)
+        $siteManager    = SiteManager::getInstance();
+        $isValid        = $siteManager->isValidProductId($id);
+        if(!$isValid)
         {
-            throw new \yii\web\NotFoundHttpException();
+            throw new InvalidParamException(UsniAdaptor::t('products', "Invalid product"));
         }
-        $product        = ProductUtil::getProduct($id);
-        $breadcrumbView = new Breadcrumb(['page' => $product['name']]);
-        $this->getView()->params['breadcrumbs'] = $breadcrumbView->getBreadcrumbLinks();
-        $this->getView()->params['title'] = $product['name']; 
-        $productView  = new ProductView(['product' => $product]);
-        $content      = $this->renderInnerContent([$productView]);
-        $this->setMetaKeywords($product['metakeywords']);
-        $this->setMetaDescription($product['metadescription']);
-        return $this->render(FrontUtil::getDefaultInnerLayout(), ['content' => $content]);
+        //Populate dtos
+        $productDTO     = new ProductDTO();
+        $productDTO->setId($id);
+        
+        //Fetch and populate details
+        $siteManager->populateDetails($productDTO);
+        
+        $view   = new ProductView(['product' => $productDTO->getProduct()]);
+        $view->theme = $this->getView()->theme;
+        //Set metatag and description for each product
+        $productDetail = $productDTO->getProduct();
+        if($productDetail['metakeywords'] != null)
+        {
+            $view->registerMetaTag([
+                'name' => 'keywords',
+                'content' => $productDetail['metakeywords']
+            ]);
+        }
+        if($productDetail['metadescription'] != null)
+        {
+            $view->registerMetaTag([
+                'name' => 'description',
+                'content' => $productDetail['metadescription']
+            ]);
+        }
+        $this->setView($view);
+        //Fetch the result set
+        return $this->render("/front/view", ['productDTO' => $productDTO]);
     }
 
     /**
@@ -94,20 +111,15 @@ class SiteController extends BaseController
     {
         if(UsniAdaptor::app()->request->isAjax && isset($_POST['ProductReview']))
         {
-            $model = new ProductReview();
-            $model->attributes = $_POST['ProductReview'];
-            if($model->validate())
+            $isReviewPosted = SiteManager::getInstance()->postReview($_POST['ProductReview'], UsniAdaptor::app()->languageManager->selectedLanguage);
+            if($isReviewPosted)
             {
-                $model->save();
-                TranslationUtil::saveTranslatedModels($model);
-                ProductUtil::sendReviewNotification($model);
                 echo "Success";
             }
             else
             {
                 echo "Failure";
             }
-            
         }
     }
     
@@ -119,7 +131,7 @@ class SiteController extends BaseController
     {
         $compareproducts   = ApplicationUtil::getCompareProducts();
         $compareproducts->addItem($_POST['productId']);
-        $data       = CompareProductsUtil::renderCompareProductsInTopnav();
+        $data       = TopNavCompareProducts::widget();
         $result     = ['success' => true, 'data' => $data];
         echo Json::encode($result);
     }
@@ -130,15 +142,13 @@ class SiteController extends BaseController
      */
     public function actionCompareProducts()
     {
-        $compareProductsSetting = StoreUtil::getSettingValue('allow_compare_products');
+        $compareProductsSetting = UsniAdaptor::app()->storeManager->getSettingValue('allow_compare_products');
         if($compareProductsSetting)
         {
-            $breadcrumbView = new Breadcrumb(['page' => UsniAdaptor::t('products', 'Compare Products')]);
-            $this->getView()->params['breadcrumbs'] = $breadcrumbView->getBreadcrumbLinks();
-            $this->getView()->params['title']       = UsniAdaptor::t('products', 'Compare Products'); 
-            $view       =  new CompareProductsView();
-            $content    = $this->renderInnerContent([$view]);
-            return $this->render(FrontUtil::getDefaultInnerLayout(), ['content' => $content]);
+            $gridViewDTO    = new GridViewDTO();
+            $dataProvider   = SiteManager::getInstance()->getCompareProductsDataProvider(ApplicationUtil::getCompareProducts());
+            $gridViewDTO->setDataProvider($dataProvider);
+            return $this->render('/front/compareview', ['gridViewDTO' => $gridViewDTO]);
         }
         else
         {
@@ -147,25 +157,34 @@ class SiteController extends BaseController
     }
     
     /**
-     * Render Tagged products list.
+     * Render tagged products list.
+     * 
+     * @param string $name name of the tag
      * @return string.
      */
-    public function actionTagList($tag)
+    public function actionTagList($name)
     {
         $model          = new SearchForm();
         $queryParams    = UsniAdaptor::app()->getRequest()->getQueryParams();
-        if($tag == null)
+        if($name == null)
         {
             throw new \yii\web\BadRequestHttpException();
         }
         if($queryParams != null)
         {
-            $model->attributes = $queryParams;
+            $model->tag = $queryParams['name'];
         }
-        $tagView    = new TagView(['model' => $model]);
-        $content    = $this->renderInnerContent([$tagView]);
-        return $this->render(FrontUtil::getDefaultInnerLayout(), ['content' => $content]);
-        
+        $listViewDTO    = new TagListViewDTO();
+        $listViewDTO->setSearchModel($model);
+        $listViewDTO->setSortingOption(UsniAdaptor::app()->request->get('sort'));
+        $listViewDTO->setPageSize(UsniAdaptor::app()->request->get('showItemsPerPage'));
+        $dataCategoryId = UsniAdaptor::app()->storeManager->selectedStore['data_category_id'];
+        $listViewDTO->setDataCategoryId($dataCategoryId);
+        $dp             = SearchManager::getInstance()->getDataProvider($listViewDTO);
+        $listViewDTO->setDataprovider($dp);
+        $tagList        = TagDAO::getAll(UsniAdaptor::app()->languageManager->selectedLanguage);
+        $listViewDTO->setTagList($tagList);
+        return $this->render('/front/searchbytagview', ['listViewDTO' => $listViewDTO]);
     }
     
     /**
@@ -178,7 +197,7 @@ class SiteController extends BaseController
         {
             $compareProductList         = ApplicationUtil::getCompareProducts();
             $compareProductList->removeItem($_GET['product_id']);
-            $headerContent              = CompareProductsUtil::renderCompareProductsInTopnav();
+            $headerContent              = TopNavCompareProducts::widget();
             return Json::encode(['success' => true, 'headerCompareProductListContent' => $headerContent]);
         }
         return Json::encode([]);

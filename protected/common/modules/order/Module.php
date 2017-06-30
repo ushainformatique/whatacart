@@ -5,18 +5,15 @@
  */
 namespace common\modules\order;
 
-use usni\library\components\UiSecuredModule;
+use usni\library\components\SecuredModule;
 use usni\UsniAdaptor;
-use common\modules\order\utils\OrderPermissionUtil;
 use common\modules\order\models\Order;
-use common\modules\order\views\LatestOrderGridView;
-use usni\library\components\UiHtml;
 /**
  * Provides functionality related to order.
  *
  * @package common\modules\order
  */
-class Module extends UiSecuredModule
+class Module extends SecuredModule
 {  
     public $controllerNamespace = 'common\modules\order\controllers';
     
@@ -44,21 +41,21 @@ class Module extends UiSecuredModule
     /**
      * @inheritdoc
      */
-    public static function getPermissionUtil()
+    public function getPermissionModels()
     {
-        return OrderPermissionUtil::className();
+        return array(
+            Order::className()
+        );
     }
     
     /**
-     * Gets dashboard content.
-     * @return string
+     * @inheritdoc
      */
-    public function getDashboardContent()
+    public function getPermissions()
     {
-        $model      = new Order();
-        $view       = new LatestOrderGridView(['model' => $model]);
-        $content    = UiHtml::panelContent($view->render(), ['class' => 'panel-dashboard']);
-        return UiHtml::tag('div', $content, ['class' => 'col-sm-6 col-xs-12']);
+        $permissions = parent::getPermissions();
+        unset($permissions['Order']['order.bulk-edit']);
+        unset($permissions['Order']['order.bulk-delete']);
+        return $permissions;
     }
 }
-?>

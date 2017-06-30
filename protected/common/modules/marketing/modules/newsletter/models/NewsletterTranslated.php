@@ -5,12 +5,13 @@
  */
 namespace newsletter\models;
     
-use usni\library\components\UiSecuredActiveRecord;
+use usni\library\db\ActiveRecord;
 /**
- * NewsletterTranslated class file
+ * NewsletterTranslated class file.
+ * 
  * @package newsletter\models
  */
-class NewsletterTranslated extends UiSecuredActiveRecord
+class NewsletterTranslated extends ActiveRecord
 {
     /**
      * @inheritdoc
@@ -20,4 +21,3 @@ class NewsletterTranslated extends UiSecuredActiveRecord
         return $this->hasOne(Newsletter::className(), ['id' => 'owner_id']);
     }
 }
-?>

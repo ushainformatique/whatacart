@@ -5,12 +5,13 @@
  */
 namespace products\models;
     
-use usni\library\components\UiSecuredActiveRecord;
+use usni\library\db\ActiveRecord;
 /**
  * ProductImageTranslated class file
+ * 
  * @package products\models
  */
-class ProductImageTranslated extends UiSecuredActiveRecord
+class ProductImageTranslated extends ActiveRecord
 {
     /**
      * @inheritdoc
@@ -20,4 +21,3 @@ class ProductImageTranslated extends UiSecuredActiveRecord
         return $this->hasOne(ProductImage::className(), ['id' => 'owner_id']);
     }
 }
-?>

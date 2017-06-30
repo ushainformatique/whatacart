@@ -5,14 +5,15 @@
  */
 namespace newsletter;
 
-use usni\library\components\UiSecuredModule;
+use usni\library\components\SecuredModule;
 use usni\UsniAdaptor;
-use newsletter\utils\NewsletterPermissionUtil;
+use newsletter\models\Newsletter;
 /**
  * Provides functionality related to newsletter.
+ * 
  * @package newsletter
  */
-class Module extends UiSecuredModule
+class Module extends SecuredModule
 {      
     /**
      * Overrides to register translations.
@@ -40,13 +41,21 @@ class Module extends UiSecuredModule
         ];
     }
     
+    /**
+     * @inheritdoc
+     */
+    public function getPermissionModels()
+    {
+        return [
+                Newsletter::className()
+        ];
+    }
     
     /**
      * @inheritdoc
      */
-    public static function getPermissionUtil()
+    public function getModelToExcludedPermissions()
     {
-        return NewsletterPermissionUtil::className();
+         return [Newsletter::className() => ['bulk-edit', 'bulk-delete']];
     }
 }
-?>

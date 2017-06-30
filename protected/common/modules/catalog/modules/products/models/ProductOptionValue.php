@@ -5,8 +5,9 @@
  */
 namespace products\models;
 
-use usni\library\components\TranslatableActiveRecord;
+use usni\library\db\TranslatableActiveRecord;
 use usni\UsniAdaptor;
+use products\dao\ProductOptionDAO;
 /**
  * ProductOptionValue class file.
  *
@@ -23,6 +24,7 @@ class ProductOptionValue extends TranslatableActiveRecord
                     [['value','option_id'], 'required'],
                     ['value', 'validateValue'],
                     ['value', 'string', 'max' => 128],
+                    [['value','option_id'], 'safe'],
                ];
 	}
     
@@ -82,13 +84,8 @@ class ProductOptionValue extends TranslatableActiveRecord
     {
         if (!$this->hasErrors())
         {
-            $language       = UsniAdaptor::app()->languageManager->getContentLanguage();
-            $tableName      = UsniAdaptor::tablePrefix(). 'product_option_value';
-            $trTableName    = UsniAdaptor::tablePrefix(). 'product_option_value_translated';
-            $sql            = "SELECT * FROM $tableName pov, $trTableName povt WHERE povt.value = :value AND povt.owner_id = pov.id "
-                               . "AND povt.language = :lan AND pov.option_id = :optionId";
-            $record         = UsniAdaptor::app()->db->createCommand($sql, [':value' => $this->value, ':lan' => $language, 
-                              ':optionId' => $this->option_id])->queryOne();
+            $language       = $this->language;
+            $record         = ProductOptionDAO::getOptionValueRecord($this->value, $this->option_id, $language);
             if ($record !== false)
             {
                 $this->addError($attribute, UsniAdaptor::t('products', 'The combination "' . $this->value . '"-"' . $language . '" of Option Value and Language has already been taken for the option.'));

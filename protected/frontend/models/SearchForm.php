@@ -5,14 +5,13 @@
  */
 namespace frontend\models;
 
-use usni\library\components\UiFormModel;
 use usni\UsniAdaptor;
 /**
  * SearchForm class file.
  *
  * @package frontend\models
  */
-class SearchForm extends UiFormModel
+class SearchForm extends \yii\base\Model
 {
     /**
      * Store keyword during search.
@@ -45,7 +44,7 @@ class SearchForm extends UiFormModel
     {
         return [
                     [['keyword', 'categoryId', 'manufacturerId', 'tag'], 'safe'],
-                    [['keyword', 'categoryId', 'manufacturerId', 'tag'], 'filter', 'filter' => 'usni\library\components\UiHtml::encode']
+                    [['keyword', 'categoryId', 'manufacturerId', 'tag'], 'filter', 'filter' => 'usni\library\utils\Html::encode']
                ];
     }
     

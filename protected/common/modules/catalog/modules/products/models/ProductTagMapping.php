@@ -5,13 +5,13 @@
  */
 namespace products\models;
 
-use usni\library\components\UiSecuredActiveRecord;
+use usni\library\db\ActiveRecord;
 /**
  * ProductTagMapping active record.
  *
  * @package products\models
  */
-class ProductTagMapping extends UiSecuredActiveRecord
+class ProductTagMapping extends ActiveRecord
 {
     /**
      * @inheritdoc

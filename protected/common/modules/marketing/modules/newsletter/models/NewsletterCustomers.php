@@ -5,14 +5,14 @@
  */
 namespace newsletter\models;
 
-use usni\library\components\UiSecuredActiveRecord;
+use usni\library\db\ActiveRecord;
 use usni\UsniAdaptor;
 /**
  * Newsletter active record.
  * 
  * @package newsletter\models
  */
-class NewsletterCustomers extends UiSecuredActiveRecord
+class NewsletterCustomers extends ActiveRecord
 {
     /**
      * Check newsletter is subscribe or not.

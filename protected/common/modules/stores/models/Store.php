@@ -5,15 +5,13 @@
  */
 namespace common\modules\stores\models;
 
-use usni\library\components\TranslatableActiveRecord;
+use usni\library\db\TranslatableActiveRecord;
 use usni\UsniAdaptor;
-use common\modules\dataCategories\models\DataCategory;
 use usni\library\modules\users\models\Address;
-use usni\library\modules\users\models\Person;
-use usni\library\components\ImageManager;
 use common\models\BillingAddress;
 use common\models\ShippingAddress;
 use common\modules\stores\models\StoreConfiguration;
+use yii\db\Exception;
 /**
  * Store active record.
  *
@@ -21,13 +19,18 @@ use common\modules\stores\models\StoreConfiguration;
  */
 class Store extends TranslatableActiveRecord
 {
+    /**
+     * Default store id at the time of install
+     */
+    const DEFAULT_STORE_ID = 1;
+    
 	/**
      * @inheritdoc
      */
 	public function rules()
 	{
 		return [
-                    [['name', 'owner_id', 'data_category_id'],  'required'],
+                    [['name', 'owner_id', 'data_category_id', 'status'],  'required'],
                     ['name',  'unique', 'targetClass' => StoreTranslated::className(), 'targetAttribute' => ['name', 'language'], 'on' => 'create'],
                     ['name', 'unique', 'targetClass' => StoreTranslated::className(), 'targetAttribute' => ['name', 'language'], 'filter' => ['!=', 'owner_id', $this->id], 'on' => 'update'],
                     ['name',                                'string', 'max'=>64],
@@ -50,15 +53,6 @@ class Store extends TranslatableActiveRecord
                                                          'owner_id', 'theme'];
         $scenario['bulkedit']   = ['status'];
         return $scenario;
-    }
-    
-    /**
-     * Get DataCategory for the store.
-     * @return \ActiveQuery
-     */
-    public function getDataCategory()
-    {
-        return $this->hasOne(DataCategory::className(), ['id' => 'data_category_id']);
     }
     
     /**
@@ -108,16 +102,6 @@ class Store extends TranslatableActiveRecord
     }
 
     /**
-     * Gets store name
-     * @return array
-     */
-    public static function getDisplayLabel($storeId)
-    {
-        $row   = StoreTranslated::find()->where('owner_id = :oid', [':oid' => $storeId])->asArray()->one();
-        return $row['name'];
-    }
-    
-    /**
      * @inheritdoc
      */
     public static function getTranslatableAttributes()
@@ -163,15 +147,6 @@ class Store extends TranslatableActiveRecord
     }
     
     /**
-     * Get person for the store.
-     * @return ActiveQuery
-     */
-    public function getPerson()
-    {
-        return $this->hasOne(Person::className(), ['id' => 'owner_id']);
-    }
-    
-    /**
      * Get Settings for the store.
      * @return \StoreSettings
      */
@@ -212,7 +187,11 @@ class Store extends TranslatableActiveRecord
     {
         if (parent::beforeDelete())
         {
-             //Delete store logo.
+            if($this->is_default || ($this->id == self::DEFAULT_STORE_ID))
+            {
+                throw new Exception("<strong>the default store can not be deleted</strong>");
+            }
+            //Delete store logo.
             if($this->storeImage->store_logo != null)
             {
                 //Delete store_logo if exist
@@ -220,9 +199,10 @@ class Store extends TranslatableActiveRecord
                             'model'             => $this->storeImage,
                             'attribute'         => 'store_logo', 
                             'uploadInstance'    => null, 
-                            'savedFile'         => null
+                            'savedFile'         => null,
+                            'createThumbnail'   => true
                           ];
-                $fileManagerInstance = new ImageManager($config);
+                $fileManagerInstance = UsniAdaptor::app()->assetManager->getResourceManager('image', $config);
                 $fileManagerInstance->delete();
             }
             
@@ -236,7 +216,7 @@ class Store extends TranslatableActiveRecord
                             'uploadInstance'    => null, 
                             'savedFile'         => null
                           ];
-                $fileManagerInstance = new ImageManager($config);
+                $fileManagerInstance = UsniAdaptor::app()->assetManager->getResourceManager('image', $config);
                 $fileManagerInstance->delete();
             }
             

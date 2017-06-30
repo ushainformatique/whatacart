@@ -7,16 +7,11 @@ namespace common\utils;
 
 use usni\UsniAdaptor;
 use common\utils\ApplicationUtil;
-use usni\library\utils\StringUtil;
-use usni\library\utils\FileUploadUtil;
-use usni\library\components\UiHtml;
-use common\modules\stores\utils\StoreUtil;
-use frontend\utils\FrontUtil;
-use usni\library\utils\FileUtil;
-use products\utils\ProductUtil;
-use wishlist\utils\WishlistUtil;
-use products\utils\CompareProductsUtil;
-use cart\utils\CartUtil;
+use cart\models\Cart;
+use yii\base\Model;
+use products\models\CompareProducts;
+use cart\models\Checkout;
+use wishlist\models\Wishlist;
 /**
  * ApplicationUtil class file.
  * 
@@ -59,7 +54,7 @@ class ApplicationUtil
     
     /**
      * Gets checkout.
-     * @return Checkout
+     * @return Checkout | AdminCheckout
      */
     public static function getCheckout()
     {
@@ -74,8 +69,8 @@ class ApplicationUtil
     }
     
     /**
-     * Gets cart.
-     * @return Cart
+     * Gets wishlist.
+     * @return Wishlist
      */
     public static function getWishList()
     {
@@ -117,44 +112,8 @@ class ApplicationUtil
         }
         else
         {
-            return UsniAdaptor::app()->user->getUserModel()->id;
+            return UsniAdaptor::app()->user->getIdentity()->id;
         }
-    }
-    
-    /**
-     * Get image for type of screen.
-     * @param string $image
-     * @param string $type
-     * @return string
-     */
-    public static function getImage($image, $type, $defaultWidth, $defaultHeight)
-    {
-        $imageThumbWidth     = StoreUtil::getImageSetting($type . '_image_width', $defaultWidth);
-        $imageThumbHeight    = StoreUtil::getImageSetting($type . '_image_height', $defaultHeight);
-        if($image != null)
-        {
-            $src    = StringUtil::replaceBackSlashByForwardSlash(UsniAdaptor::app()->getAssetManager()->getImageUploadUrl() . DS . $image);
-            return UiHtml::img($src, ["width" => $imageThumbWidth , "height" => $imageThumbHeight]);
-        }
-        else
-        {
-            return FileUploadUtil::getNoAvailableImage(["thumbWidth"=> $imageThumbWidth , "thumbHeight" => $imageThumbHeight]);
-        }
-    }
-    
-    /**
-     * Get favicon.
-     * @param string $baseUrl
-     * @return mixed
-     */
-    public static function getFavIcon($baseUrl)
-    {
-        $icon = StoreUtil::getImageSetting('icon');
-        if(!empty($icon))
-        {
-            return UsniAdaptor::app()->getAssetManager()->getImageUploadUrl() . DS . $icon;
-        }
-        return $baseUrl . "/assets/images/favicon.ico";
     }
     
     /**
@@ -169,57 +128,5 @@ class ApplicationUtil
             return true;
         }
         return false;
-    }
-    
-    /**
-     * Get version
-     * @return string
-     */
-    public static function getVersion()
-    {
-        return '1.0.0';
-    }
-    
-    /**
-     * Get default data template
-     * @param string $template
-     * @return string
-     */
-    public static function getDefaultEmailTemplate($template)
-    {
-        $theme          = FrontUtil::getThemeName();
-        $rawLanguage    = UsniAdaptor::app()->languageManager->getLanguageWithoutLocale();
-        $path           = FileUtil::normalizePath(APPLICATION_PATH . '/themes/' . $theme . '/views/email/' . $rawLanguage . '/' . $template . '.php');
-        return UsniAdaptor::app()->getView()->renderFile($path);
-    }
-    
-    /**
-     * Register global scripts
-     * 
-     * @param View $view
-     * @return void
-     */
-    public static function registerGlobalScripts($view)
-    {
-        $js = ProductUtil::addToCartScript();
-        $view->registerJs($js);
-        $compareProductsSetting = StoreUtil::getSettingValue('allow_compare_products');
-        if($compareProductsSetting)
-        {
-            $compareProductsJs  = CompareProductsUtil::addToCompareProductsScript();
-            $view->registerJs($compareProductsJs);
-            $removeFromCompareProductsJs  = CompareProductsUtil::removeFromCompareProductScript();
-            $view->registerJs($removeFromCompareProductsJs);
-        }
-        $wishlistSetting = StoreUtil::getSettingValue('allow_wishlist');
-        if($wishlistSetting)
-        {
-            $wishListJs             = WishlistUtil::addToWishListScript();
-            $view->registerJs($wishListJs);
-            $removeFromwishListJs   = WishlistUtil::removeFromWishListScript();
-            $view->registerJs($removeFromwishListJs);
-        }
-        $view->registerJs(CartUtil::registerRemoveFromCartScript());
-        $view->registerJs(CartUtil::registerUpdateCartScript());
     }
 }

@@ -5,14 +5,17 @@
  */
 namespace taxes;
 
-use usni\library\components\UiSecuredModule;
+use usni\library\components\SecuredModule;
 use usni\UsniAdaptor;
-use taxes\utils\TaxPermissionUtil;
+use taxes\models\ProductTaxClass;
+use taxes\models\TaxRule;
+use taxes\models\Zone;
 /**
  * Provides functionality related to taxation.
+ * 
  * @package common\modules\tax
  */
-class Module extends UiSecuredModule
+class Module extends SecuredModule
 {   
     /**
      * Overrides to register translations.
@@ -43,9 +46,12 @@ class Module extends UiSecuredModule
     /**
      * @inheritdoc
      */
-    public static function getPermissionUtil()
+    public function getPermissionModels()
     {
-        return TaxPermissionUtil::className();
+        return [
+                ProductTaxClass::className(),
+                TaxRule::className(),
+                Zone::className()
+        ];
     }
 }
-?>

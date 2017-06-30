@@ -8,10 +8,8 @@ namespace newsletter\controllers;
 use frontend\controllers\BaseController;
 use newsletter\models\NewsletterCustomers;
 use usni\UsniAdaptor;
-use customer\utils\CustomerUtil;
-use newsletter\views\UnsubscribeView;
-use frontend\components\Breadcrumb;
-use frontend\utils\FrontUtil;
+use customer\dao\CustomerDAO;
+use newsletter\business\Manager;
 /**
  * SiteController class file.
  * 
@@ -34,8 +32,8 @@ class SiteController extends BaseController
             }
             elseif($_POST['NewsletterCustomers']['is_subscribe'] == true)
             {
-                $user       = UsniAdaptor::app()->user->getUserModel();
-                $customer   = CustomerUtil::getCustomerById($user->id);
+                $user       = UsniAdaptor::app()->user->getIdentity();
+                $customer   = CustomerDAO::getById($user->id);
                 $model->email       = $customer['email'];
                 $model->customer_id = $user->id;
             }
@@ -53,11 +51,7 @@ class SiteController extends BaseController
      */
     public function actionUnsubscribeNewsletter($email)
     {
-        NewsletterCustomers::deleteAll('email = :email', [':email' => $email]);
-        $breadcrumbView     = new Breadcrumb(['page' => UsniAdaptor::t('newsletter', 'Unsubscribe Newsletter')]);
-        $this->getView()->params['breadcrumbs'] = $breadcrumbView->getBreadcrumbLinks();
-        $view       = new UnsubscribeView();
-        $content    = $this->renderInnerContent([$view]);
-        return $this->render(FrontUtil::getDefaultInnerLayout(), ['content' => $content]);
+        Manager::getInstance()->processUnsubscribeNewsletter($email);
+        return $this->render('/front/unsubscribenewsletter');
     }
 }

@@ -6,115 +6,106 @@
 namespace products\controllers;
 
 use products\models\Product;
-use common\modules\catalog\controllers\BaseController;
-use usni\library\utils\FileUploadUtil;
-use usni\library\utils\TranslationUtil;
 use usni\UsniAdaptor;
-use products\utils\ProductUtil;
 use yii\web\Response;
-use usni\library\managers\UploadInstanceManager;
-use products\utils\DiscountUtil;
-use products\utils\SpecialUtil;
+use yii\filters\AccessControl;
+use usni\library\web\actions\CreateAction;
+use usni\library\web\actions\UpdateAction;
+use usni\library\web\actions\IndexAction;
+use usni\library\web\actions\BulkDeleteAction;
+use usni\library\web\actions\ViewAction;
+use products\dto\FormDTO;
+use products\business\Manager;
+use usni\library\dto\GridViewDTO;
+use usni\library\web\actions\BulkEditAction;
+use products\web\actions\DeleteAction;
 /**
  * Default controller for products module.
  * 
  * @package products\controllers
  */
-class DefaultController extends BaseController
+class DefaultController extends \usni\library\web\Controller
 {
     /**
-     * @inheritdoc
+     * inheritdoc
      */
-    protected function resolveModelClassName()
+    public function behaviors()
     {
-        return Product::className();
+        return [
+            'access' => [
+                'class' => AccessControl::className(),
+                'rules' => [
+                    [
+                        'allow' => true,
+                        'actions' => ['index'],
+                        'roles' => ['product.manage'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['view'],
+                        'roles' => ['product.view'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['create'],
+                        'roles' => ['product.create'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['update', 'bulk-edit'],
+                        'roles' => ['product.update'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['delete', 'bulk-delete'],
+                        'roles' => ['product.delete'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['latest']
+                    ],
+                ],
+            ],
+        ];
     }
-
+    
     /**
-     * @inheritdoc
+     * inheritdoc
      */
-    protected function beforeAssigningPostData($model)
+    public function actions()
     {
-        $model->savedImage = $model->image;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    protected function beforeModelSave($model)
-    {
-        $isValid    = true;
-        $required   = false;
-        if($model->scenario == 'create')
-        {
-            $required = true;
-        }
-        $config = [
-                        'model'             => $model,
-                        'attribute'         => 'image',
-                        'uploadInstanceAttribute' => 'uploadInstance',
-                        'type'              => 'image',
-                        'savedAttribute'    => 'savedImage',
-                        'fileMissingError'  => UsniAdaptor::t('application', 'Please upload image'),
-                        'required'          => $required
-                  ];
-        $uploadInstanceManager = new UploadInstanceManager($config);
-        $result = $uploadInstanceManager->processUploadInstance();
-        if($result === false)
-        {
-            $isValid = false;
-        }
-        //For discount
-        if (isset($_POST['ProductDiscount']) && is_array($_POST['ProductDiscount']))
-        {
-            $productDiscounts   = $model->discounts = $_POST['ProductDiscount'];
-            $isValid            = DiscountUtil::validateDiscounts($productDiscounts, $model);
-        }
-        //For related product
-        if (isset($_POST['Product']['relatedProducts']) && is_array($_POST['Product']['relatedProducts']))
-        {
-            $model->relatedProducts = $_POST['Product']['relatedProducts'];
-        }
-        
-        //For special
-        if (isset($_POST['ProductSpecial']) && is_array($_POST['ProductSpecial']))
-        {
-            $productSpecials   = $model->specials = $_POST['ProductSpecial'];
-            $isValid           = SpecialUtil::validateSpecials($productSpecials, $model);
-        }
-        //For product images
-        if (isset($_POST['ProductImage']) && is_array($_POST['ProductImage']))
-        {
-            $model->productImageData = $_POST['ProductImage'];
-        }
-        $imageErrors    = ProductUtil::validateImageUploads($model);
-        if(!empty($imageErrors))
-        {
-            $isValid = false;
-        }
-        return $isValid;
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function afterModelSave($model)
-    {
-        if($model->image != '')
-        {
-            $config = [
-                        'model'             => $model, 
-                        'attribute'         => 'image', 
-                        'uploadInstance'    => $model->uploadInstance, 
-                        'savedFile'         => $model->savedImage
-                      ];
-            FileUploadUtil::save('image', $config);
-        }
-        if($this->action->id == 'create')
-        {
-            TranslationUtil::saveTranslatedModels($model);
-        }
-        return true;
+        return [
+            'create' => ['class' => CreateAction::className(),
+                         'modelClass' => Product::className(),
+                         'updateUrl'  => 'update',
+                         'formDTOClass' => FormDTO::className(),
+                         'viewFile' => '/create'
+                        ],
+            'update' => ['class' => UpdateAction::className(),
+                         'modelClass' => Product::className(),
+                         'formDTOClass' => FormDTO::className(),
+                         'viewFile' => '/update'
+                        ],
+            'index'  => ['class' => IndexAction::className(),
+                         'modelClass' => Product::className(),
+                         'viewFile' => '/index'
+                        ],
+            'view'   => ['class' => ViewAction::className(),
+                         'modelClass' => Product::className(),
+                         'viewFile' => '/view'
+                        ],
+            'delete'   => ['class' => DeleteAction::className(),
+                           'modelClass' => Product::className(),
+                           'redirectUrl'=> 'index',
+                           'permission' => 'product.deleteother'
+                        ],
+            'bulk-delete' => ['class' => BulkDeleteAction::className(),
+                              'modelClass' => Product::className()
+                        ],
+            'bulk-edit' => ['class' => BulkEditAction::className(),
+                            'modelClass' => Product::className()
+                        ],
+        ];
     }
     
     /**
@@ -124,7 +115,8 @@ class DefaultController extends BaseController
      */
     public function actionTags($query)
     {
-        $items = ProductUtil::getTagItems($query);
+        $manager = new Manager();
+        $items = $manager->getTagItems($query);
         // We know we can use ContentNegotiator filter
         // this way is easier to show you here :)
         UsniAdaptor::app()->response->format = Response::FORMAT_JSON;
@@ -132,51 +124,14 @@ class DefaultController extends BaseController
     }
     
     /**
-     * @inheritdoc
+     * Get the latest products
+     * @return string
      */
-    public function pageTitles()
+    public function actionLatest()
     {
-        return [
-                    'create'         => UsniAdaptor::t('application','Create') . ' ' . Product::getLabel(1),
-                    'update'         => UsniAdaptor::t('application','Update') . ' ' . Product::getLabel(1),
-                    'view'           => UsniAdaptor::t('application','View') . ' ' . Product::getLabel(1),
-                    'manage'         => UsniAdaptor::t('application','Manage') . ' ' . Product::getLabel(2)
-               ];
-    }
-    
-    /**
-     * @inheritdoc
-     */
-    public function actionView($id)
-    {
-        if(ProductUtil::checkIfProductAllowedToPerformAction($id) == false)
-        {
-            throw new \yii\web\NotFoundHttpException();
-        }
-        return parent::actionView($id);
-    }
-    
-    /**
-     * @inheritdoc
-     */
-    public function actionUpdate($id)
-    {
-        if(ProductUtil::checkIfProductAllowedToPerformAction($id) == false)
-        {
-            throw new \yii\web\NotFoundHttpException();
-        }
-        return parent::actionUpdate($id);
-    }
-    
-    /**
-     * @inheritdoc
-     */
-    public function actionDelete($id)
-    {
-        if(ProductUtil::checkIfProductAllowedToPerformAction($id) == false)
-        {
-            throw new \yii\web\NotFoundHttpException();
-        }
-        return parent::actionDelete($id);
+        $manager = Manager::getInstance();
+        $gridViewDTO = new GridViewDTO();
+        $manager->processLatestProducts($gridViewDTO);
+        return $this->renderPartial('/_latestproductsgrid', ['gridViewDTO' => $gridViewDTO]);
     }
 }
