@@ -35,3 +35,19 @@ Download the version zip from http://www.whatacart.com/download and extract it. 
 Run http://localhost/whatacart if running on local environment.
 
 If you are deploying on a domain for example xyz.com, go to public_html folder and http://xyz.com.
+
+### NOTE
+
+In case you are getting the following errors 
+
+* No default value is provided for a column
+* Error while adding the indexes
+
+Please add the following line to either my.ini or my.cnf based on your configuration.
+
+sql-mode = ""
+
+   OR
+   
+sql-mode = "NO_ENGINE_SUBSTITUTION"
+
