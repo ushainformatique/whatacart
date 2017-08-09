@@ -174,7 +174,7 @@ class Cart extends \yii\base\Model
      */
     public function getProducts()
     {
-        return iterator_to_array($this->itemsList);
+        return iterator_to_array($this->itemsList, false);
     }
     
     /**
