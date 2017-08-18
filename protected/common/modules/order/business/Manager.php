@@ -27,6 +27,7 @@ use common\modules\order\events\OrderEvent;
 use common\modules\localization\modules\orderstatus\models\OrderStatusTranslated;
 use yii\db\Exception;
 use products\behaviors\PriceBehavior;
+use common\modules\order\behaviors\OrderBehavior;
 /**
  * Implements business logic for order
  *
@@ -45,6 +46,7 @@ class Manager extends \common\business\Manager
         return [
             NotificationService::className(),
             PriceBehavior::className(),
+            OrderBehavior::className()
         ];
     }
     
@@ -190,6 +192,8 @@ class Manager extends \common\business\Manager
         $order['billingAddress']        = OrderDAO::getOrderAddress($order['id'], Address::TYPE_BILLING_ADDRESS);
         $order['shippingAddress']       = OrderDAO::getOrderAddress($order['id'], Address::TYPE_SHIPPING_ADDRESS);
         $order['payment_method_name']   = $this->getPaymentMethodName($order['payment_method']);
+        $order                          = $this->afterOrderPopulation($order);
+        $order['netPayment']            = $this->getAmount($order);
         return $order;
     }
     
@@ -234,6 +238,7 @@ class Manager extends \common\business\Manager
         $order->status      = $postData['status'];
         $order->save();
         $order->addHistory($postData['comment'], $postData['notify_customer']);
+        $this->trigger(Order::EVENT_AFTER_ADDING_HISTORY, new OrderEvent(['order' => $order]));
         if($postData['notify_customer'])
         {
            if($postData['status'] == $completedStatus)
@@ -288,5 +293,16 @@ class Manager extends \common\business\Manager
     {
         $orderSearch = new LatestOrderSearch();
         $gridViewDTO->setDataProvider($orderSearch->search());
+    }
+    
+    /**
+     * Process after order population
+     * @param array $order
+     */
+    public function afterOrderPopulation($order)
+    {
+        $event = new OrderEvent(['order' => $order]);
+        $this->trigger(Order::EVENT_AFTER_ORDER_POPULATION, $event);
+        return $event->order;
     }
 }

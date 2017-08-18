@@ -43,8 +43,7 @@ class OrderSearch extends Order
      * @var float 
      */
     public $amount;
-
-
+    
     /**
      * @inheritdoc
      */
@@ -85,7 +84,7 @@ class OrderSearch extends Order
         $orderInvoice           = UsniAdaptor::tablePrefix() . 'invoice';
         $customerTable          = UsniAdaptor::tablePrefix() . 'customer';
         $currentStoreId         = UsniAdaptor::app()->storeManager->selectedStoreId;
-        $query->select(["ot.*", "opd.payment_method", "opd.total_including_tax", "opd.shipping_fee", "opd.payment_method",
+        $query->select(["DISTINCT(ot.id)", "ot.*", "opd.payment_method", "opd.total_including_tax", "opd.shipping_fee", "opd.payment_method",
                         "oi.id AS invoice_id", "CONCAT_WS(' ', oad.firstname, oad.lastname) AS name", 
                         "(opd.total_including_tax + opd.shipping_fee) AS amount", "tc.username"])
               ->from(["$tableName ot"])
@@ -121,14 +120,14 @@ class OrderSearch extends Order
         foreach($models as $index => $model)
         {
             $currencySymbol                 = UsniAdaptor::app()->currencyManager->getCurrencySymbol($model['currency_code']);
-            $model['amount']                = $this->getPriceWithSymbol($model['total_including_tax'] + $model['shipping_fee'], $currencySymbol);
             $model['payment_method_name']   = $this->getPaymentMethodName($model['payment_method']);
             $model['shipping_method_name']  = ShippingDAO::getShippingMethodName($model['shipping'], UsniAdaptor::app()->languageManager->selectedLanguage);
             $model['payment_activity_url']  = $this->getPaymentActivityUrl($model);
             $model['show_update_link']      = $this->showUpdateLink($model);
             $model['status_label']          = $this->getOrderStatusLabel($model['status']);
             $model['username']              = CustomerBusinessManager::getInstance()->getCustomer($model['customer_id']);
-            $models[$index] = $model;
+            $model['amount']                = $this->getPriceWithSymbol(OrderBusinessManager::getInstance()->getAmount($model), $currencySymbol);
+            $models[$index]                 = $model;
         }
         $dataProvider->setModels($models);
         return $dataProvider;

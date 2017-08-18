@@ -27,6 +27,9 @@ use products\dao\DownloadDAO;
 use products\models\CustomerDownloadMapping;
 use common\modules\order\dto\DetailViewDTO;
 use common\modules\shipping\dao\ShippingDAO;
+use common\modules\order\events\OrderEvent;
+use common\modules\order\behaviors\OrderBehavior;
+use common\modules\order\models\Order;
 /**
  * Manager class file.
  *
@@ -43,7 +46,8 @@ class SiteManager extends Manager
      */
     public function behaviors()
     {
-        return ['notifyService' => SiteNotificationService::className()];
+        return ['notifyService' => SiteNotificationService::className(),
+                OrderBehavior::className()];
     }
     
     /**
@@ -281,6 +285,8 @@ class SiteManager extends Manager
             $order['billingAddress']        = OrderDAO::getOrderAddress($order['id'], Address::TYPE_BILLING_ADDRESS);
             $order['shippingAddress']       = OrderDAO::getOrderAddress($order['id'], Address::TYPE_SHIPPING_ADDRESS);
             $order['payment_method_name']   = $this->getPaymentMethodName($order['payment_method']);
+            $order                          = $this->afterOrderPopulation($order);
+            $order['netPayment']            = $this->getAmount($order);
             $detailViewDTO->setBrowseModels($this->getOrderViewBrowseModels($storeId));
             $detailViewDTO->setModel($order);
             $detailViewDTO->setIsValidOrder(true);
@@ -299,5 +305,16 @@ class SiteManager extends Manager
     public function getOrderViewBrowseModels($storeId)
     {
         return OrderDAO::getStoreOrdersForCustomer($this->userId, $storeId);
+    }
+    
+    /**
+     * Process after order population
+     * @param array $order
+     */
+    public function afterOrderPopulation($order)
+    {
+        $event = new OrderEvent(['order' => $order]);
+        $this->trigger(Order::EVENT_AFTER_ORDER_POPULATION, $event);
+        return $event->order;
     }
 }

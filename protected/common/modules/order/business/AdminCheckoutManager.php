@@ -19,6 +19,8 @@ use customer\models\Customer;
 use common\modules\order\dao\OrderDAO;
 use usni\library\modules\users\models\Address;
 use usni\UsniAdaptor;
+use cart\behaviors\CheckoutManagerBehavior;
+use common\modules\order\events\ConfirmOrderEvent;
 /**
  * AdminCheckoutManager implements the business logic for checkout
  *
@@ -29,6 +31,11 @@ class AdminCheckoutManager extends \common\business\Manager
     use \common\modules\payment\traits\PaymentTrait;
     use \common\modules\shipping\traits\ShippingTrait;
     use \common\modules\localization\modules\orderstatus\traits\OrderStatusTrait;
+    
+    /**
+     * @event Event triggered after payment is confirmed
+     */
+    CONST EVENT_AFTER_CONFIRM = 'afterConfirm';
     
     /**
      * Payment factory class name
@@ -42,7 +49,8 @@ class AdminCheckoutManager extends \common\business\Manager
     public function behaviors()
     {
         return [
-            PriceBehavior::className()
+            PriceBehavior::className(),
+            CheckoutManagerBehavior::className()
         ];
     }
     
@@ -139,9 +147,11 @@ class AdminCheckoutManager extends \common\business\Manager
         $paymentFactoryClassName    = $this->paymentFactoryClassName;
         $paymentFactory             = new $paymentFactoryClassName(['type' => $checkout->paymentMethodEditForm->payment_method,
                                                   'order' => $order,
-                                                  'checkoutDetails' => $checkoutDTO->getCheckout()]);
+                                                  'checkoutDetails' => $checkoutDTO->getCheckout()
+                                                ]);
         $instance                   = $paymentFactory->getInstance();
         $instance->processConfirm();
+        $this->processAfterConfirm($checkoutDTO);
         $checkoutDTO->getCheckout()->deliveryOptionsEditForm  = new DeliveryOptionsEditForm();
         $checkoutDTO->getCheckout()->paymentMethodEditForm    = new PaymentMethodEditForm();
         $checkoutDTO->getCheckout()->order                    = new Order();
@@ -186,5 +196,15 @@ class AdminCheckoutManager extends \common\business\Manager
                 $checkoutDTO->getCheckout()->$attribute->attributes = $address;
             }
         }
+    }
+    
+    /**
+     * Process after confirm
+     * @param CheckoutDTO $checkoutDTO
+     */
+    public function processAfterConfirm($checkoutDTO)
+    {
+        $event          = new ConfirmOrderEvent(['checkoutDTO' => $checkoutDTO]);
+        $this->trigger(static::EVENT_AFTER_CONFIRM, $event);
     }
 }

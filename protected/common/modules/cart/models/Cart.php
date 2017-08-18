@@ -174,15 +174,7 @@ class Cart extends \yii\base\Model
      */
     public function getProducts()
     {
-        $products   = [];
-        if(!empty($this->itemsList))
-        {
-            foreach($this->itemsList as $productId => $cartData)
-            {
-                $products[] = $cartData;
-            }
-        }
-        return $products;
+        return iterator_to_array($this->itemsList, false);
     }
     
     /**

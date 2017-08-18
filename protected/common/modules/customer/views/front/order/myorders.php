@@ -7,7 +7,6 @@ use usni\UsniAdaptor;
 use usni\library\grid\GridView;
 use common\modules\order\models\Order;
 use common\modules\order\grid\OrderStatusDataColumn;
-use common\modules\order\grid\FormattedPriceColumn;
 use usni\library\grid\FormattedDateTimeColumn;
 use common\modules\order\grid\MyOrderActionColumn;
 
@@ -42,7 +41,6 @@ $widgetParams   = [
                                         [
                                             'label'     => UsniAdaptor::t('products', 'Amount'),
                                             'attribute' => 'amount',
-                                            'class'     => FormattedPriceColumn::className()
                                         ],
                                         [
                                             'label'     => UsniAdaptor::t('order', 'Date Added'),

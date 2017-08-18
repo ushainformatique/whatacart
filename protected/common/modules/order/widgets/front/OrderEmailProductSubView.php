@@ -6,6 +6,7 @@
 namespace common\modules\order\widgets\front;
 
 use common\modules\order\widgets\AdminOrderProductSubView;
+use common\modules\order\behaviors\OrderEmailProductSubViewBehavior;
 /**
  * OrderEmailProductSubView class file. This would be used while sending email related to order.
  * 
@@ -22,4 +23,14 @@ class OrderEmailProductSubView extends AdminOrderProductSubView
      * @inheritdoc
      */
     public $itemView = '@common/modules/order/views/email/_orderEmailItem.php';
+    
+    /**
+     * inheritdoc
+     */
+    public function behaviors()
+    {
+        return [
+                    OrderEmailProductSubViewBehavior::className()
+               ];
+    }
 }

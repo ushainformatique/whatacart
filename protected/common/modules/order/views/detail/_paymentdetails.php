@@ -1,5 +1,6 @@
 <?php
 use usni\library\widgets\DetailView;
+use usni\UsniAdaptor;
 
 /* @var $detailViewDTO \common\modules\order\dto\DetailViewDTO */
 /* @var $this \usni\library\web\AdminView */
@@ -22,6 +23,17 @@ $widgetParams   = [
                                             [
                                                 'attribute' => 'tax',
                                                 'value'     => $this->getPriceWithSymbol($model['tax'], $model['currency_symbol']),
+                                                'format'    => 'raw'
+                                            ],
+                                            [
+                                                'attribute' => 'shipping_fee',
+                                                'value'     => $this->getPriceWithSymbol($model['shipping_fee'], $model['currency_symbol']),
+                                                'format'    => 'raw'
+                                            ],
+                                            [
+                                                'label'     => UsniAdaptor::t('order', 'Net Payment'),
+                                                'attribute' => 'netPayment',
+                                                'value'    => $this->getPriceWithSymbol($model['netPayment'], $model['currency_symbol']),
                                                 'format'    => 'raw'
                                             ],
                                             'payment_type',

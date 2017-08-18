@@ -334,7 +334,10 @@ class Manager extends \common\business\Manager
         $defaultImageDataSet = self::getDefaultImageDataSet();
         foreach($defaultImageDataSet as $key => $value)
         {
-            $model->$key = $value;
+            if($model->$key == null)
+            {
+                $model->$key = $value;
+            }
         }
         $formDTO->getModel()->storeImage = $model;
     }
@@ -437,6 +440,8 @@ class Manager extends \common\business\Manager
     public static function getDefaultImageDataSet()
     {
         return [
+                'store_logo'    => '',
+                'icon'          => '',
                 'category_image_width'   => 90, 
                 'category_image_height'  => 90,
                 'product_list_image_width' => 150,

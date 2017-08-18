@@ -10,6 +10,8 @@ use usni\UsniAdaptor;
 use usni\library\modules\users\models\Address;
 use yii\data\Sort;
 use usni\library\dataproviders\ArrayRecordDataProvider;
+use products\behaviors\PriceBehavior;
+use common\modules\order\business\Manager as OrderBusinessManager;
 /**
  * MyOrderSearch class file
  * This is the search class for model Order.
@@ -19,7 +21,7 @@ use usni\library\dataproviders\ArrayRecordDataProvider;
 class MyOrderSearch extends Order 
 {
     use \usni\library\traits\SearchTrait;
-    
+    use \common\modules\payment\traits\PaymentTrait;
     /**
      * Payment method
      * @var string 
@@ -73,14 +75,14 @@ class MyOrderSearch extends Order
         $orderPaymentDetails    = UsniAdaptor::tablePrefix() . 'order_payment_details';
         $orderInvoice           = UsniAdaptor::tablePrefix() . 'invoice';
         $currentStoreId         = UsniAdaptor::app()->storeManager->selectedStoreId;
-        $query->select(["ot.*", "et.code", "ett.name", "CONCAT_WS(' ', oad.firstname, oad.lastname) AS username", "opd.payment_method", "opd.total_including_tax", "oi.id AS invoice_id", "(opd.total_including_tax + opd.shipping_fee) AS amount"])
+        $query->select(["ot.*", "et.code", "ett.name", "CONCAT_WS(' ', oad.firstname, oad.lastname) AS username", "opd.shipping_fee", "opd.payment_method", "opd.total_including_tax", "oi.id AS invoice_id", "(opd.total_including_tax + opd.shipping_fee) AS amount"])
               ->from(["$tableName ot"])
               ->innerJoin("$orderAddressDetails oad", "ot.id = oad.order_id AND oad.type = :type", [':type' => Address::TYPE_BILLING_ADDRESS])
               ->innerJoin("$orderPaymentDetails opd", "ot.id = opd.order_id")
               ->innerJoin("$orderInvoice oi", "ot.id = oi.order_id")
               ->leftJoin("$extensionTable et", "ot.shipping = et.code AND et.category = :cat", [':cat' => 'shipping'])
               ->leftJoin("$trExtensionTable ett", "et.id = ett.owner_id AND ett.language = :lan", [':lan' => UsniAdaptor::app()->languageManager->selectedLanguage])
-              ->where('ot.store_id = :sid AND customer_id = :cid', [':sid' => $currentStoreId, ':cid' => $this->getUserId()]);
+              ->where('ot.store_id = :sid AND ot.customer_id = :cid', [':sid' => $currentStoreId, ':cid' => $this->getUserId()]);
         
         $dataProvider   = new ArrayRecordDataProvider([
             'query' => $query,
@@ -99,6 +101,15 @@ class MyOrderSearch extends Order
         $query->andFilterWhere(['ot.status' => $this->status]);
         $query->andFilterWhere(['(opd.total_including_tax + opd.shipping_fee)' => $this->amount]);
         $query->andFilterWhere(['like', 'ot.created_datetime', $this->created_datetime]);
+        $this->attachBehavior('priceBehavior', PriceBehavior::className());
+        $models = $dataProvider->getModels();
+        foreach($models as $index => $model)
+        {
+            $currencySymbol     = UsniAdaptor::app()->currencyManager->getCurrencySymbol($model['currency_code']);
+            $model['amount']    = $this->getPriceWithSymbol(OrderBusinessManager::getInstance()->getAmount($model), $currencySymbol);
+            $models[$index]     = $model;
+        }
+        $dataProvider->setModels($models);
         return $dataProvider;
     }
 }

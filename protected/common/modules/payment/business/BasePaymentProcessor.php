@@ -16,6 +16,7 @@ use products\models\Product;
 use cart\models\Checkout;
 use cart\models\Cart;
 use common\modules\order\business\InvoiceManager as InvoiceManager;
+use common\modules\order\models\OrderProduct;
 /**
  * Base class for payment processor.
  * 
@@ -261,7 +262,26 @@ abstract class BasePaymentProcessor extends \yii\base\Component
      */
     public function saveOrderProduct()
     {
+        $modifiedOrderProducts = [];
         $orderProducts = OrderDAO::getOrderProducts($this->order->id, $this->language);
+        if(!empty($orderProducts))
+        {
+            //Go through the products in db for the order and check if product is not in cart than it is removed from cart so should be deleted from db.
+            foreach($orderProducts as $index => $data)
+            {
+                $item = $this->cartDetails->itemsList->get($data['item_code']);
+                if($item == null)
+                {
+                    //Remove from database
+                    OrderProduct::deleteAll('id = :id', [':id' => $data['id']]);
+                }
+                else
+                {
+                    //Store it so that it can be updated
+                    $modifiedOrderProducts[] = $data;
+                }
+            }
+        }
         foreach ($this->cartDetails->itemsList as $itemCode => $item)
         {
             //In case of options
@@ -275,9 +295,9 @@ abstract class BasePaymentProcessor extends \yii\base\Component
             }
             $isNewRecord  = true;
             $orderProduct = [];
-            if(!empty($orderProducts))
+            if(!empty($modifiedOrderProducts))
             {
-                foreach($orderProducts as $data)
+                foreach($modifiedOrderProducts as $data)
                 {
                     if($data['item_code'] == $itemCode)
                     {

@@ -46,10 +46,6 @@ class DynamicOptionsEditView extends \yii\bootstrap\Widget
      */
     public function run()
     {
-        if(empty($this->fieldOptions))
-        {
-            $this->fieldOptions = $this->getDefaultFieldOptions();
-        }
         $records       = $this->assignedOptions;
         $modifiedRecords = [];
         foreach($records as $record)
@@ -59,16 +55,25 @@ class DynamicOptionsEditView extends \yii\bootstrap\Widget
         $valueContent = null;
         foreach($modifiedRecords as $optionId => $rows)
         {
+            if(empty($this->fieldOptions))
+            {
+                $fieldOptions = $this->getDefaultFieldOptions();
+            }
+            else
+            {
+                $fieldOptions = $this->fieldOptions;
+            }
+            
             $type       = $rows[0]['type'];
             $displayName = $rows[0]['display_name'];
             $required    = $rows[0]['required'];
             if($required == true)
             {
-                $this->fieldOptions['fieldContainerOptions']['class'] .= ' required';
+                $fieldOptions['fieldContainerOptions']['class'] .= ' required';
             }
-            $this->fieldOptions['fieldContainerOptions']['class'] .= ' field-productoptionmapping-' . $optionId;
+            $fieldOptions['fieldContainerOptions']['class'] .= ' field-productoptionmapping-' . $optionId;
             $name       = 'ProductOptionMapping[option][' . $optionId . ']';
-            $label      = Html::label($displayName, null, ['class' => $this->fieldOptions['labelOptions']['class'], 'for' => $name]);
+            $label      = Html::label($displayName, null, ['class' => $fieldOptions['labelOptions']['class'], 'for' => $name]);
             $items = [];
             foreach($rows as $row)
             {
@@ -76,7 +81,7 @@ class DynamicOptionsEditView extends \yii\bootstrap\Widget
             }
             if ($type == 'select')
             {
-                $field = $this->renderSelectOption($name, $items, $this->fieldOptions['inputOptions']['class'], $optionId);
+                $field = $this->renderSelectOption($name, $items, $fieldOptions['inputOptions']['class'], $optionId);
             }
             if($type == 'radio')
             {
@@ -85,20 +90,20 @@ class DynamicOptionsEditView extends \yii\bootstrap\Widget
             }
             if($type == 'checkbox')
             {
-                $field = $this->renderCheckboxOption($name, $items, $optionId);
+                $field = $this->renderCheckboxOption($name, $items, $optionId, $fieldOptions);
             }   
             $errorContainer = Html::tag('div', '', ['class' => 'help-block help-block-error']);
             //Wrap input into container if available
-            if(!empty($this->fieldOptions['inputContainerOptions']['class']))
+            if(!empty($fieldOptions['inputContainerOptions']['class']))
             {
-                $inputContainer = Html::tag('div', $field . $errorContainer, $this->fieldOptions['inputContainerOptions']); 
+                $inputContainer = Html::tag('div', $field . $errorContainer, $fieldOptions['inputContainerOptions']); 
             }
             else
             {
                 $inputContainer = $field . $errorContainer;
             }
             $valueContent .= Html::tag('div', $label . $inputContainer, 
-                                         ['class' => $this->fieldOptions['fieldContainerOptions']['class']]);
+                                         ['class' => $fieldOptions['fieldContainerOptions']['class']]);
         }
         return $valueContent;
     }
@@ -143,9 +148,10 @@ class DynamicOptionsEditView extends \yii\bootstrap\Widget
      * @param string $name
      * @param array $items
      * @param int $optionId
+     * @param array $fieldOptions
      * @return string
      */
-    protected function renderCheckboxOption($name, $items, $optionId)
+    protected function renderCheckboxOption($name, $items, $optionId, $fieldOptions)
     {
         $field  = null;
         foreach ($items as $value => $item)
@@ -153,7 +159,7 @@ class DynamicOptionsEditView extends \yii\bootstrap\Widget
             $field .= Html::tag('div', Html::checkbox($name . '[]', false, 
                                                          ['label' => $item,
                                                           'value' => $value]), 
-                                    $this->fieldOptions['checkboxContainerOptions']);
+                                    $fieldOptions['checkboxContainerOptions']);
         }
         return Html::tag('div', $field, ['data-productid' => $this->productId, 'data-optionid'  => $optionId]);
     }

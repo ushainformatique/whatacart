@@ -6,6 +6,7 @@ use usni\UsniAdaptor;
         <tr>
             <th><?php echo UsniAdaptor::t('products', 'SKU'); ?></th>
             <th><?php echo UsniAdaptor::t('application', 'Name'); ?></th>
+            <th><?php echo UsniAdaptor::t('products', 'Options') ?></th>
             <th><?php echo UsniAdaptor::t('products', 'Quantity'); ?></th>
             <th><?php echo UsniAdaptor::t('products', 'Price'); ?></th>
             <th><?php echo UsniAdaptor::t('tax', 'Tax');    ?></th>
@@ -20,6 +21,7 @@ use usni\UsniAdaptor;
             <tr>
                 <td><?php echo $orderProduct['sku']; ?></td>
                 <td><?php echo $orderProduct['name']; ?></td>
+                <td><?php echo $orderProduct['displayed_options'];?></td>
                 <td><?php echo $orderProduct['quantity']; ?></td>
                 <td><?php echo $this->getPriceWithSymbol($orderProduct['price'], $currencySymbol); ?></td>
                 <td><?php echo $this->getPriceWithSymbol($orderProduct['tax'], $currencySymbol); ?></td>

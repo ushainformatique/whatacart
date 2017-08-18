@@ -33,7 +33,7 @@ class CheckoutController extends BaseController
     {
         if(parent::beforeAction($action))
         {
-            $this->checkoutManager = CheckoutManager::getInstance(['paymentFactoryClassName' => PaymentFactory::className()]);
+            $this->checkoutManager  = CheckoutManager::getInstance(['paymentFactoryClassName' => PaymentFactory::className()]);
             return true;
         }
         return false;
@@ -83,6 +83,10 @@ class CheckoutController extends BaseController
     {
         $cart       = ApplicationUtil::getCart();
         $checkout   = ApplicationUtil::getCheckout();
+        if($cart->itemsList->count() == 0)
+        {
+            return $this->goHome();
+        }
         //Each time on review order screen check if currency is changed then redirect to home page.
         $selectedCurrency = UsniAdaptor::app()->currencyManager->selectedCurrency;
         if($selectedCurrency != $checkout->order->currency_code)

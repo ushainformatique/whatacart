@@ -92,8 +92,8 @@ class DefaultController extends \usni\library\web\Controller
                     ],
                     [
                         'allow' => true,
-                        'actions' => ['add-to-cart', 'add-product', 'review-order', 'complete-order', 'checkout', 'remove', 'render-option-form', 
-                                      'checkout'],
+                        'actions' => ['add-to-cart', 'add-product', 'review-order', 'complete-order', 'checkout', 'remove', 
+                                      'render-option-form', 'checkout'],
                         'roles' => ['order.manage'],
                     ],
                     [

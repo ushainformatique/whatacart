@@ -7,6 +7,10 @@ namespace common\modules\order\widgets;
 
 use usni\UsniAdaptor;
 use usni\library\utils\Html;
+use common\modules\order\behaviors\AdminOrderProductSubViewBehavior;
+use usni\library\utils\ArrayUtil;
+use cart\widgets\CartSubView;
+use cart\events\CartEvent;
 /**
  * AdminOrderProductSubView class file. This would be used on order detail view, product tab in admin
  * 
@@ -82,6 +86,15 @@ class AdminOrderProductSubView extends \yii\bootstrap\Widget
     /**
      * inheritdoc
      */
+    public function behaviors()
+    {
+        $behaviors = parent::behaviors();
+        return ArrayUtil::merge($behaviors, [AdminOrderProductSubViewBehavior::className()]);
+    }
+    
+    /**
+     * inheritdoc
+     */
     public function run()
     {
         $content = preg_replace_callback("/{\\w+}/", function ($matches) {
@@ -122,10 +135,12 @@ class AdminOrderProductSubView extends \yii\bootstrap\Widget
         {
             foreach($products as $data)
             {
-                $content .= $this->getView()->render($this->itemView, [ 'data' => $data, 
-                                                                        'currencyCode'  => $this->order['currency_code'], 
-                                                                        'currencySymbol'  => $this->order['currency_symbol']
-                                                                    ]);
+                $viewParams = ['data' => $data, 
+                                'currencyCode'  => $this->order['currency_code'], 
+                                'currencySymbol'  => $this->order['currency_symbol'],
+                                'isConfirm'         => true];
+                $viewParams = $this->beforeRenderingCartRow($viewParams);
+                $content .= $this->getView()->render($this->itemView, $viewParams);
                 $totalUnitPrice += $data['price'] * $data['quantity'];
                 $totalTax       += $data['tax'] * $data['quantity'];
             }
@@ -149,7 +164,7 @@ class AdminOrderProductSubView extends \yii\bootstrap\Widget
         $items               = $this->getRows();
         $this->totalPrice    = $this->totalUnitPrice + $this->totalTax + $this->shippingPrice;
         $this->totalPrice    = number_format($this->totalPrice, 2, ".", "");
-        return [
+        $params = [
                     'items'             => $items, 
                     'isEmpty'           => false, 
                     'totalUnitPrice'    => $this->totalUnitPrice, 
@@ -157,8 +172,10 @@ class AdminOrderProductSubView extends \yii\bootstrap\Widget
                     'totalPrice'        => $this->totalPrice,
                     'shippingPrice'     => $this->shippingPrice,
                     'currencyCode'      => $this->order['currency_code'],
-                    'currencySymbol'    => $this->order['currency_symbol']
+                    'currencySymbol'    => $this->order['currency_symbol'],
+                    'isConfirm'         => true
                ];
+        return $this->beforeRenderingCart($params);
     }
     
     /**
@@ -189,5 +206,30 @@ class AdminOrderProductSubView extends \yii\bootstrap\Widget
             return $this->order['shipping_fee'];
         }
         return 0;
+    }
+    
+    /**
+     * Before rendering cart.
+     * @param array $viewParams
+     * @return array
+     */
+    public function beforeRenderingCart($viewParams)
+    {
+        $viewParams = ArrayUtil::merge($viewParams, ['order' => $this->order]);
+        $event      = new CartEvent(['viewParams' => $viewParams]);
+        $this->trigger(CartSubView::EVENT_BEFORE_RENDERING_CART, $event);
+        return $event->viewParams;
+    }
+    
+    /**
+     * Before rendering cart row.
+     * @param array $viewParams
+     * @return array
+     */
+    public function beforeRenderingCartRow($viewParams)
+    {
+        $event = new CartEvent(['viewParams' => $viewParams]);
+        $this->trigger(CartSubView::EVENT_BEFORE_RENDERING_CART_ROW, $event);
+        return $event->viewParams;
     }
 }

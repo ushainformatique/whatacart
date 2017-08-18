@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "541edacb2382c10a32c27bcd4eef806f",
+    "content-hash": "1f858cb6644ec2f58575035dbfc0f441",
     "packages": [
         {
             "name": "2amigos/yii2-date-picker-widget",
@@ -333,16 +333,16 @@
         },
         {
             "name": "bower-asset/codemirror",
-            "version": "5.27.2",
+            "version": "5.26.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/components/codemirror.git",
-                "reference": "bec22ed5876ede8a1affe44fa22db8d348e40f3b"
+                "reference": "54202fb872642e5d5aff986d26c7acb22f6d3985"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/components/codemirror/zipball/bec22ed5876ede8a1affe44fa22db8d348e40f3b",
-                "reference": "bec22ed5876ede8a1affe44fa22db8d348e40f3b",
+                "url": "https://api.github.com/repos/components/codemirror/zipball/54202fb872642e5d5aff986d26c7acb22f6d3985",
+                "reference": "54202fb872642e5d5aff986d26c7acb22f6d3985",
                 "shasum": ""
             },
             "type": "bower-asset-library",
@@ -1172,7 +1172,7 @@
                 "wysiwyg",
                 "yii2"
             ],
-            "time": "2016-05-23 13:00:07"
+            "time": "2016-01-15T00:00:00+00:00"
         },
         {
             "name": "swiftmailer/swiftmailer",
@@ -1227,41 +1227,6 @@
                 "mailer"
             ],
             "time": "2017-05-01T15:54:03+00:00"
-        },
-        {
-            "name": "ushainformatique/yiichimp",
-            "version": "1.0.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/ushainformatique/yiichimp.git",
-                "reference": "5152ad3263cb23e6994390461ce72d5137b6a76b"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/ushainformatique/yiichimp/zipball/5152ad3263cb23e6994390461ce72d5137b6a76b",
-                "reference": "5152ad3263cb23e6994390461ce72d5137b6a76b",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=5.4.0"
-            },
-            "type": "library",
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "BSD-3-Clause"
-            ],
-            "authors": [
-                {
-                    "name": "Usha Informatique",
-                    "email": "ushainformatique@gmail.com"
-                }
-            ],
-            "description": "YiiChimp is a web development framework written on top of high performance yii2 framework.",
-            "keywords": [
-                "framework",
-                "yiichimp"
-            ],
-            "time": "2017-06-30T07:08:45+00:00"
         },
         {
             "name": "yiisoft/yii2",

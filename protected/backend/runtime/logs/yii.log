@@ -1,8 +1,0 @@
-2017-06-21 15:18:38 [127.0.0.1][-][ve59qlds6sg5a3t7fsd7fb2r41][error][yii\base\ErrorException:1] exception 'yii\base\ErrorException' with message 'Class 'products\db\UsniAdaptor' not found' in E:\Workspace\Softwares\xampp\htdocs\whatacartv2\protected\common\modules\catalog\modules\products\db\ProductRatingTableBuilder.php:44
-Stack trace:
-#0 [internal function]: yii\base\ErrorHandler->handleFatalError()
-#1 {main}
-2017-06-21 15:21:25 [127.0.0.1][-][ve59qlds6sg5a3t7fsd7fb2r41][error][yii\base\ErrorException:1] exception 'yii\base\ErrorException' with message 'Class 'products\db\UsniAdaptor' not found' in E:\Workspace\Softwares\xampp\htdocs\whatacartv2\protected\common\modules\catalog\modules\products\db\ProductRatingTableBuilder.php:44
-Stack trace:
-#0 [internal function]: yii\base\ErrorHandler->handleFatalError()
-#1 {main}

@@ -14,6 +14,8 @@ use usni\UsniAdaptor;
 use common\modules\order\utils\OrderUtil;
 use common\modules\order\dto\InvoiceDetailViewDTO;
 use common\modules\order\business\Manager as OrderBusinessManager;
+use common\modules\order\behaviors\InvoiceManagerBehavior;
+use usni\library\utils\ArrayUtil;
 /**
  * Implements business logic for invoice
  *
@@ -23,6 +25,11 @@ class InvoiceManager extends \common\business\Manager
 {
     use \common\modules\sequence\traits\SequenceTrait;
     use \common\modules\payment\traits\PaymentTrait;
+    
+    public function behaviors()
+    {
+        return ArrayUtil::merge(parent::behaviors(), [InvoiceManagerBehavior::className()]);
+    }
     
     /**
      * Save invoice details.
@@ -50,13 +57,16 @@ class InvoiceManager extends \common\business\Manager
      */
     public function processDetail($detailViewDTO)
     {
-        $orderId        = $detailViewDTO->getId();
+        $invoice        = OrderDAO::getInvoice($detailViewDTO->getId(), $this->language);
+        $orderId        = $invoice['order_id'];
+        $order          = OrderDAO::getById($orderId, $this->language, $this->selectedStoreId);
         $isValidOrder   = OrderBusinessManager::getInstance()->isValidOrderId($orderId);
         if($isValidOrder)
         {
             parent::processDetail($detailViewDTO);
             $orderProducts  = OrderDAO::getOrderProducts($orderId, $this->language, true);
             $detailViewDTO->setOrderProducts($orderProducts);
+            $this->populateExtraAttributesInModel($detailViewDTO, $order);
         }
         else
         {
@@ -69,8 +79,7 @@ class InvoiceManager extends \common\business\Manager
      */
     public function processDetailAccess($detailViewDTO, $model)
     {
-        $modelClass         = $detailViewDTO->getModelClass();
-        $isPermissible      = true;
+        $isPermissible  = true;
         if($this->userId != $model['created_by'])
         {
             $isPermissible      = UsniAdaptor::app()->authorizationManager->checkAccess($this->userId, 'order.viewother');

@@ -9,6 +9,8 @@ use usni\UsniAdaptor;
 use usni\library\utils\Html;
 use common\utils\ApplicationUtil;
 use cart\models\Cart;
+use cart\behaviors\CartSubViewBehavior;
+use cart\events\CartEvent;
 /**
  * CartSubView class file.
  * 
@@ -16,6 +18,17 @@ use cart\models\Cart;
  */
 class CartSubView extends \yii\bootstrap\Widget
 {
+    const EVENT_BEFORE_RENDERING_CART = 'beforeRenderingCart';
+    const EVENT_BEFORE_RENDERING_CART_ROW = 'beforeRenderingCartRow';
+    /**
+     * inheritdoc
+     */
+    public function behaviors()
+    {
+        $behaviors = parent::behaviors();
+        return array_merge($behaviors, [CartSubViewBehavior::className()]);
+    }
+    
     /**
      * Is cart empty
      * @var boolean 
@@ -158,17 +171,19 @@ class CartSubView extends \yii\bootstrap\Widget
     {
         $this->totalPrice       = $this->totalUnitPrice + $this->totalTax + $this->shippingPrice;
         $this->totalPrice       = number_format($this->totalPrice, 2, ".", "");
-        return ['items' => $this->getRows(), 
-                'isEmpty' => $this->isEmpty, 
-                'totalUnitPrice' => $this->totalUnitPrice, 
-                'totalTax' => $this->totalTax, 
-                'totalPrice' => $this->totalPrice,
-                'products' => $this->products, 
-                'shippingPrice' => $this->shippingPrice,
-                'cart'  => $this->cart,
-                'itemCount' => $this->itemCount,
-                'currencyCode' => $this->getCurrencyCode()
-               ];
+        $params = ['items' => $this->getRows(), 
+                    'isEmpty' => $this->isEmpty, 
+                    'totalUnitPrice' => $this->totalUnitPrice, 
+                    'totalTax' => $this->totalTax, 
+                    'totalPrice' => $this->totalPrice,
+                    'products' => $this->products, 
+                    'shippingPrice' => $this->shippingPrice,
+                    'cart'  => $this->cart,
+                    'itemCount' => $this->itemCount,
+                    'currencyCode' => $this->getCurrencyCode(),
+                    'isConfirm' => $this->isConfirm
+                  ];
+        return $this->beforeRenderingCart($params);
     }
 
     /**
@@ -184,8 +199,10 @@ class CartSubView extends \yii\bootstrap\Widget
             $this->isEmpty = false;
             foreach($products as $item)
             {
-                $content .= $this->getView()->render($this->itemView, ['item' => $item, 'currencyCode' => $this->getCurrencyCode(),
-                                                                       'isConfirm' => $this->isConfirm]);
+                $viewParams = ['item' => $item, 'currencyCode' => $this->getCurrencyCode(),
+                                                                       'isConfirm' => $this->isConfirm];
+                $viewParams = $this->beforeRenderingCartRow($viewParams);
+                $content .= $this->getView()->render($this->itemView, $viewParams);
             }
         }
         else
@@ -237,5 +254,29 @@ class CartSubView extends \yii\bootstrap\Widget
     public function getCurrencyCode()
     {
         return UsniAdaptor::app()->currencyManager->selectedCurrency;
+    }
+    
+    /**
+     * Before rendering cart.
+     * @param array $viewParams
+     * @return array
+     */
+    public function beforeRenderingCart($viewParams)
+    {
+        $event = new CartEvent(['viewParams' => $viewParams, 'cart' => $this->cart]);
+        $this->trigger(self::EVENT_BEFORE_RENDERING_CART, $event);
+        return $event->viewParams;
+    }
+    
+    /**
+     * Before rendering cart row.
+     * @param array $viewParams
+     * @return array
+     */
+    public function beforeRenderingCartRow($viewParams)
+    {
+        $event = new CartEvent(['viewParams' => $viewParams]);
+        $this->trigger(self::EVENT_BEFORE_RENDERING_CART_ROW, $event);
+        return $event->viewParams;
     }
 }

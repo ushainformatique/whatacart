@@ -23,7 +23,7 @@ class StoreTableBuilder extends TableBuilder
             'url' => $this->string(64),
             'status' => $this->smallInteger(1)->notNull(),
             'data_category_id' => $this->integer(11)->notNull(),
-            'is_default' => $this->smallInteger(1)->notNull(),
+            'is_default' => $this->smallInteger(1)->notNull()->defaultValue(0),
             'owner_id' => $this->integer(11)->notNull(),
             'theme' => $this->string(16),
         ];

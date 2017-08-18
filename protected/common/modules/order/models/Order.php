@@ -55,6 +55,8 @@ class Order extends TranslatableActiveRecord
     CONST EVENT_NEW_ORDER_CREATED   = 'newOrderCreated';
     CONST EVENT_ORDER_STATUS_UPDATE = 'orderStatusUpdated';
     CONST EVENT_ORDER_COMPLETED     = 'orderCompleted';
+    CONST EVENT_AFTER_ADDING_HISTORY = 'afterAddingOrderHistory';
+    CONST EVENT_AFTER_ORDER_POPULATION = "afterOrderPopulation";
     
     /**
      * @inheritdoc

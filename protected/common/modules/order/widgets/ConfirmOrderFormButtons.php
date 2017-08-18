@@ -17,7 +17,7 @@ class ConfirmOrderFormButtons extends \usni\library\bootstrap\FormButtons
     /**
      * inheritdoc
      */
-    public $layout = "<div class='row'><div class='form-actions text-right'>{submit}\n{cancel}\n{editcart}</div></div>";
+    public $layout = "<div class='form-actions text-right'>{submit}\n{cancel}\n{editcart}</div>";
     
     /**
      * @var string url for edit cart 

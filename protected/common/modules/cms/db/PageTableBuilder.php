@@ -24,7 +24,7 @@ class PageTableBuilder extends TableBuilder
             'parent_id' => $this->integer(11),
             'custom_url' => $this->string(64),
             'level' => $this->smallInteger(1)->notNull(),
-            'path'  => $this->text()->notNull(),
+            'path'  => $this->text(),
         ];
     }
     

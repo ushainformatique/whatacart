@@ -55,7 +55,7 @@ use usni\library\utils\Html;
         ?>
             <tr>
                 <td colspan='6'> <?php echo UsniAdaptor::t('application', 'No results found');?></td>
-            </tr>;
+            </tr>
         <?php
             }
         ?>

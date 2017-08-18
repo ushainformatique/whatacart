@@ -27,7 +27,7 @@ class ProductCategoryTableBuilder extends TableBuilder
             'displayintopmenu' => $this->smallInteger(1),
             'data_category_id' => $this->integer(11)->notNull(),
             'code' => $this->string(164)->notNull(),
-            'path'  => $this->text()->notNull(),
+            'path'  => $this->text(),
         ];
     }
     
