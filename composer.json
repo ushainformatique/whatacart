@@ -13,7 +13,7 @@
         "php": ">=5.4.0",
         "yiisoft/yii2": "2.0.11",
         "yiisoft/yii2-bootstrap": "*",
-        "yiisoft/yii2-swiftmailer": "*",
+        "yiisoft/yii2-swiftmailer": "2.0.7",
         "branchonline/yii2-lightbox": "*",
         "2amigos/yii2-date-time-picker-widget": "*",
         "2amigos/yii2-date-picker-widget": "*",

@@ -100,6 +100,8 @@ class CheckoutController extends BaseController
         }
         $reviewDTO      = new ReviewDTO();
         $this->checkoutManager->populateReviewDTO($reviewDTO, $checkout, $cart);
+        //If new items are added to cart, shipping cost would be updated see issue https://github.com/ushainformatique/whatacart/issues/27
+        $checkout->updateSession();
         $type           = ApplicationUtil::getCheckout()->paymentMethodEditForm->payment_method;
         $confirmRoute   = "payment/$type/confirm";
         $formContent    = UsniAdaptor::app()->runAction($confirmRoute);

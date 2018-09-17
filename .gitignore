@@ -1,5 +1,6 @@
 /nbproject/
 /protected/common/config/instance.php
+/protected/common/config/instance.install.php
 /resources/
 /runtime/
 /protected/common/config/instancetest.php

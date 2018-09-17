@@ -171,6 +171,14 @@ class AdminCheckoutManager extends \common\business\Manager
             $reviewDTO->setShippingContent($checkout->deliveryInfoEditForm->getConcatenatedAddress());
             $reviewDTO->setShippingName(ShippingDAO::getShippingMethodName($checkout->deliveryOptionsEditForm->shipping,
                                                                            $this->language));
+            $shippingMethod  = $checkout->deliveryOptionsEditForm->shipping;
+            if($shippingMethod != null)
+            {
+                $checkout->deliveryOptionsEditForm->shipping_fee = $this->getCalculatedPriceByType($shippingMethod, $cart);
+                $order = $checkout->order;
+                $order->shipping_fee = $checkout->deliveryOptionsEditForm->shipping_fee;
+                $order->save();
+            }
         }
         $paymentMethodName = $this->getPaymentMethodName($checkout->paymentMethodEditForm->payment_method);
         $reviewDTO->setPaymentMethodName($paymentMethodName);

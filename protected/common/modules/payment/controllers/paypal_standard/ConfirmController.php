@@ -22,4 +22,10 @@ class ConfirmController extends \usni\library\web\Controller
         $config                 = Manager::getInstance()->getPaypalConfig();
         return $this->renderPartial('/paypal_standard/confirmorder', ['config' => $config]);
     }
+    
+    public function actionValidate()
+    {
+        $config                 = Manager::getInstance()->getPaypalConfig();
+        return $this->renderPartial('/paypal_standard/_confirmform', ['config' => $config]);
+    }
 }

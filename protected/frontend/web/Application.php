@@ -41,6 +41,18 @@ class Application extends \usni\library\web\Application
      */
     public function powered()
     {
-		return UsniAdaptor::t('application','Powered by {application}.', array('application'=>'<a href="http://whatacart.com" rel="external">WhatACart</a>'));
+	return UsniAdaptor::t('application','Powered by {application}.', array('application'=>'<a href="http://whatacart.com" rel="external">WhatACart</a>'));
+    }
+    
+    /**
+     * @inheritdoc
+     */
+    public function setVendorPath($path)
+    {
+        parent::setVendorPath($path);
+        if(!is_dir(VENDOR_PATH . DIRECTORY_SEPARATOR . 'bower'))
+        {
+            \Yii::setAlias('@bower', VENDOR_PATH . DIRECTORY_SEPARATOR . 'bower-asset');
+        }
     }
 }
