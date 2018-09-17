@@ -397,9 +397,11 @@ class DefaultController extends \usni\library\web\Controller
                 return $this->redirect(UsniAdaptor::createUrl('order/default/complete-order'));
             }
         }
-        $model->status  = ApplicationUtil::getCheckout()->order->status;
+        $model->status  = $checkout->order->status;
         $reviewDTO      = new ReviewDTO();
-        $this->checkoutManager->populateReviewDTO($reviewDTO, ApplicationUtil::getCheckout(), ApplicationUtil::getCart());
+        $this->checkoutManager->populateReviewDTO($reviewDTO, $checkout, ApplicationUtil::getCart());
+        //If new items are added to cart, shipping cost would be updated see issue https://github.com/ushainformatique/whatacart/issues/27
+        $checkout->updateSession();
         return $this->render('/revieworder', ['model' => $model, 'reviewDTO' => $reviewDTO]);
     }
     
