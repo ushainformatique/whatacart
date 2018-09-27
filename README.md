@@ -8,7 +8,7 @@ product categories, products, enabling payment and shipping methods and can star
 REQUIREMENTS
 ------------
 
-The minimum requirement for this software to run is that your Web server supports PHP 5.4.0.
+The minimum requirement for this software to run is that your Web server supports PHP 5.5 or greater.
 
 
 INSTALLATION
