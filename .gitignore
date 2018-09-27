@@ -8,3 +8,6 @@
 /assets/
 /backend/assets/
 /vendor/
+/data/installdata.sql
+/protected/backend/runtime/
+/protected/frontend/runtime/
