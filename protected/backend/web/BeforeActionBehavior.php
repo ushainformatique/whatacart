@@ -105,7 +105,7 @@ class BeforeActionBehavior extends Behavior
         UsniAdaptor::app()->languageManager->languages              = $manager->getList();
         UsniAdaptor::app()->languageManager->translatedLanguages    = $manager->getTranslatedLanguages();
         //Set from cookie
-        UsniAdaptor::app()->languageManager->selectedLanguage       = UsniAdaptor::app()->cookieManager->getSelectedLanguage();
+        UsniAdaptor::app()->language = UsniAdaptor::app()->languageManager->selectedLanguage = UsniAdaptor::app()->cookieManager->getSelectedLanguage();
     }
     
     /**

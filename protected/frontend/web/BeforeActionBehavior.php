@@ -113,8 +113,18 @@ class BeforeActionBehavior extends \backend\web\BeforeActionBehavior
         if($selectedStore['theme'] != null)
         {
             $themeName = $selectedStore['theme'];
-            UsniAdaptor::app()->view->theme->basePath = '@webroot/themes/' . $themeName;
-            UsniAdaptor::app()->view->theme->baseUrl  = '@web/themes/' . $themeName;
+            
+            $themeConfig = [
+                            'basePath' => '@webroot/themes/' . $themeName,
+                            'baseUrl' => '@web/themes/' . $themeName,
+                            'class'   => 'yii\base\Theme',
+                            'pathMap' => [
+                                                '@app/views' => '@webroot/themes/' . $themeName,
+                                                '@app/modules' => '@webroot/themes/' . $themeName . '/modules',
+                                                '@common/modules' => '@webroot/themes/' . $themeName . '/modules'
+                            ]
+            ];
+            UsniAdaptor::app()->view->theme = \Yii::createObject($themeConfig);
         }
     }
     
@@ -168,5 +178,15 @@ class BeforeActionBehavior extends \backend\web\BeforeActionBehavior
         {
             UsniAdaptor::app()->cookieManager->setLanguageCookie('en-US');
         }
+    }
+
+    /**
+     * Set language data
+     */
+    public function setLanguageData()
+    {
+        parent::setLanguageData();
+        //Set from cookie
+        UsniAdaptor::app()->language = UsniAdaptor::app()->languageManager->selectedLanguage;
     }
 }

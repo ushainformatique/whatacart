@@ -25,7 +25,7 @@ class StoreTableBuilder extends TableBuilder
             'data_category_id' => $this->integer(11)->notNull(),
             'is_default' => $this->smallInteger(1)->notNull()->defaultValue(0),
             'owner_id' => $this->integer(11)->notNull(),
-            'theme' => $this->string(16),
+            'theme' => $this->string(128),
         ];
     }
     

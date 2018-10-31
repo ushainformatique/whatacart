@@ -208,4 +208,18 @@ class View extends \usni\library\web\View
         }
         return parent::renderHeadHtml();
     }
+
+    /**
+     * Get fav icon.
+     * @return string
+     */
+    public function getFavIcon()
+    {
+        $image = UsniAdaptor::app()->configManager->getValue('application', 'favicon');
+        if($image != null)
+        {
+            return str_replace('https', 'http', UsniAdaptor::app()->assetManager->getImageUploadUrl() . '/' . $image);
+        }
+        return null;
+    }
 }
