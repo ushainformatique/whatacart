@@ -10,7 +10,7 @@ namespace cart\models;
  *
  * @package cart\models
  */
-class Item extends \yii\base\Object
+class Item extends \yii\base\BaseObject
 {
     /**
      * @var float 

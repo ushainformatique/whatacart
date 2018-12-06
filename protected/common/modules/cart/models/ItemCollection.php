@@ -5,7 +5,7 @@
  */
 namespace cart\models;
 
-use yii\base\Object;
+use yii\base\BaseObject;
 use cart\models\Item;
 use ArrayIterator;
 /**
@@ -13,7 +13,7 @@ use ArrayIterator;
  *
  * @package cart\models
  */
-class ItemCollection extends Object implements \IteratorAggregate, \ArrayAccess, \Countable
+class ItemCollection extends BaseObject implements \IteratorAggregate, \ArrayAccess, \Countable
 {
     /**
      * @var Item[] the items in this collection (indexed by the item item code)
