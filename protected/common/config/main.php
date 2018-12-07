@@ -9,7 +9,7 @@ return ArrayHelper::merge(
                                             'vendorPath'    => VENDOR_PATH,
                                             'installed'     => $installed,
                                             'name'          => $siteName,
-                                            'version'       => '2.0.3',
+                                            'version'       => '2.0.4',
                                             'poweredByName' => 'WhatACart',
                                             'poweredByUrl'  => 'http://whatacart.com',
                                             'environment'   => $environment,
