@@ -4,7 +4,7 @@
     "keywords": ["whatacart", "ecommerce", "open source ecommerce"],
     "homepage": "http://www.whatacart.com/",
     "type": "project",
-    "license": "GPLv3",
+    "license": "GPL-3.0-only",
     "support": {
         "issues": "https://github.com/ushainformatique/whatacart/issues"
     },
