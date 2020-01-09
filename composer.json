@@ -11,8 +11,8 @@
     "minimum-stability": "stable",
     "require": {
         "php": ">=5.4.0",
-        "yiisoft/yii2": "~2.0.13",
-        "yiisoft/yii2-bootstrap": "*",
+        "yiisoft/yii2": "2.0.15.1",
+        "yiisoft/yii2-bootstrap": "2.0.8",
         "yiisoft/yii2-swiftmailer": "2.0.7",
         "branchonline/yii2-lightbox": "*",
         "2amigos/yii2-date-time-picker-widget": "*",
@@ -20,7 +20,7 @@
         "2amigos/yii2-taggable-behavior": "*",
         "2amigos/yii2-selectize-widget": "*",
         "kartik-v/yii2-widget-rating": "*",
-		"kartik-v/bootstrap-star-rating": "@dev",
+        "kartik-v/bootstrap-star-rating": "@dev",
         "marqu3s/yii2-summernote": "dev-master",
         "fortawesome/font-awesome": "*",
         "ushainformatique/yiichimp": "*"
