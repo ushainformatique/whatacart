@@ -84,6 +84,7 @@ class ShippingProcessor extends BaseShippingProcessor
             {
                 return 0;
             }
+            $price = 0;
             if($data['calculateHandlingFee'] == 'fixed')
             {
                 if($data['type'] == 'perOrder')
@@ -98,6 +99,10 @@ class ShippingProcessor extends BaseShippingProcessor
             elseif($data['calculateHandlingFee'] == 'percent')
             {
                 $price = ($data['price']/100) * ($cart->getTotalUnitPrice() + $cart->getTax());
+            }
+            else
+            {
+                $price = $data['price'];
             }
             if($data['method_name'] == 'fixedPlusHandling')
             {
@@ -120,13 +125,13 @@ class ShippingProcessor extends BaseShippingProcessor
                 return UsniAdaptor::t('shipping', 'No fees applied');
             }
             $methodNameDD = FlatShippingUtil::getMethodNameDropdown();
-            if($data['calculateHandlingFee'] == 'fixed')
+            if($data['method_name'] == 'fixed')
             {
                 $typeData = FlatShippingUtil::getTypeDropdown();
                 $type     = $typeData[$data['type']];
                 return $this->getFormattedPrice($data['price'], $this->selectedCurrency) . ' ' . $type . ' ' . $methodNameDD[$data['method_name']]; 
             }
-            if($data['calculateHandlingFee'] == 'percent')
+            if($data['method_name'] == 'percent')
             {
                 return $data['price'] . ' Percent '  . $methodNameDD[$data['method_name']];
             }

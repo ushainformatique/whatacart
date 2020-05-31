@@ -84,6 +84,7 @@ class OrderSearch extends Order
         $orderInvoice           = UsniAdaptor::tablePrefix() . 'invoice';
         $customerTable          = UsniAdaptor::tablePrefix() . 'customer';
         $currentStoreId         = UsniAdaptor::app()->storeManager->selectedStoreId;
+        $currentStoreOwnerId = UsniAdaptor::app()->storeManager->selectedStore['owner_id'];
         $query->select(["DISTINCT(ot.id)", "ot.*", "opd.payment_method", "opd.total_including_tax", "opd.shipping_fee", "opd.payment_method",
                         "oi.id AS invoice_id", "CONCAT_WS(' ', oad.firstname, oad.lastname) AS name", 
                         "(opd.total_including_tax + opd.shipping_fee) AS amount", "tc.username"])
@@ -111,9 +112,9 @@ class OrderSearch extends Order
         $query->andFilterWhere(['ot.status' => $this->status]);
         $query->andFilterWhere(['opd.payment_method' => $this->payment_method]);
         $query->andFilterWhere(['(opd.total_including_tax + opd.shipping_fee)' => $this->amount]);
-        if($this->canAccessOwnedRecordsOnly('order'))
+        if($this->canAccessOwnedRecordsOnly('order') && $currentStoreOwnerId != $this->getUserId())
         {
-            $query->andFilterWhere(['ot.created_by' => $this->getUserId()]);
+            $query->andFilterWhere(['ot.created_by' => -1]);
         }
         $this->attachBehavior('priceBehavior', PriceBehavior::className());
         $models = $dataProvider->getModels();

@@ -31,6 +31,9 @@ class PaymentActionColumn extends \common\modules\extension\grid\ExtensionAction
      */
     public function renderChangeStatusLink($url, $model, $key)
     {
+        $label  = null;
+        $icon   = null;
+        $url    = null;
         if($this->checkAccess($model, 'update'))
         {
             if($model['status'] == Extension::STATUS_ACTIVE && $model['allowToDeactivate'])
@@ -45,10 +48,13 @@ class PaymentActionColumn extends \common\modules\extension\grid\ExtensionAction
                 $icon  = FA::icon('check');
                 $url   = $this->resolveChangeStatusUrl($model, Extension::STATUS_ACTIVE);
             }
-            return Html::a($icon, $url, [
+            if($label != null && $icon != null && $url != null)
+            {
+                return Html::a($icon, $url, [
                                                 'title' => $label,
                                                 'data-pjax' => '0',
                                           ]);
+            }
         }
         return null;
     }
