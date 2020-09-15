@@ -11,7 +11,7 @@
     "minimum-stability": "stable",
     "require": {
         "php": ">=5.4.0",
-        "yiisoft/yii2": "2.0.15.1",
+        "yiisoft/yii2": "2.0.38",
         "yiisoft/yii2-bootstrap": "*",
         "yiisoft/yii2-swiftmailer": "2.0.7",
         "branchonline/yii2-lightbox": "*",
