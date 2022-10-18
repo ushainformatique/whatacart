@@ -37,7 +37,6 @@ class TableManager extends \usni\library\db\TableManager
                     ProductImageTableBuilder::className(),
                     ProductRatingTableBuilder::className(),
                     ProductDownloadTableBuilder::className(),
-                    ProductDownloadTranslatedTableBuilder::className(),
                     ProductDownloadMappingTableBuilder::className(),
                     CustomerDownloadMappingTableBuilder::className(),
             ];

@@ -121,8 +121,11 @@ class ProductCategory extends TranslatableActiveRecord
         if(parent::beforeSave($insert))
         {
             $this->level                = $this->getLevel($this->parent_id);
-            $category                   = ProductCategoryDAO::getById($this->id, $this->language);
-            $this->savedDataCategoryId  = $category['data_category_id'];
+            if(!$insert)
+            {
+                $category                   = ProductCategoryDAO::getById($this->id, $this->language);
+                $this->savedDataCategoryId  = $category['data_category_id'];
+            }
             return true;
         }
        return false;
