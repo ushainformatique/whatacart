@@ -1237,12 +1237,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/ushainformatique/yiichimp.git",
-                "reference": "1c30868052ea1ec834474871f3ca87cd3f8b8893"
+                "reference": "a4b29ec286668a175df75a3c3941cfb586b6547a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/ushainformatique/yiichimp/zipball/1c30868052ea1ec834474871f3ca87cd3f8b8893",
-                "reference": "1c30868052ea1ec834474871f3ca87cd3f8b8893",
+                "url": "https://api.github.com/repos/ushainformatique/yiichimp/zipball/a4b29ec286668a175df75a3c3941cfb586b6547a",
+                "reference": "a4b29ec286668a175df75a3c3941cfb586b6547a",
                 "shasum": ""
             },
             "require": {
@@ -1264,7 +1264,7 @@
                 "framework",
                 "yiichimp"
             ],
-            "time": "2022-10-23T05:16:18+00:00"
+            "time": "2022-10-23T06:28:11+00:00"
         },
         {
             "name": "yiisoft/yii2",
