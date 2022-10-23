@@ -333,16 +333,16 @@
         },
         {
             "name": "bower-asset/codemirror",
-            "version": "5.50.2",
+            "version": "6.65.7",
             "source": {
                 "type": "git",
                 "url": "https://github.com/components/codemirror.git",
-                "reference": "a7ba57fe529ad23e150caee8daec52ab68caa983"
+                "reference": "e90054a9063d3ceece4869563681901d5acd5003"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/components/codemirror/zipball/a7ba57fe529ad23e150caee8daec52ab68caa983",
-                "reference": "a7ba57fe529ad23e150caee8daec52ab68caa983",
+                "url": "https://api.github.com/repos/components/codemirror/zipball/e90054a9063d3ceece4869563681901d5acd5003",
+                "reference": "e90054a9063d3ceece4869563681901d5acd5003",
                 "shasum": ""
             },
             "type": "bower-asset-library",
@@ -365,7 +365,7 @@
                     "mode/*/*.html"
                 ]
             },
-            "time": "2020-01-01T17:36:54+00:00"
+            "time": "2022-08-05T16:17:09+00:00"
         },
         {
             "name": "bower-asset/inputmask",
@@ -542,12 +542,12 @@
             "version": "v1.3.2",
             "source": {
                 "type": "git",
-                "url": "https://github.com/bestiejs/punycode.js.git",
+                "url": "https://github.com/mathiasbynens/punycode.js.git",
                 "reference": "38c8d3131a82567bfef18da09f7f4db68c84f8a3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/bestiejs/punycode.js/zipball/38c8d3131a82567bfef18da09f7f4db68c84f8a3",
+                "url": "https://api.github.com/repos/mathiasbynens/punycode.js/zipball/38c8d3131a82567bfef18da09f7f4db68c84f8a3",
                 "reference": "38c8d3131a82567bfef18da09f7f4db68c84f8a3",
                 "shasum": ""
             },
@@ -568,16 +568,16 @@
         },
         {
             "name": "bower-asset/selectize",
-            "version": "v0.12.6",
+            "version": "0.12.6-patch1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/selectize/selectize.js.git",
-                "reference": "eb0fca364f9bd6864ae197ea58c853f2717052a9"
+                "reference": "b8df29c9d4733857a4df4ddbf40d72abfd7c3ae9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/selectize/selectize.js/zipball/eb0fca364f9bd6864ae197ea58c853f2717052a9",
-                "reference": "eb0fca364f9bd6864ae197ea58c853f2717052a9",
+                "url": "https://api.github.com/repos/selectize/selectize.js/zipball/b8df29c9d4733857a4df4ddbf40d72abfd7c3ae9",
+                "reference": "b8df29c9d4733857a4df4ddbf40d72abfd7c3ae9",
                 "shasum": ""
             },
             "require": {
@@ -621,7 +621,7 @@
                 "tagging",
                 "ui"
             ],
-            "time": "2018-07-12T21:29:54+00:00"
+            "time": "2019-01-29T04:37:53+00:00"
         },
         {
             "name": "bower-asset/sifter",
@@ -704,16 +704,16 @@
         },
         {
             "name": "bower-asset/summernote",
-            "version": "v0.8.15",
+            "version": "v0.8.20",
             "source": {
                 "type": "git",
                 "url": "https://github.com/summernote/summernote.git",
-                "reference": "926bdb1fef32288a1ec1aaa9faf551aa06157f35"
+                "reference": "cd06928b8f978e8c852df5de0b87a008573dac4c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/summernote/summernote/zipball/926bdb1fef32288a1ec1aaa9faf551aa06157f35",
-                "reference": "926bdb1fef32288a1ec1aaa9faf551aa06157f35",
+                "url": "https://api.github.com/repos/summernote/summernote/zipball/cd06928b8f978e8c852df5de0b87a008573dac4c",
+                "reference": "cd06928b8f978e8c852df5de0b87a008573dac4c",
                 "shasum": ""
             },
             "type": "bower-asset-library"
@@ -856,31 +856,41 @@
         },
         {
             "name": "ezyang/htmlpurifier",
-            "version": "v4.12.0",
+            "version": "v4.16.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/ezyang/htmlpurifier.git",
-                "reference": "a617e55bc62a87eec73bd456d146d134ad716f03"
+                "reference": "523407fb06eb9e5f3d59889b3978d5bfe94299c8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/ezyang/htmlpurifier/zipball/a617e55bc62a87eec73bd456d146d134ad716f03",
-                "reference": "a617e55bc62a87eec73bd456d146d134ad716f03",
+                "url": "https://api.github.com/repos/ezyang/htmlpurifier/zipball/523407fb06eb9e5f3d59889b3978d5bfe94299c8",
+                "reference": "523407fb06eb9e5f3d59889b3978d5bfe94299c8",
                 "shasum": ""
             },
             "require": {
-                "php": ">=5.2"
+                "php": "~5.6.0 || ~7.0.0 || ~7.1.0 || ~7.2.0 || ~7.3.0 || ~7.4.0 || ~8.0.0 || ~8.1.0 || ~8.2.0"
             },
             "require-dev": {
-                "simpletest/simpletest": "dev-master#72de02a7b80c6bb8864ef9bf66d41d2f58f826bd"
+                "cerdic/css-tidy": "^1.7 || ^2.0",
+                "simpletest/simpletest": "dev-master"
+            },
+            "suggest": {
+                "cerdic/css-tidy": "If you want to use the filter 'Filter.ExtractStyleBlocks'.",
+                "ext-bcmath": "Used for unit conversion and imagecrash protection",
+                "ext-iconv": "Converts text to and from non-UTF-8 encodings",
+                "ext-tidy": "Used for pretty-printing HTML"
             },
             "type": "library",
             "autoload": {
+                "files": [
+                    "library/HTMLPurifier.composer.php"
+                ],
                 "psr-0": {
                     "HTMLPurifier": "library/"
                 },
-                "files": [
-                    "library/HTMLPurifier.composer.php"
+                "exclude-from-classmap": [
+                    "/library/HTMLPurifier/Language/"
                 ]
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -899,7 +909,7 @@
             "keywords": [
                 "html"
             ],
-            "time": "2019-10-28T03:44:26+00:00"
+            "time": "2022-09-18T07:06:19+00:00"
         },
         {
             "name": "fortawesome/font-awesome",
@@ -955,18 +965,18 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/kartik-v/bootstrap-star-rating.git",
-                "reference": "0e5df96c9cc69b2b333af0fa0afbb57e48c46e7b"
+                "reference": "46c21f551d6c608499244eb45a841dba334d1d2a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/kartik-v/bootstrap-star-rating/zipball/0e5df96c9cc69b2b333af0fa0afbb57e48c46e7b",
-                "reference": "0e5df96c9cc69b2b333af0fa0afbb57e48c46e7b",
+                "url": "https://api.github.com/repos/kartik-v/bootstrap-star-rating/zipball/46c21f551d6c608499244eb45a841dba334d1d2a",
+                "reference": "46c21f551d6c608499244eb45a841dba334d1d2a",
                 "shasum": ""
             },
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "4.0.x-dev"
+                    "dev-master": "4.1.x-dev"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -991,30 +1001,37 @@
                 "star",
                 "svg"
             ],
-            "time": "2019-10-04T13:34:11+00:00"
+            "funding": [
+                {
+                    "url": "https://opencollective.com/bootstrap-star-rating",
+                    "type": "open_collective"
+                }
+            ],
+            "time": "2022-04-03T17:42:59+00:00"
         },
         {
             "name": "kartik-v/yii2-krajee-base",
-            "version": "v2.0.5",
+            "version": "v3.0.5",
             "source": {
                 "type": "git",
                 "url": "https://github.com/kartik-v/yii2-krajee-base.git",
-                "reference": "9ddb662bdf49fdb671a90853912a40418a26a0dd"
+                "reference": "5c095126d1be47e0bb1f92779b7dc099f6feae31"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/kartik-v/yii2-krajee-base/zipball/9ddb662bdf49fdb671a90853912a40418a26a0dd",
-                "reference": "9ddb662bdf49fdb671a90853912a40418a26a0dd",
+                "url": "https://api.github.com/repos/kartik-v/yii2-krajee-base/zipball/5c095126d1be47e0bb1f92779b7dc099f6feae31",
+                "reference": "5c095126d1be47e0bb1f92779b7dc099f6feae31",
                 "shasum": ""
             },
             "suggest": {
                 "yiisoft/yii2-bootstrap": "for Krajee extensions to work with Bootstrap 3.x version",
-                "yiisoft/yii2-bootstrap4": "for Krajee extensions to work with Bootstrap 4.x version"
+                "yiisoft/yii2-bootstrap4": "for Krajee extensions to work with Bootstrap 4.x version",
+                "yiisoft/yii2-bootstrap5": "for Krajee extensions to work with Bootstrap 5.x version"
             },
             "type": "yii2-extension",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "2.0.x-dev"
+                    "dev-master": "3.0.x-dev"
                 }
             },
             "autoload": {
@@ -1043,20 +1060,20 @@
                 "widget",
                 "yii2"
             ],
-            "time": "2019-03-13T17:14:54+00:00"
+            "time": "2022-06-01T14:05:39+00:00"
         },
         {
             "name": "kartik-v/yii2-widget-rating",
-            "version": "v1.0.4",
+            "version": "v1.0.5",
             "source": {
                 "type": "git",
                 "url": "https://github.com/kartik-v/yii2-widget-rating.git",
-                "reference": "651eaa5e6a3bd19471e2a907fb17c3fd92f383e7"
+                "reference": "d3d7249490044f80e65f8f3938191f39a76586b2"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/kartik-v/yii2-widget-rating/zipball/651eaa5e6a3bd19471e2a907fb17c3fd92f383e7",
-                "reference": "651eaa5e6a3bd19471e2a907fb17c3fd92f383e7",
+                "url": "https://api.github.com/repos/kartik-v/yii2-widget-rating/zipball/d3d7249490044f80e65f8f3938191f39a76586b2",
+                "reference": "d3d7249490044f80e65f8f3938191f39a76586b2",
                 "shasum": ""
             },
             "require": {
@@ -1099,7 +1116,7 @@
                 "widget",
                 "yii2"
             ],
-            "time": "2018-09-16T09:30:44+00:00"
+            "time": "2021-11-20T05:26:05+00:00"
         },
         {
             "name": "marqu3s/yii2-summernote",
@@ -1107,12 +1124,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/marqu3s/yii2-summernote.git",
-                "reference": "26aab8e1ee13524394716e09a1efa9db4d91457e"
+                "reference": "28daacd5c981a8a221a2dd551c170af36346ed33"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/marqu3s/yii2-summernote/zipball/26aab8e1ee13524394716e09a1efa9db4d91457e",
-                "reference": "26aab8e1ee13524394716e09a1efa9db4d91457e",
+                "url": "https://api.github.com/repos/marqu3s/yii2-summernote/zipball/28daacd5c981a8a221a2dd551c170af36346ed33",
+                "reference": "28daacd5c981a8a221a2dd551c170af36346ed33",
                 "shasum": ""
             },
             "require": {
@@ -1157,7 +1174,7 @@
                 "wysiwyg",
                 "yii2"
             ],
-            "time": "2019-06-17T18:56:24+00:00"
+            "time": "2020-08-15T00:51:12+00:00"
         },
         {
             "name": "swiftmailer/swiftmailer",
@@ -1211,20 +1228,21 @@
                 "mail",
                 "mailer"
             ],
+            "abandoned": "symfony/mailer",
             "time": "2018-07-31T09:26:32+00:00"
         },
         {
             "name": "ushainformatique/yiichimp",
-            "version": "1.0.5",
+            "version": "1.0.7",
             "source": {
                 "type": "git",
                 "url": "https://github.com/ushainformatique/yiichimp.git",
-                "reference": "01542953ecbe4904f831ac42b974b95db9585883"
+                "reference": "1c30868052ea1ec834474871f3ca87cd3f8b8893"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/ushainformatique/yiichimp/zipball/01542953ecbe4904f831ac42b974b95db9585883",
-                "reference": "01542953ecbe4904f831ac42b974b95db9585883",
+                "url": "https://api.github.com/repos/ushainformatique/yiichimp/zipball/1c30868052ea1ec834474871f3ca87cd3f8b8893",
+                "reference": "1c30868052ea1ec834474871f3ca87cd3f8b8893",
                 "shasum": ""
             },
             "require": {
@@ -1246,7 +1264,7 @@
                 "framework",
                 "yiichimp"
             ],
-            "time": "2020-01-11T13:42:38+00:00"
+            "time": "2022-10-23T05:16:18+00:00"
         },
         {
             "name": "yiisoft/yii2",
@@ -1350,16 +1368,16 @@
         },
         {
             "name": "yiisoft/yii2-bootstrap",
-            "version": "2.0.10",
+            "version": "2.0.11",
             "source": {
                 "type": "git",
                 "url": "https://github.com/yiisoft/yii2-bootstrap.git",
-                "reference": "073c9ab0a4eb71f2485d84c96a1967130300d8fc"
+                "reference": "83d144f4089adaa7064ad60dc4c1436daa2eb30e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/yiisoft/yii2-bootstrap/zipball/073c9ab0a4eb71f2485d84c96a1967130300d8fc",
-                "reference": "073c9ab0a4eb71f2485d84c96a1967130300d8fc",
+                "url": "https://api.github.com/repos/yiisoft/yii2-bootstrap/zipball/83d144f4089adaa7064ad60dc4c1436daa2eb30e",
+                "reference": "83d144f4089adaa7064ad60dc4c1436daa2eb30e",
                 "shasum": ""
             },
             "require": {
@@ -1367,12 +1385,22 @@
                 "yiisoft/yii2": "~2.0.6"
             },
             "require-dev": {
-                "phpunit/phpunit": "<7"
+                "cweagans/composer-patches": "^1.7",
+                "phpunit/phpunit": "4.8.34"
             },
             "type": "yii2-extension",
             "extra": {
                 "branch-alias": {
                     "dev-master": "2.0.x-dev"
+                },
+                "patches": {
+                    "phpunit/phpunit-mock-objects": {
+                        "Fix PHP 7 and 8 compatibility": "https://yiisoft.github.io/phpunit-patches/phpunit_mock_objects.patch"
+                    },
+                    "phpunit/phpunit": {
+                        "Fix PHP 7 compatibility": "https://yiisoft.github.io/phpunit-patches/phpunit_php7.patch",
+                        "Fix PHP 8 compatibility": "https://yiisoft.github.io/phpunit-patches/phpunit_php8.patch"
+                    }
                 }
             },
             "autoload": {
@@ -1386,8 +1414,9 @@
             ],
             "authors": [
                 {
-                    "name": "Paul Klimov",
-                    "email": "klimov.paul@gmail.com"
+                    "name": "Qiang Xue",
+                    "email": "qiang.xue@gmail.com",
+                    "homepage": "http://www.yiiframework.com/"
                 },
                 {
                     "name": "Alexander Makarov",
@@ -1399,9 +1428,8 @@
                     "email": "amigo.cobos@gmail.com"
                 },
                 {
-                    "name": "Qiang Xue",
-                    "email": "qiang.xue@gmail.com",
-                    "homepage": "http://www.yiiframework.com/"
+                    "name": "Paul Klimov",
+                    "email": "klimov.paul@gmail.com"
                 }
             ],
             "description": "The Twitter Bootstrap extension for the Yii framework",
@@ -1409,27 +1437,41 @@
                 "bootstrap",
                 "yii2"
             ],
-            "time": "2019-04-23T13:18:43+00:00"
+            "funding": [
+                {
+                    "url": "https://github.com/yiisoft",
+                    "type": "github"
+                },
+                {
+                    "url": "https://opencollective.com/yiisoft",
+                    "type": "open_collective"
+                },
+                {
+                    "url": "https://tidelift.com/funding/github/packagist/yiisoft/yii2-bootstrap",
+                    "type": "tidelift"
+                }
+            ],
+            "time": "2021-08-09T20:54:06+00:00"
         },
         {
             "name": "yiisoft/yii2-composer",
-            "version": "2.0.8",
+            "version": "2.0.10",
             "source": {
                 "type": "git",
                 "url": "https://github.com/yiisoft/yii2-composer.git",
-                "reference": "5c7ca9836cf80b34db265332a7f2f8438eb469b9"
+                "reference": "94bb3f66e779e2774f8776d6e1bdeab402940510"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/yiisoft/yii2-composer/zipball/5c7ca9836cf80b34db265332a7f2f8438eb469b9",
-                "reference": "5c7ca9836cf80b34db265332a7f2f8438eb469b9",
+                "url": "https://api.github.com/repos/yiisoft/yii2-composer/zipball/94bb3f66e779e2774f8776d6e1bdeab402940510",
+                "reference": "94bb3f66e779e2774f8776d6e1bdeab402940510",
                 "shasum": ""
             },
             "require": {
-                "composer-plugin-api": "^1.0"
+                "composer-plugin-api": "^1.0 | ^2.0"
             },
             "require-dev": {
-                "composer/composer": "^1.0",
+                "composer/composer": "^1.0 | ^2.0@dev",
                 "phpunit/phpunit": "<7"
             },
             "type": "composer-plugin",
@@ -1464,7 +1506,21 @@
                 "extension installer",
                 "yii2"
             ],
-            "time": "2019-07-16T13:22:30+00:00"
+            "funding": [
+                {
+                    "url": "https://github.com/yiisoft",
+                    "type": "github"
+                },
+                {
+                    "url": "https://opencollective.com/yiisoft",
+                    "type": "open_collective"
+                },
+                {
+                    "url": "https://tidelift.com/funding/github/packagist/yiisoft/yii2-composer",
+                    "type": "tidelift"
+                }
+            ],
+            "time": "2020-06-24T00:04:01+00:00"
         },
         {
             "name": "yiisoft/yii2-swiftmailer",
@@ -1520,26 +1576,26 @@
     "packages-dev": [
         {
             "name": "imagine/imagine",
-            "version": "1.2.3",
+            "version": "1.3.2",
             "source": {
                 "type": "git",
-                "url": "https://github.com/avalanche123/Imagine.git",
-                "reference": "cb2361e5bb4410b681462d8e4f912bc5dabf84ab"
+                "url": "https://github.com/php-imagine/Imagine.git",
+                "reference": "ae864f26afbf8859ebd2e2b9df92d77ee175dc13"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/avalanche123/Imagine/zipball/cb2361e5bb4410b681462d8e4f912bc5dabf84ab",
-                "reference": "cb2361e5bb4410b681462d8e4f912bc5dabf84ab",
+                "url": "https://api.github.com/repos/php-imagine/Imagine/zipball/ae864f26afbf8859ebd2e2b9df92d77ee175dc13",
+                "reference": "ae864f26afbf8859ebd2e2b9df92d77ee175dc13",
                 "shasum": ""
             },
             "require": {
-                "php": ">=5.3.2"
+                "php": ">=5.5"
             },
             "require-dev": {
-                "friendsofphp/php-cs-fixer": "2.2.*",
-                "phpunit/phpunit": "^4.8 || ^5.7 || ^6.5 || ^7.5 || ^8.4"
+                "phpunit/phpunit": "^4.8 || ^5.7 || ^6.5 || ^7.5 || ^8.4 || ^9.3"
             },
             "suggest": {
+                "ext-exif": "to read EXIF metadata",
                 "ext-gd": "to use the GD implementation",
                 "ext-gmagick": "to use the Gmagick implementation",
                 "ext-imagick": "to use the Imagick implementation"
@@ -1547,7 +1603,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-develop": "0.7-dev"
+                    "dev-develop": "1.x-dev"
                 }
             },
             "autoload": {
@@ -1574,34 +1630,34 @@
                 "image manipulation",
                 "image processing"
             ],
-            "time": "2019-12-04T09:55:33+00:00"
+            "time": "2022-04-01T11:58:30+00:00"
         },
         {
             "name": "linslin/yii2-curl",
-            "version": "1.3.0",
+            "version": "1.5.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/linslin/Yii2-Curl.git",
-                "reference": "734c40b520729c79af2937283864f8c999e86879"
+                "reference": "c180a1e5d5035d9dbe54d2cd3cd7fec87c0de764"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/linslin/Yii2-Curl/zipball/734c40b520729c79af2937283864f8c999e86879",
-                "reference": "734c40b520729c79af2937283864f8c999e86879",
+                "url": "https://api.github.com/repos/linslin/Yii2-Curl/zipball/c180a1e5d5035d9dbe54d2cd3cd7fec87c0de764",
+                "reference": "c180a1e5d5035d9dbe54d2cd3cd7fec87c0de764",
                 "shasum": ""
             },
             "require": {
                 "ext-curl": "*",
                 "ext-json": "*",
-                "yiisoft/yii2": "*"
+                "php": ">=7.2.0 <9.0",
+                "yiisoft/yii2": "^2.0.0"
             },
             "require-dev": {
-                "codeception/base": "^2.2.3",
-                "codeception/specify": "~0.4.3",
-                "codeception/verify": "~0.3.1",
-                "codeclimate/php-test-reporter": "dev-master",
+                "codeception/module-asserts": "^1.3",
                 "guzzlehttp/guzzle": ">=4.1.4 <7.0",
-                "mcustiel/phiremock-codeception-extension": "1.2.4"
+                "mcustiel/phiremock": "^2.1",
+                "mcustiel/phiremock-codeception-extension": "^2.1",
+                "mcustiel/phiremock-codeception-module": "^1.1.2"
             },
             "type": "yii2-extension",
             "autoload": {
@@ -1626,81 +1682,20 @@
                 "restful",
                 "yii2"
             ],
-            "time": "2019-02-25T10:56:34+00:00"
-        },
-        {
-            "name": "opis/closure",
-            "version": "3.5.1",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/opis/closure.git",
-                "reference": "93ebc5712cdad8d5f489b500c59d122df2e53969"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/opis/closure/zipball/93ebc5712cdad8d5f489b500c59d122df2e53969",
-                "reference": "93ebc5712cdad8d5f489b500c59d122df2e53969",
-                "shasum": ""
-            },
-            "require": {
-                "php": "^5.4 || ^7.0"
-            },
-            "require-dev": {
-                "jeremeamia/superclosure": "^2.0",
-                "phpunit/phpunit": "^4.0 || ^5.0 || ^6.0 || ^7.0"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "3.5.x-dev"
-                }
-            },
-            "autoload": {
-                "psr-4": {
-                    "Opis\\Closure\\": "src/"
-                },
-                "files": [
-                    "functions.php"
-                ]
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Marius Sarca",
-                    "email": "marius.sarca@gmail.com"
-                },
-                {
-                    "name": "Sorin Sarca",
-                    "email": "sarca_sorin@hotmail.com"
-                }
-            ],
-            "description": "A library that can be used to serialize closures (anonymous functions) and arbitrary objects.",
-            "homepage": "https://opis.io/closure",
-            "keywords": [
-                "anonymous functions",
-                "closure",
-                "function",
-                "serializable",
-                "serialization",
-                "serialize"
-            ],
-            "time": "2019-11-29T22:36:02+00:00"
+            "time": "2021-02-20T10:10:56+00:00"
         },
         {
             "name": "phpspec/php-diff",
-            "version": "v1.1.0",
+            "version": "v1.1.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpspec/php-diff.git",
-                "reference": "0464787bfa7cd13576c5a1e318709768798bec6a"
+                "reference": "fc1156187f9f6c8395886fe85ed88a0a245d72e9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpspec/php-diff/zipball/0464787bfa7cd13576c5a1e318709768798bec6a",
-                "reference": "0464787bfa7cd13576c5a1e318709768798bec6a",
+                "url": "https://api.github.com/repos/phpspec/php-diff/zipball/fc1156187f9f6c8395886fe85ed88a0a245d72e9",
+                "reference": "fc1156187f9f6c8395886fe85ed88a0a245d72e9",
                 "shasum": ""
             },
             "type": "library",
@@ -1725,30 +1720,30 @@
                 }
             ],
             "description": "A comprehensive library for generating differences between two hashable objects (strings or arrays).",
-            "time": "2016-04-07T12:29:16+00:00"
+            "time": "2020-09-18T13:47:07+00:00"
         },
         {
             "name": "yiisoft/yii2-debug",
-            "version": "2.1.12",
+            "version": "2.1.21",
             "source": {
                 "type": "git",
                 "url": "https://github.com/yiisoft/yii2-debug.git",
-                "reference": "bf9234ba1369116d12ebe266d98006416a5ae304"
+                "reference": "fa9fa02e242c1b744eb68045ee8e9d698134836d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/yiisoft/yii2-debug/zipball/bf9234ba1369116d12ebe266d98006416a5ae304",
-                "reference": "bf9234ba1369116d12ebe266d98006416a5ae304",
+                "url": "https://api.github.com/repos/yiisoft/yii2-debug/zipball/fa9fa02e242c1b744eb68045ee8e9d698134836d",
+                "reference": "fa9fa02e242c1b744eb68045ee8e9d698134836d",
                 "shasum": ""
             },
             "require": {
                 "ext-mbstring": "*",
-                "opis/closure": "^3.3",
                 "php": ">=5.4",
                 "yiisoft/yii2": "~2.0.13"
             },
             "require-dev": {
-                "phpunit/phpunit": "<7",
+                "cweagans/composer-patches": "^1.7",
+                "phpunit/phpunit": "4.8.34",
                 "yiisoft/yii2-coding-standards": "~2.0",
                 "yiisoft/yii2-swiftmailer": "*"
             },
@@ -1756,6 +1751,17 @@
             "extra": {
                 "branch-alias": {
                     "dev-master": "2.0.x-dev"
+                },
+                "composer-exit-on-patch-failure": true,
+                "patches": {
+                    "phpunit/phpunit-mock-objects": {
+                        "Fix PHP 7 and 8 compatibility": "https://yiisoft.github.io/phpunit-patches/phpunit_mock_objects.patch"
+                    },
+                    "phpunit/phpunit": {
+                        "Fix PHP 7 compatibility": "https://yiisoft.github.io/phpunit-patches/phpunit_php7.patch",
+                        "Fix PHP 8 compatibility": "https://yiisoft.github.io/phpunit-patches/phpunit_php8.patch",
+                        "Fix PHP 8.1 compatibility": "https://yiisoft.github.io/phpunit-patches/phpunit_php81.patch"
+                    }
                 }
             },
             "autoload": {
@@ -1783,20 +1789,34 @@
                 "debugger",
                 "yii2"
             ],
-            "time": "2019-11-19T20:09:08+00:00"
+            "funding": [
+                {
+                    "url": "https://github.com/yiisoft",
+                    "type": "github"
+                },
+                {
+                    "url": "https://opencollective.com/yiisoft",
+                    "type": "open_collective"
+                },
+                {
+                    "url": "https://tidelift.com/funding/github/packagist/yiisoft/yii2-debug",
+                    "type": "tidelift"
+                }
+            ],
+            "time": "2022-09-06T17:40:08+00:00"
         },
         {
             "name": "yiisoft/yii2-gii",
-            "version": "2.1.3",
+            "version": "2.2.5",
             "source": {
                 "type": "git",
                 "url": "https://github.com/yiisoft/yii2-gii.git",
-                "reference": "0dcc7d3c66de045f1b560ad4928dc67a6611f6d1"
+                "reference": "e2f2dcf0f16713e678df6ba70362c99a215a8f72"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/yiisoft/yii2-gii/zipball/0dcc7d3c66de045f1b560ad4928dc67a6611f6d1",
-                "reference": "0dcc7d3c66de045f1b560ad4928dc67a6611f6d1",
+                "url": "https://api.github.com/repos/yiisoft/yii2-gii/zipball/e2f2dcf0f16713e678df6ba70362c99a215a8f72",
+                "reference": "e2f2dcf0f16713e678df6ba70362c99a215a8f72",
                 "shasum": ""
             },
             "require": {
@@ -1804,13 +1824,24 @@
                 "yiisoft/yii2": "~2.0.14"
             },
             "require-dev": {
-                "phpunit/phpunit": "<7",
+                "cweagans/composer-patches": "^1.7",
+                "phpunit/phpunit": "4.8.34",
                 "yiisoft/yii2-coding-standards": "~2.0"
             },
             "type": "yii2-extension",
             "extra": {
                 "branch-alias": {
                     "dev-master": "2.0.x-dev"
+                },
+                "composer-exit-on-patch-failure": true,
+                "patches": {
+                    "phpunit/phpunit-mock-objects": {
+                        "Fix PHP 7 and 8 compatibility": "https://yiisoft.github.io/phpunit-patches/phpunit_mock_objects.patch"
+                    },
+                    "phpunit/phpunit": {
+                        "Fix PHP 7 compatibility": "https://yiisoft.github.io/phpunit-patches/phpunit_php7.patch",
+                        "Fix PHP 8 compatibility": "https://yiisoft.github.io/phpunit-patches/phpunit_php8.patch"
+                    }
                 }
             },
             "autoload": {
@@ -1834,33 +1865,58 @@
                 "gii",
                 "yii2"
             ],
-            "time": "2019-11-19T20:19:33+00:00"
+            "funding": [
+                {
+                    "url": "https://github.com/yiisoft",
+                    "type": "github"
+                },
+                {
+                    "url": "https://opencollective.com/yiisoft",
+                    "type": "open_collective"
+                },
+                {
+                    "url": "https://tidelift.com/funding/github/packagist/yiisoft/yii2-gii",
+                    "type": "tidelift"
+                }
+            ],
+            "time": "2022-09-04T10:00:25+00:00"
         },
         {
             "name": "yiisoft/yii2-imagine",
-            "version": "2.2.0",
+            "version": "2.3.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/yiisoft/yii2-imagine.git",
-                "reference": "8637f63ee2eb81b7fe1f4c0e16cc8cc474a68bae"
+                "reference": "7ec4332dc25893aec5a7cf084722b162b3a4d55d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/yiisoft/yii2-imagine/zipball/8637f63ee2eb81b7fe1f4c0e16cc8cc474a68bae",
-                "reference": "8637f63ee2eb81b7fe1f4c0e16cc8cc474a68bae",
+                "url": "https://api.github.com/repos/yiisoft/yii2-imagine/zipball/7ec4332dc25893aec5a7cf084722b162b3a4d55d",
+                "reference": "7ec4332dc25893aec5a7cf084722b162b3a4d55d",
                 "shasum": ""
             },
             "require": {
-                "imagine/imagine": "^0.6 | ^0.7 | ^1.0",
+                "imagine/imagine": "^1.0",
                 "yiisoft/yii2": "~2.0.0"
             },
             "require-dev": {
-                "phpunit/phpunit": "<7"
+                "cweagans/composer-patches": "^1.7",
+                "phpunit/phpunit": "4.8.34"
             },
             "type": "yii2-extension",
             "extra": {
                 "branch-alias": {
                     "dev-master": "2.0.x-dev"
+                },
+                "composer-exit-on-patch-failure": true,
+                "patches": {
+                    "phpunit/phpunit-mock-objects": {
+                        "Fix PHP 7 and 8 compatibility": "https://yiisoft.github.io/phpunit-patches/phpunit_mock_objects.patch"
+                    },
+                    "phpunit/phpunit": {
+                        "Fix PHP 7 compatibility": "https://yiisoft.github.io/phpunit-patches/phpunit_php7.patch",
+                        "Fix PHP 8 compatibility": "https://yiisoft.github.io/phpunit-patches/phpunit_php8.patch"
+                    }
                 }
             },
             "autoload": {
@@ -1885,7 +1941,21 @@
                 "imagine",
                 "yii2"
             ],
-            "time": "2019-06-04T12:38:50+00:00"
+            "funding": [
+                {
+                    "url": "https://github.com/yiisoft",
+                    "type": "github"
+                },
+                {
+                    "url": "https://opencollective.com/yiisoft",
+                    "type": "open_collective"
+                },
+                {
+                    "url": "https://tidelift.com/funding/github/packagist/yiisoft/yii2-imagine",
+                    "type": "tidelift"
+                }
+            ],
+            "time": "2022-09-04T10:06:40+00:00"
         }
     ],
     "aliases": [],
@@ -1899,5 +1969,6 @@
     "platform": {
         "php": ">=5.4.0"
     },
-    "platform-dev": []
+    "platform-dev": [],
+    "plugin-api-version": "1.1.0"
 }
