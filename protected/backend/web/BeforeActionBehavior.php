@@ -155,12 +155,12 @@ class BeforeActionBehavior extends Behavior
         if($sendMethod == 'smtp')
         {
             $configurationArray = [
-                                    'class'         => 'Swift_SmtpTransport',
+                                    'scheme'        => 'smtps',
                                     'host'          => trim(ArrayUtil::getValue($config, 'smtpHost', '')),
                                     'username'      => trim(ArrayUtil::getValue($config, 'smtpUsername', '')),
                                     'password'      => ArrayUtil::getValue($config, 'smtpPassword', ''),
                                     'port'          => trim(ArrayUtil::getValue($config, 'smtpPort', '')),
-                                    'encryption'    => 'tls',
+                                    //'encryption'    => 'tls',
                                   ];
             UsniAdaptor::app()->mailer->setTransport($configurationArray);
         }

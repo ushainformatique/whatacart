@@ -11,3 +11,4 @@
 /data/installdata.sql
 /protected/backend/runtime/
 /protected/frontend/runtime/
+/protected/console/runtime/

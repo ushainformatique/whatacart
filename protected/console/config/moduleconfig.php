@@ -28,5 +28,17 @@ return [
                         'marketing',
                         'marketing/newsletter',
                         'customer'
-                    ]]
+                    ]],
+    'localization/lengthclass'      => [
+                        'dataManager' => 'common\modules\localization\modules\lengthclass\db\LengthClassDataManager'
+                   ],
+    'localization/weightclass'      => [
+                        'dataManager' => 'common\modules\localization\modules\weightclass\db\WeightClassDataManager'
+                   ],
+    'localization/orderstatus'      => [
+                        'dataManager' => 'common\modules\localization\modules\orderstatus\db\OrderStatusDataManager'
+                   ],
+    'localization/stockstatus'      => [
+                        'dataManager' => 'common\modules\localization\modules\stockstatus\db\StockStatusDataManager'
+                   ],
 ];

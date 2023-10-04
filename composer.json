@@ -11,25 +11,25 @@
     "minimum-stability": "stable",
     "require": {
         "php": ">=5.4.0",
-        "yiisoft/yii2": "2.0.15.1",
+        "yiisoft/yii2": "*",
         "yiisoft/yii2-bootstrap": "*",
-        "yiisoft/yii2-swiftmailer": "2.0.7",
+        "yiisoft/yii2-symfonymailer": "~3.0.0",
         "branchonline/yii2-lightbox": "*",
         "2amigos/yii2-date-time-picker-widget": "*",
         "2amigos/yii2-date-picker-widget": "*",
         "2amigos/yii2-taggable-behavior": "*",
         "2amigos/yii2-selectize-widget": "*",
         "kartik-v/yii2-widget-rating": "*",
-		"kartik-v/bootstrap-star-rating": "@dev",
+        "kartik-v/bootstrap-star-rating": "@dev",
         "marqu3s/yii2-summernote": "dev-master",
-        "fortawesome/font-awesome": "v4.7.0",
-        "ushainformatique/yiichimp": "*"
+        "fortawesome/font-awesome": "v4.7.0"
     },
     "require-dev": {
         "yiisoft/yii2-debug": "*",
         "yiisoft/yii2-gii": "*",
         "yiisoft/yii2-imagine": "*",
-        "linslin/yii2-curl": "*"
+        "linslin/yii2-curl": "*",
+        "phpcompatibility/php-compatibility": "*"
     },
     "config": {
         "process-timeout": 1800,
@@ -40,5 +40,8 @@
               "bower-asset-library": "vendor/bower"
             }
           }
+    },
+    "scripts": {
+        "sniffer:php8": "phpcs -p . --standard=vendor/phpcompatibility/php-compatibility/PHPCompatibility --extensions=php --ignore=*/vendor/* --runtime-set testVersion 8.2"
     }
 }
