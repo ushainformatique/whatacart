@@ -29,7 +29,10 @@ abstract class BaseAdminPaymentProcessor extends BasePaymentProcessor
     {
         parent::init();
         //Set the currency set in customer form
-        $this->selectedCurrency  = $this->checkoutDetails->customerForm->currencyCode;
+        if(!is_null($this->checkoutDetails))
+        {
+            $this->selectedCurrency  = $this->checkoutDetails->customerForm->currencyCode;
+        }
     }
     
     /**

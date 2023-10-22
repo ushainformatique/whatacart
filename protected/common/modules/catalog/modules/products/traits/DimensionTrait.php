@@ -54,7 +54,9 @@ trait DimensionTrait
         {
             return null;
         }
-        if($currentStoreLengthClassId !== $product['length_class'])
+        $currentStoreLengthClassIdInt = intval($currentStoreLengthClassId);
+        $productLengthClass   = intval($product['length_class']);
+        if($currentStoreLengthClassIdInt !== $productLengthClass)
         {
             $productLengthClass = LengthClassDAO::getById($product['length_class'], $this->owner->language);
             $dimensions         = $this->convertDimensionsToUnit($productLengthClass['name'], $currentStoreLengthClassName, $product);

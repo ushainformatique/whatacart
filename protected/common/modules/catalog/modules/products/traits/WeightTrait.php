@@ -51,7 +51,9 @@ trait WeightTrait
         {
             return null;
         }
-        if($currentStoreWeightClassId !== $product['weight_class'])
+        $currentStoreWeightClassIdInt = intval($currentStoreWeightClassId);
+        $productWeightClass   = intval($product['weight_class']);
+        if($currentStoreWeightClassIdInt !== $productWeightClass)
         {
             $productLengthClass = WeightClassDAO::getById($product['weight_class'], $this->owner->language);
             $weight         = $this->convertWeightToUnit($productLengthClass['name'], $currentStoreWeightClassName, $product);
