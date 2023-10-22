@@ -23,7 +23,7 @@
         "kartik-v/bootstrap-star-rating": "@dev",
         "marqu3s/yii2-summernote": "dev-master",
         "fortawesome/font-awesome": "v4.7.0",
-        "ushainformatique/yiichimp": "*"
+        "ushainformatique/yiichimp": "dev-master"
     },
     "require-dev": {
         "yiisoft/yii2-debug": "*",
