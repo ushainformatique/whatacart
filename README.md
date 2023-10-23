@@ -36,6 +36,11 @@ Run http://localhost/whatacart if running on local environment.
 
 If you are deploying on a domain for example xyz.com, go to public_html folder and http://xyz.com.
 
+### Install from terminal
+
+* Run `php ./yii app/build`
+* Provide the necessary inputs
+
 ### NOTE
 
 In case you are getting the following errors 

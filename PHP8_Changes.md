@@ -10,3 +10,7 @@
 * protected/common/modules/catalog/modules/products/traits/WeightTrait.php
 * protected/common/modules/payment/business/BaseAdminPaymentProcessor.php
 
+# Config changes #
+
+* If php-fpm is used than enable flushpackets. Refer to https://beamtic.com/php-output-buffering 
+
